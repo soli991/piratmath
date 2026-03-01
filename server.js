@@ -37,3 +37,6 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`\n🐀 Pi-ratMath działa na http://localhost:${PORT}\n`);
 });
+process.on('SIGTERM', () => {
+  process.exit(0);
+});
