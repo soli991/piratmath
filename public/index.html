@@ -1,0 +1,2614 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pi-ratMath – Nauka Matematyki</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e1a;
+  --bg2: #0f1628;
+  --bg3: #141c35;
+  --card: #1a2340;
+  --card2: #1e2a4a;
+  --border: #2a3a6a;
+  --accent: #4f8ef7;
+  --accent2: #7b5ef8;
+  --accent3: #00d4aa;
+  --text: #e8eeff;
+  --text2: #8899cc;
+  --text3: #5566aa;
+  --gold: #ffd700;
+  --silver: #c0c0c0;
+  --bronze: #cd7f32;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #f59e0b;
+  --sidebar-w: 260px;
+  --right-w: 280px;
+  --header-h: 160px;
+  --font-head: 'Baloo 2', cursive;
+  --font-body: 'Nunito', sans-serif;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+body.theme-pink {
+  --bg: #fdf0f7;
+  --bg2: #fae8f4;
+  --bg3: #f5d9ec;
+  --card: #ffffff;
+  --card2: #fdf4fb;
+  --border: #e8b8d8;
+  --accent: #c0568a;
+  --accent2: #a044b0;
+  --accent3: #d4427a;
+  --text: #2d1a28;
+  --text2: #7a4468;
+  --text3: #b87aaa;
+  --gold: #b8600a;
+  --green: #2a8a50;
+  --red: #c0304a;
+}
+
+body.theme-classic {
+  --bg: #f5f5f0;
+  --bg2: #ebe8e0;
+  --bg3: #ddd8cc;
+  --card: #ffffff;
+  --card2: #f8f5ee;
+  --border: #ccc8bb;
+  --accent: #2563eb;
+  --accent2: #7c3aed;
+  --accent3: #059669;
+  --text: #1a1a2e;
+  --text2: #555566;
+  --text3: #888899;
+  --gold: #b8860b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background 0.4s, color 0.4s;
+}
+
+/* STARS */
+.stars-bg {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+}
+.star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle var(--dur, 3s) ease-in-out infinite;
+  opacity: var(--op, 0.5);
+}
+@keyframes twinkle {
+  0%,100%{opacity:var(--op,0.5);transform:scale(1)}
+  50%{opacity:0.1;transform:scale(0.5)}
+}
+body.theme-pink .stars-bg { display: none; }
+body.theme-classic .stars-bg { display: none; }
+
+/* ===== LAYOUT ===== */
+.layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr var(--right-w);
+  grid-template-rows: var(--header-h) 1fr;
+  min-height: 100vh;
+  position: relative;
+  /* bez z-index – nie tworzymy stacking context, żeby sidebar-right mógł wyjść ponad decoOverlay */
+}
+
+/* ===== HEADER ===== */
+header {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  position: relative;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  justify-content: center;
+}
+
+.social-links {
+  display: flex;
+  gap: 10px;
+}
+
+.social-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font-body);
+}
+.social-btn:hover { background: var(--card2); color: var(--accent); border-color: var(--accent); transform: translateY(-2px); }
+.social-btn .icon { font-size: 20px; }
+.social-btn.yt .icon { color: #ff0000; }
+.social-btn.tt .icon { color: var(--text2); }
+.social-btn.tw .icon { color: #9146ff; }
+.social-btn.survey .icon { color: #34a853; }
+
+.season-box {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  text-align: center;
+  min-width: 160px;
+}
+.season-box .label { font-size: 10px; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+.season-box .timer { font-family: var(--font-head); font-size: 18px; font-weight: 800; letter-spacing: 2px; color: white; }
+
+.fact-box {
+  width: 100%;
+  max-width: 600px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.fact-box .fact-icon { font-size: 20px; flex-shrink: 0; }
+.fact-box .fact-text { font-size: 14px; color: var(--text2); line-height: 1.4; }
+.fact-box .fact-label { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
+.fact-box { cursor: default; transition: background 0.25s, border-color 0.25s, box-shadow 0.25s; }
+.fact-box:hover { background: var(--card2, #1e2a3a); border-color: var(--accent); box-shadow: 0 0 12px 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+
+/* ===== SIDEBAR LEFT ===== */
+.sidebar-left {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-title {
+  font-family: var(--font-head);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+  padding: 0 16px 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.level-group { margin: 4px 0; }
+
+.level-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+.level-btn:hover { background: var(--card); color: var(--accent); }
+.level-btn.active { background: var(--card); color: var(--accent); border-left: 3px solid var(--accent); }
+.level-btn .level-badge {
+  font-size: 10px;
+  background: var(--accent);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 20px;
+  font-weight: 800;
+}
+.level-btn .chevron { transition: transform 0.2s; font-size: 12px; }
+.level-btn.open .chevron { transform: rotate(180deg); }
+
+.topics-list {
+  display: none;
+  flex-direction: column;
+  background: var(--bg3);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.topics-list.open { display: flex; }
+
+.topic-btn {
+  padding: 8px 16px 8px 28px;
+  background: transparent;
+  border: none;
+  color: var(--text2);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.topic-btn:hover { color: var(--accent); background: var(--card); }
+.topic-btn.active { color: var(--accent); font-weight: 800; }
+.topic-btn .topic-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.topic-btn.wip { opacity: 0.4; }
+.topic-btn.wip .topic-dot { background: var(--text2); }
+.topic-section-label {
+  padding: 8px 16px 3px 16px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--accent2);
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+/* planet decorations */
+.planet-deco {
+  margin-top: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+.planet { font-size: 32px; animation: float 4s ease-in-out infinite; }
+.planet:nth-child(2) { animation-delay: -2s; font-size: 22px; }
+body.theme-pink .planet-deco::before { content: '🦄'; font-size: 32px; }
+body.theme-classic .planet-deco { display: none; }
+
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+/* ===== MAIN ===== */
+main {
+  grid-column: 2;
+  grid-row: 2;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* WELCOME */
+.welcome-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 24px;
+  text-align: center;
+}
+.welcome-title {
+  font-family: var(--font-head);
+  font-size: 62px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+}
+.welcome-sub { color: var(--text2); font-size: 20px; max-width: 480px; line-height: 1.6; }
+.welcome-hint {
+  background: var(--card);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 18px 28px;
+  color: var(--text2);
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* EXERCISE AREA */
+.exercise-area { display: none; flex-direction: column; gap: 20px; }
+.exercise-area.visible { display: flex; }
+
+/* WRITTEN ADDITION (dodawanie pisemne) */
+.wa-wrap { display:flex; justify-content:center; padding:16px 0; }
+.wa-block { display:flex; flex-direction:column; align-items:stretch; }
+.wa-row { display:flex; align-items:center; }
+.wa-cell {
+  width:44px; height:44px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; font-weight:700; font-family:var(--font-head);
+  color:var(--text1);
+}
+.wa-op-cell { color:var(--accent); font-size:20px; }
+.wa-carry-cell {
+  font-size:12px; font-weight:800; color:var(--accent2);
+  height:22px; visibility:hidden;
+  align-items:flex-end;
+}
+.wa-block.carries-visible .wa-carry-cell { visibility:visible; }
+.wa-line { height:3px; background:var(--border); border-radius:2px; margin:4px 0; }
+.wa-input-row { margin-top:2px; }
+.wa-digit-input {
+  width:44px; height:44px; box-sizing:border-box;
+  background:var(--bg2); border:2px solid var(--border); border-radius:8px;
+  color:var(--text1); font-size:22px; font-weight:700; font-family:var(--font-head);
+  text-align:center; outline:none; transition:border-color 0.15s;
+  -moz-appearance:textfield;
+}
+.wa-digit-input:focus { border-color:var(--accent); }
+.wa-digit-input.correct { border-color:#22c55e; background:color-mix(in srgb,#22c55e 18%,transparent); color:#22c55e; }
+.wa-digit-input.wrong   { border-color:#ef4444; background:color-mix(in srgb,#ef4444 18%,transparent); color:#ef4444; }
+.wm-placeholder { color:var(--text3); font-size:20px; opacity:0.5; }
+.wm-second-line { margin-top:4px; }
+
+/* WRITTEN DIVISION (dzielenie pisemne) – słupek */
+.wd-wrap { display:flex; flex-direction:column; align-items:center; padding:8px 0 16px; }
+.wd-paper-tip {
+  font-size:16px; color:var(--text2); text-align:center;
+  margin:0 0 16px; padding:8px 18px;
+  border:1px dashed var(--border); border-radius:var(--radius-sm);
+  background:var(--bg3);
+}
+.wd-paper-tip strong { color:var(--accent); font-size:18px; }
+
+/* Układ słupka */
+.wd-slupek { display:flex; flex-direction:column; align-items:flex-start; }
+.wd-quot-section { display:flex; flex-direction:column; }
+.wd-quot-row { display:flex; align-items:center; }
+.wd-mc-ph { width:40px; flex-shrink:0; }  /* wyrównanie z kolumną minusów */
+.wd-d-ph  { width:44px; height:44px; flex-shrink:0; } /* puste miejsce w wierszu ilorazu */
+.wd-quot-bar { height:2px; background:var(--text2); opacity:0.55; margin:2px 0; }
+.wd-work-section { display:flex; align-items:flex-start; }
+.wd-col-left { display:flex; flex-direction:column; }
+.wd-dividend-row .wd-hint-digit { font-size:24px; color:var(--text); }
+.wd-vsep { width:2px; background:var(--text2); align-self:stretch; opacity:0.55; }
+.wd-col-right { display:flex; flex-direction:column; align-items:flex-start; padding-left:10px; }
+.wd-divisor-txt {
+  height:36px; display:flex; align-items:center;
+  font-size:22px; font-weight:800; font-family:var(--font-head);
+  color:var(--text); letter-spacing:1px; padding:0 6px;
+}
+
+/* Wiersze kroków słupka */
+.wd-hint-rule { display:block; width:100%; height:2px; background:var(--border); border-radius:2px; margin:2px 0 3px; }
+.wd-hint-row { display:flex; justify-content:flex-end; align-items:center; line-height:1.3; }
+.wd-hint-digit {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:44px; height:36px;
+  font-size:20px; font-weight:700; font-family:var(--font-head); color:var(--text);
+}
+.wd-hint-prod .wd-hint-digit { color:var(--text2); }
+.wd-minus {
+  display:inline-flex; align-items:center; justify-content:flex-end;
+  width:40px; height:36px;
+  font-size:20px; font-weight:700; color:var(--text2); padding-right:4px;
+}
+.wd-hint-final .wd-hint-digit { color:var(--accent3); }
+
+/* ZAOKRĄGLANIE */
+.rnd-wrap {
+  display:flex; flex-direction:column; align-items:center;
+  padding:20px 16px 24px; gap:20px;
+}
+.rnd-question { margin:0; font-size:16px; color:var(--text2); text-align:center; }
+.rnd-question strong { font-size:20px; color:var(--text); }
+.rnd-number { display:flex; align-items:center; }
+.rnd-sep { width:10px; flex-shrink:0; }
+.rnd-digit {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:44px; height:56px;
+  font-size:36px; font-weight:800; font-family:var(--font-head); color:var(--text);
+}
+.rnd-dot {
+  display:inline-flex; align-items:flex-end; justify-content:center;
+  width:18px; height:56px; padding-bottom:4px;
+  font-size:36px; font-weight:800; color:var(--text);
+}
+.rnd-deciding {
+  color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 18%,transparent);
+  border-radius:8px;
+}
+.rnd-input-row { display:flex; align-items:center; gap:10px; }
+.rnd-input {
+  width:200px; height:52px; box-sizing:border-box;
+  background:var(--bg2); border:2px solid var(--border); border-radius:10px;
+  color:var(--text1); font-size:26px; font-weight:700; font-family:var(--font-head);
+  text-align:center; outline:none; transition:border-color 0.15s;
+}
+.rnd-input:focus { border-color:var(--accent); }
+.rnd-input.correct { border-color:#22c55e; background:color-mix(in srgb,#22c55e 18%,transparent); color:#22c55e; }
+.rnd-input.wrong   { border-color:#ef4444; background:color-mix(in srgb,#ef4444 18%,transparent); color:#ef4444; }
+
+/* KOLEJNOŚĆ DZIAŁAŃ */
+.oop-wrap { display:flex; flex-direction:column; align-items:center; padding:20px 16px 32px; gap:16px; }
+.oop-top-row { display:flex; justify-content:center; }
+.oop-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.oop-expr { font-size:30px; font-weight:700; font-family:var(--font-head); color:var(--text); }
+.oop-expr sup { font-size:0.58em; vertical-align:super; color:var(--accent); }
+.oop-eq   { font-size:30px; font-weight:700; color:var(--text2); }
+.oop-input { width:120px; height:56px; font-size:28px; font-weight:800; text-align:center;
+  background:var(--bg2); border:2px solid var(--border); border-radius:10px;
+  color:var(--text1); outline:none; font-family:var(--font-head); }
+.oop-input:focus   { border-color:var(--accent); }
+.oop-input.correct { border-color:#22c55e; background:color-mix(in srgb,#22c55e 18%,transparent); color:#22c55e; }
+.oop-input.wrong   { border-color:#ef4444; background:color-mix(in srgb,#ef4444 18%,transparent); color:#ef4444; }
+.oop-rules-btn { padding:6px 14px; font-size:13px; font-weight:600; background:var(--bg3);
+  border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text2); cursor:pointer; white-space:nowrap; transition:border-color 0.15s, color 0.15s; }
+.oop-rules-btn:hover { border-color:var(--accent); color:var(--accent); }
+.oop-rules-panel { display:none; background:var(--bg3); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:10px 24px; }
+.oop-rules-panel.open { display:flex; flex-direction:column; gap:6px; }
+.oop-rule { font-size:16px; color:var(--text2); }
+.oop-step { color:var(--accent); font-weight:800; margin-right:6px; }
+.oop-eg   { font-size:14px; opacity:0.65; margin-left:4px; }
+
+/* POTĘGOWANIE */
+.pow-wrap { display:flex; align-items:center; justify-content:center; padding:32px 16px 40px; }
+.pow-expression { display:flex; align-items:center; gap:8px; }
+.pow-base   { font-size:72px; font-weight:900; font-family:var(--font-head); color:var(--text); line-height:1; }
+.pow-exp    { font-size:36px; font-weight:800; font-family:var(--font-head); color:var(--accent); align-self:flex-start; margin-top:4px; }
+.pow-exp-wrap { display:inline-flex; align-self:flex-start; margin-top:4px; }
+.pow-eq     { font-size:52px; font-weight:700; color:var(--text2); margin:0 4px; }
+.pow-result { font-size:72px; font-weight:900; font-family:var(--font-head); color:var(--text); line-height:1; }
+.pow-input { height:68px; font-size:36px; font-weight:800; text-align:center;
+  background:var(--bg2); border:2px solid var(--border); border-radius:12px;
+  color:var(--text1); outline:none; font-family:var(--font-head); }
+.pow-input:focus   { border-color:var(--accent); }
+.pow-input.correct { border-color:#22c55e; background:color-mix(in srgb,#22c55e 18%,transparent); color:#22c55e; }
+.pow-input.wrong   { border-color:#ef4444; background:color-mix(in srgb,#ef4444 18%,transparent); color:#ef4444; }
+/* szerokości zależne od wariantu */
+.pow-input:not(.pow-input-base):not(.pow-input-exp) { width:140px; }
+.pow-input-base { width:110px; }
+.pow-input-exp  { width:64px; height:44px; font-size:24px; }
+
+/* PODZIELNOŚĆ LICZB */
+.div-wrap { display:flex; flex-direction:column; align-items:center; padding:16px 16px 24px; gap:16px; }
+.div-top-row { display:flex; align-items:center; gap:16px; flex-wrap:wrap; justify-content:center; }
+.div-number { font-size:52px; font-weight:900; font-family:var(--font-head); color:var(--text); letter-spacing:3px; }
+.div-question { font-size:17px; color:var(--text2); margin:0; text-align:center; }
+.div-options { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+.div-opt { min-width:64px; height:54px; padding:0 14px; font-size:22px; font-weight:800;
+  background:var(--bg3); border:2px solid var(--border); border-radius:10px;
+  color:var(--text); cursor:pointer; transition:border-color 0.15s, background 0.15s, color 0.15s;
+  font-family:var(--font-head); }
+.div-opt:hover { border-color:var(--accent); }
+.div-opt.selected { background:color-mix(in srgb,var(--accent) 18%,transparent); border-color:var(--accent); color:var(--accent); }
+.div-opt.correct  { background:color-mix(in srgb,#22c55e 20%,transparent); border-color:#22c55e; color:#22c55e; }
+.div-opt.wrong    { background:color-mix(in srgb,#ef4444 18%,transparent); border-color:#ef4444; color:#ef4444; }
+.div-check-btn { padding:10px 36px; font-size:17px; font-weight:700; background:var(--accent);
+  color:#fff; border:none; border-radius:var(--radius-sm); cursor:pointer; transition:opacity 0.15s; }
+.div-check-btn:hover { opacity:0.85; }
+.div-rules-btn { padding:6px 14px; font-size:13px; font-weight:600; background:var(--bg3);
+  border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text2); cursor:pointer; white-space:nowrap; transition:border-color 0.15s, color 0.15s; }
+.div-rules-btn:hover { border-color:var(--accent); color:var(--accent); }
+.div-rules-panel { display:none; background:var(--bg3); border:1px solid var(--border);
+  border-radius:var(--radius-sm); padding:12px 16px; width:100%; max-width:440px; box-sizing:border-box; }
+.div-rules-panel.open { display:grid; grid-template-columns:1fr 1fr; gap:5px 20px; }
+.div-rule { font-size:13px; color:var(--text2); padding:1px 0; }
+.div-rule strong { color:var(--accent); margin-right:4px; }
+
+/* O ILE? ILE RAZY? */
+.cmp-wrap { display:flex; flex-direction:column; align-items:center; padding:20px 16px 24px; gap:20px; }
+.cmp-hint-box { font-size:14px; color:var(--text2); padding:8px 16px; border:1px dashed var(--border); border-radius:var(--radius-sm); background:var(--bg3); }
+.cmp-sentence { font-size:22px; font-weight:600; color:var(--text); text-align:center; line-height:2.2; margin:0; }
+.cmp-given { display:inline-flex; align-items:center; justify-content:center; min-width:52px; padding:2px 10px; background:var(--bg3); border:2px solid var(--accent); border-radius:8px; font-weight:800; color:var(--accent); margin:0 4px; }
+.cmp-input { width:90px; height:44px; font-size:22px; font-weight:700; text-align:center; background:var(--bg2); border:2px solid var(--border); border-radius:8px; color:var(--text1); outline:none; margin:0 4px; }
+.cmp-input:focus { border-color:var(--accent); }
+.cmp-input.correct { border-color:#22c55e; background:color-mix(in srgb,#22c55e 18%,transparent); color:#22c55e; }
+.cmp-input.wrong   { border-color:#ef4444; background:color-mix(in srgb,#ef4444 18%,transparent); color:#ef4444; }
+
+/* POJĘCIE FUNKCJI */
+.funcq-wrap    { display:flex; flex-direction:column; align-items:center; padding:20px 16px 28px; gap:20px; }
+.funcq-def     { font-size:14px; color:var(--text2); text-align:center; line-height:1.5;
+  padding:8px 16px; background:var(--bg3); border-radius:10px; border-left:3px solid var(--accent);
+  max-width:420px; }
+.funcq-def-kw  { font-weight:900; color:var(--accent); font-size:15px; }
+.funcq-prompt  { font-size:18px; font-weight:700; color:var(--text); text-align:center; margin:0; }
+.funcq-pairs   { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.funcq-arrow   { font-size:22px; font-weight:700; font-family:var(--font-head); color:var(--text); }
+.funcq-words   { font-size:17px; font-weight:600; color:var(--text); text-align:center; line-height:1.5; max-width:440px; padding:12px 16px; background:var(--bg3); border-radius:12px; border:2px solid var(--border); }
+.funcq-justify { display:none; font-size:14px; color:var(--text2); text-align:center; line-height:1.6;
+  padding:10px 16px; background:color-mix(in srgb,#f59e0b 12%,var(--bg3)); border-radius:10px;
+  border-left:3px solid #f59e0b; max-width:420px; }
+.funcq-justify.show { display:block; }
+.funcq-formula { font-size:28px; font-weight:700; font-family:var(--font-head); color:var(--text); text-align:center; }
+.funcq-formula sup { font-size:0.6em; vertical-align:super; color:var(--accent); }
+.funcq-table   { border-collapse:collapse; font-size:18px; font-weight:700; }
+.funcq-table td { border:2px solid var(--border); padding:8px 14px; text-align:center; min-width:40px; }
+.funcq-table .funcq-var { background:var(--bg3); color:var(--accent); font-weight:900; font-size:16px; }
+.funcq-btns    { display:flex; gap:20px; }
+.funcq-btn     { width:110px; height:60px; font-size:24px; font-weight:900; border-radius:12px; border:2px solid;
+  cursor:pointer; transition:all 0.15s; font-family:var(--font-head); }
+.funcq-yes     { background:color-mix(in srgb,#22c55e 12%,var(--bg3)); border-color:#22c55e; color:#22c55e; }
+.funcq-no      { background:color-mix(in srgb,#ef4444 12%,var(--bg3)); border-color:#ef4444; color:#ef4444; }
+.funcq-yes:hover { background:color-mix(in srgb,#22c55e 25%,var(--bg3)); }
+.funcq-no:hover  { background:color-mix(in srgb,#ef4444 25%,var(--bg3)); }
+.funcq-btn.correct { background:color-mix(in srgb,#22c55e 35%,transparent); border-color:#22c55e; color:#22c55e; transform:scale(1.06); }
+.funcq-btn.wrong   { background:color-mix(in srgb,#ef4444 30%,transparent); border-color:#ef4444; color:#ef4444; }
+
+/* ŚWIAT LICZB */
+.sliczb-wrap   { display:flex; flex-direction:column; align-items:center; padding:16px 16px 24px; gap:14px; }
+.sliczb-prompt { font-size:17px; color:var(--text2); margin:0; }
+.sliczb-number { font-size:52px; font-weight:900; font-family:var(--font-head); color:var(--text); letter-spacing:2px; }
+.sliczb-opts   { display:flex; flex-direction:column; gap:8px; width:100%; max-width:480px; }
+.sliczb-opt    { width:100%; padding:12px 18px; font-size:15px; font-weight:600; text-align:left;
+  background:var(--bg3); border:2px solid var(--border); border-radius:10px;
+  color:var(--text); cursor:pointer; white-space:normal; line-height:1.4;
+  transition:border-color 0.15s, background 0.15s, color 0.15s; }
+.sliczb-opt:hover   { border-color:var(--accent); }
+.sliczb-opt.selected { background:color-mix(in srgb,var(--accent) 18%,transparent); border-color:var(--accent); color:var(--accent); }
+.sliczb-opt.correct  { background:color-mix(in srgb,#22c55e 20%,transparent); border-color:#22c55e; color:#22c55e; }
+.sliczb-opt.wrong    { background:color-mix(in srgb,#ef4444 18%,transparent); border-color:#ef4444; color:#ef4444; }
+
+.exercise-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.topic-title {
+  font-family: var(--font-head);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.difficulty-tabs {
+  display: flex;
+  gap: 8px;
+  background: var(--card);
+  padding: 6px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.diff-tab {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.diff-tab:hover { color: var(--text); }
+.diff-tab.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  box-shadow: 0 4px 12px rgba(79,142,247,0.3);
+}
+
+.exercise-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+}
+.exercise-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
+
+.exercise-question {
+  font-family: var(--font-head);
+  font-size: 32px;
+  font-weight: 800;
+  text-align: center;
+  margin: 20px 0;
+  color: var(--text);
+}
+
+.answer-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.answer-input {
+  font-family: var(--font-head);
+  font-size: 28px;
+  font-weight: 800;
+  width: 160px;
+  text-align: center;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border);
+  background: var(--bg3);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.answer-input:focus { border-color: var(--accent); }
+.answer-input.correct { border-color: var(--green); animation: pulse-green 0.5s; }
+.answer-input.wrong { border-color: var(--red); animation: shake 0.4s; }
+
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+@keyframes pulse-green { 0%{box-shadow:none} 50%{box-shadow:0 0 20px rgba(34,197,94,0.5)} 100%{box-shadow:none} }
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: translateY(0); }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  box-shadow: 0 4px 12px rgba(79,142,247,0.3);
+}
+.btn-secondary {
+  background: var(--card2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { color: var(--accent); border-color: var(--accent); }
+
+.mistake-counter {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.mistake-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s;
+}
+.mistake-dot.used { background: var(--red); }
+
+.solution-reveal {
+  display: none;
+  background: linear-gradient(135deg, rgba(79,142,247,0.1), rgba(123,94,248,0.1));
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  text-align: center;
+  margin-top: 12px;
+}
+.solution-reveal.show { display: block; }
+.solution-reveal .sol-label { font-size: 11px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.solution-reveal .sol-val { font-family: var(--font-head); font-size: 24px; font-weight: 800; color: var(--accent3); }
+
+/* FEEDBACK TOAST */
+.feedback-toast {
+  position: fixed;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  background: var(--green);
+  color: white;
+  padding: 14px 28px;
+  border-radius: 50px;
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 800;
+  z-index: 1000;
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.feedback-toast.show { transform: translateX(-50%) translateY(0); }
+.feedback-toast.wrong { background: var(--red); }
+
+/* STREAK BANNER – duże powiadomienie za 10 z rzędu */
+.streak-banner {
+  position: fixed;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-260px);
+  background: linear-gradient(135deg, #e85d04, #f48c06);
+  color: white;
+  padding: 22px 44px;
+  border-radius: 24px;
+  font-family: var(--font-head);
+  text-align: center;
+  z-index: 1002;
+  transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 16px 48px rgba(232,93,4,0.55);
+  min-width: 300px;
+  pointer-events: none;
+}
+.streak-banner.show { transform: translateX(-50%) translateY(0); }
+.streak-banner-fire { font-size: 44px; line-height: 1; }
+.streak-banner-num  { font-size: 52px; font-weight: 900; line-height: 1; }
+.streak-banner-label { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+.streak-banner-pts  { font-size: 19px; font-weight: 700; opacity: 0.92; }
+.streak-banner-dukat {
+  font-size: 28px;
+  font-weight: 900;
+  color: #ffd700;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  margin-top: 8px;
+}
+
+/* POINTS BADGE */
+.points-pop {
+  position: fixed;
+  font-family: var(--font-head);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--gold);
+  pointer-events: none;
+  z-index: 999;
+  animation: points-float 1.5s ease-out forwards;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+@keyframes points-float {
+  0%{opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-80px) scale(1.3)}
+}
+
+/* TIMER BAR */
+.timer-bar-wrap {
+  display: none;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  gap: 12px;
+  align-items: center;
+}
+.timer-bar-wrap.visible { display: flex; }
+.timer-display {
+  font-family: var(--font-head);
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--accent);
+  min-width: 70px;
+}
+.timer-display.warning { color: var(--red); animation: pulse 0.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.timer-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--bg3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.timer-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent3), var(--accent));
+  border-radius: 4px;
+  transition: width 0.1s linear;
+}
+.timer-score {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.time-select-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.time-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border);
+  background: var(--card2);
+  color: var(--text2);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.time-btn:hover, .time-btn.active { border-color: var(--accent); color: var(--accent); }
+
+/* PROGRESS STATS */
+.stats-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.stat-chip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text2);
+}
+.stat-chip .val { color: var(--accent); }
+
+/* ===== SIDEBAR RIGHT ===== */
+.sidebar-right {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 6;
+  gap: 16px;
+}
+
+/* USER PANEL */
+.user-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+}
+.user-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin: 0 auto 10px;
+  box-shadow: 0 4px 16px rgba(79,142,247,0.3);
+}
+.user-name {
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.user-points {
+  font-size: 12px;
+  color: var(--text2);
+}
+.user-points .pts {
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--gold);
+}
+.pts-label { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+/* LEADERBOARD */
+.leaderboard-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.lb-title {
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+}
+
+.lb-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  transition: background 0.2s;
+}
+.lb-entry:hover { background: var(--bg3); }
+.lb-entry.me { background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.3); }
+
+.lb-rank {
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 13px;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.rank-1 { color: var(--gold); }
+.rank-2 { color: var(--silver); }
+.rank-3 { color: var(--bronze); }
+
+.lb-name { flex: 1; font-weight: 700; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-pts { font-family: var(--font-head); font-weight: 800; color: var(--accent); font-size: 13px; }
+
+.lb-link {
+  display: block;
+  text-align: center;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+.lb-link:hover { text-decoration: underline; }
+
+/* THEME SELECTOR */
+.theme-selector {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+.theme-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.theme-btns { display: flex; gap: 8px; }
+.sound-toggle {
+  position: fixed;
+  bottom: 18px;
+  right: 18px;
+  z-index: 1100;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 20px;
+  width: 40px; height: 40px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+}
+.sound-toggle:hover { background: var(--card2); border-color: var(--accent); }
+.sound-toggle.muted { opacity: 0.5; }
+.theme-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  position: relative;
+}
+.theme-dot.active { border-color: white; transform: scale(1.2); }
+.theme-dot.space { background: linear-gradient(135deg, #4f8ef7, #7b5ef8); }
+.theme-dot.pink { background: linear-gradient(135deg, #f472b6, #e879f9); }
+.theme-dot.classic { background: linear-gradient(135deg, #2563eb, #7c3aed); border: 2px solid var(--border); }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 500;
+  backdrop-filter: blur(8px);
+}
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px;
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+}
+.modal-title {
+  font-family: var(--font-head);
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.modal-sub { color: var(--text2); font-size: 14px; margin-bottom: 24px; }
+.modal-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border);
+  background: var(--bg3);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.modal-input:focus { border-color: var(--accent); }
+.modal-error { color: var(--red); font-size: 13px; margin-bottom: 10px; min-height: 18px; }
+.modal-deco { font-size: 48px; margin-bottom: 16px; }
+.modal-switch { margin-top: 16px; font-size: 13px; color: var(--text2); }
+.modal-switch a { color: var(--accent); cursor: pointer; font-weight: 700; }
+
+/* ===== LEADERBOARD FULL MODAL ===== */
+.lb-full-modal {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 600;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+}
+.lb-full-modal.show { display: flex; }
+.lb-full {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  width: 90%;
+  max-width: 480px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.lb-full h2 {
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.close-btn {
+  background: var(--bg3);
+  border: none;
+  color: var(--text2);
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+.close-btn:hover { color: var(--text); }
+
+/* PLANET DECORATIONS in space theme */
+.deco-planet {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.22;
+  font-size: 120px;
+  animation: float 8s ease-in-out infinite;
+}
+body.theme-pink .deco-planet { display: none; }
+body.theme-classic .deco-planet { display: none; }
+
+/* PONY DECORATIONS */
+.pony-deco {
+  display: none;
+  position: fixed;
+  font-size: 60px;
+  opacity: 0.30;
+  pointer-events: none;
+  animation: float 6s ease-in-out infinite;
+}
+body.theme-pink .pony-deco { display: block; }
+
+/* Pink theme star replacement - floating hearts/flowers */
+body.theme-pink .stars-bg { display: block; }
+body.theme-pink .star {
+  background: transparent !important;
+  font-size: 12px;
+  width: auto !important;
+  height: auto !important;
+  animation: twinkle var(--dur, 3s) ease-in-out infinite;
+}
+
+/* Pink theme bg pattern */
+body.theme-pink {
+  background-image: 
+    radial-gradient(circle at 20% 20%, rgba(192,86,138,0.06) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(160,68,176,0.06) 0%, transparent 50%);
+}
+
+/* Space theme bg grid */
+body:not(.theme-pink):not(.theme-classic) {
+  background-image: 
+    linear-gradient(rgba(79,142,247,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,142,247,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* Classic theme pattern */
+body.theme-classic {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(37,99,235,0.08) 1px, transparent 0);
+  background-size: 32px 32px;
+}
+
+/* THEME CORNER DECORATIONS */
+.theme-corner-deco {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  font-size: 80px;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+body.theme-pink .theme-corner-deco { opacity: 1; }
+
+/* LOGO / PIRAT RAT SVG */
+.logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.logo-rat {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+}
+
+/* Pink sidebar decorative pattern */
+body.theme-pink .sidebar-left {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 20px,
+    rgba(192,86,138,0.03) 20px,
+    rgba(192,86,138,0.03) 40px
+  );
+}
+
+/* Space sidebar star pattern already via stars-bg */
+
+/* Classic sidebar */
+body.theme-classic .sidebar-left {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 39px,
+    rgba(37,99,235,0.05) 39px,
+    rgba(37,99,235,0.05) 40px
+  );
+}
+
+/* Decorative math symbols floating */
+.math-deco {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  font-family: var(--font-head);
+  font-weight: 900;
+  opacity: 0.20;
+  animation: float var(--fdur, 10s) ease-in-out infinite;
+  animation-delay: var(--fdelay, 0s);
+  color: var(--accent);
+  user-select: none;
+}
+body.theme-classic .math-deco { opacity: 0.25; }
+body.theme-pink .math-deco { opacity: 0.22; }
+
+/* Interactive deco – klikalny symbol */
+.deco-clk {
+  pointer-events: auto !important;
+  cursor: pointer;
+  transition: filter 0.15s, opacity 0.15s;
+}
+.deco-clk:hover {
+  filter: brightness(2.5) saturate(2) drop-shadow(0 0 16px currentColor);
+  opacity: 1 !important;
+}
+/* Subtelny puls na pierwszym symbolu – hint że można klikać */
+@keyframes hint-pulse {
+  0%,100% { filter: brightness(1); }
+  50%      { filter: brightness(2.2) drop-shadow(0 0 14px currentColor); }
+}
+.deco-hint { animation: hint-pulse 2.5s ease-in-out 3; }
+@keyframes deco-pop {
+  0%   { transform: scale(1)    rotate(0deg); }
+  30%  { transform: scale(1.65) rotate(20deg); }
+  65%  { transform: scale(0.82) rotate(-10deg); }
+  100% { transform: scale(1)    rotate(0deg); }
+}
+.deco-popping {
+  animation: deco-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  filter: brightness(3) drop-shadow(0 0 18px currentColor) !important;
+}
+
+/* Orb adjustments for pink */
+body.theme-pink .orb1 { background: rgba(192,86,138,0.08); }
+body.theme-pink .orb2 { background: rgba(160,68,176,0.06); }
+body.theme-pink .sport-deco { display: none; }
+body.theme-pink .stars-bg { display: none; }
+
+/* Classic orb replacement */
+body.theme-classic .orb { display: none; }
+
+/* Exercise card decorative inner pattern */
+.exercise-card {
+  background-image: radial-gradient(circle at 95% 5%, rgba(79,142,247,0.05) 0%, transparent 40%);
+}
+body.theme-pink .exercise-card {
+  background-image: radial-gradient(circle at 95% 5%, rgba(192,86,138,0.06) 0%, transparent 40%);
+}
+body.theme-classic .exercise-card {
+  background-image: none;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  border: 1px solid var(--border);
+}
+
+/* Pink hearts in sidebar deco */
+body.theme-pink .planet-deco .planet:first-child::before { content: '🌸'; }
+body.theme-pink .planet-deco .planet:last-child::before { content: '💕'; }
+
+/* Pink modal */
+body.theme-pink .modal {
+  background-image: radial-gradient(circle at 50% 0%, rgba(192,86,138,0.08) 0%, transparent 60%);
+}
+
+/* Pink scrollbar */
+body.theme-pink ::-webkit-scrollbar-thumb { background: var(--border); }
+
+/* Answer input pink glow */
+body.theme-pink .answer-input.correct { 
+  border-color: #2a8a50; 
+  box-shadow: 0 0 16px rgba(42,138,80,0.3);
+}
+
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 220px 1fr;
+    grid-template-rows: auto auto 1fr;
+  }
+  .sidebar-right { display: none; }
+  header { grid-column: 2; }
+}
+
+/* sport balls decorations */
+.sport-deco {
+  position: fixed;
+  font-size: 40px;
+  opacity: 0.22;
+  pointer-events: none;
+  animation: float 10s ease-in-out infinite;
+}
+
+/* glowing orbs */
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+  animation: orb-move 12s ease-in-out infinite;
+}
+@keyframes orb-move { 0%,100%{transform:translate(0,0)} 50%{transform:translate(30px,-20px)} }
+.orb1 { width:300px;height:300px;background:rgba(79,142,247,0.08);left:-100px;top:10%; }
+.orb2 { width:200px;height:200px;background:rgba(123,94,248,0.06);right:-50px;bottom:20%;animation-delay:-6s; }
+body.theme-pink .orb1 { background:rgba(244,114,182,0.1); }
+body.theme-pink .orb2 { background:rgba(232,121,249,0.08); }
+body.theme-classic .orb1, body.theme-classic .orb2 { display: none; }
+
+/* ===== AVATAR + LEVEL SYSTEM ===== */
+.avatar-wrap {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+.avatar-edit-hint {
+  position: absolute;
+  bottom: -2px; right: -2px;
+  background: var(--accent);
+  color: white;
+  border-radius: 50%;
+  width: 18px; height: 18px;
+  font-size: 10px;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.avatar-wrap:hover .avatar-edit-hint { opacity: 1; }
+
+.user-level-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: center;
+}
+.lvl-num {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+}
+
+.xp-bar-wrap {
+  width: 100%;
+  height: 6px;
+  background: var(--bg3);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 4px 0 3px;
+}
+.xp-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent3), var(--accent));
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.xp-label {
+  font-size: 10px;
+  color: var(--text3);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.dukaty-display {
+  margin-top: 6px;
+  font-size: 15px;
+  color: var(--gold);
+  font-family: var(--font-head);
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.daily-streak-badge {
+  margin-top: 8px;
+  padding: 5px 12px;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #ff6b35, #f7c948);
+  color: white;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-block;
+  animation: streak-glow 2.5s ease-in-out infinite;
+}
+@keyframes streak-glow {
+  0%,100% { box-shadow: 0 0 6px rgba(255,107,53,0.4); }
+  50%      { box-shadow: 0 0 18px rgba(255,107,53,0.8); }
+}
+
+/* ===== AVATAR PICKER MODAL ===== */
+.avatar-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  justify-items: center;
+}
+.avatar-option {
+  font-size: 26px;
+  width: 48px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  background: var(--card2);
+  transition: all 0.18s;
+  user-select: none;
+}
+.avatar-option:hover  { border-color: var(--accent); transform: scale(1.15); }
+.avatar-option.chosen { border-color: var(--accent); background: rgba(79,142,247,0.15); }
+.avatar-option.locked { opacity: 0.45; cursor: default; }
+.avatar-option.buyable { border-color: var(--gold); opacity: 1; cursor: pointer; }
+.avatar-option.buyable:hover { border-color: var(--gold); transform: scale(1.12); background: rgba(255,215,0,0.12); }
+.avatar-price {
+  font-size: 10px; font-weight: 800; color: var(--gold);
+  font-family: var(--font-head); margin-top: 2px; text-align: center;
+  line-height: 1;
+}
+.avatar-shop-info {
+  font-size: 12px; color: var(--text-dim);
+  margin-bottom: 14px; line-height: 1.5; text-align: center;
+}
+.avatar-shop-balance {
+  font-size: 18px; font-weight: 900; color: var(--gold);
+  font-family: var(--font-head); margin-bottom: 8px; text-align: center;
+}
+.avatar-shop-item { display: flex; flex-direction: column; align-items: center; }
+
+/* ===== SHOP TABS ===== */
+.shop-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.shop-tab {
+  flex: 1; padding: 7px 0; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--card2);
+  color: var(--text2); font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: all .15s;
+}
+.shop-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.shop-tab:hover:not(.active) { background: var(--card3,var(--card2)); color: var(--accent); }
+
+/* ===== TITLES LIST ===== */
+.titles-list { display: flex; flex-direction: column; gap: 6px; max-height: 340px; overflow-y: auto; }
+.title-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 12px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--card2);
+  cursor: pointer; transition: all .15s;
+}
+.title-item:hover { border-color: var(--accent); }
+.title-item.owned { border-color: var(--accent2,#a78bfa); background: var(--card); }
+.title-item.active-title { border-color: var(--gold); background: rgba(255,215,0,.08); }
+.title-item-name { font-weight: 700; font-size: 14px; color: var(--text); }
+.title-item.locked .title-item-name { color: var(--text-dim); }
+.title-item-price { font-size: 12px; font-weight: 700; color: var(--gold); white-space: nowrap; }
+.title-item.owned .title-item-price { color: var(--accent2,#a78bfa); }
+.title-item.active-title .title-item-price { color: var(--gold); }
+
+/* ===== USER TITLE DISPLAY ===== */
+.user-title-display {
+  font-size: 11px; font-style: italic; color: var(--gold);
+  text-align: center; margin-top: -4px; margin-bottom: 4px;
+  font-family: var(--font-head); letter-spacing: .3px;
+}
+
+/* ===== STREAK CELEBRATION MODAL ===== */
+.streak-modal-body {
+  text-align: center;
+}
+.streak-fact-box {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  margin: 14px 0;
+  color: var(--text2);
+  font-size: 13px;
+  line-height: 1.65;
+  text-align: left;
+}
+
+/* ===== MULTIPLICATION TABLE ===== */
+.mult-table-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+}
+.mult-table-title {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mult-grid-wrap { overflow-x: auto; }
+.mult-grid {
+  display: grid;
+  grid-template-columns: 34px repeat(10, 34px);
+  gap: 3px;
+  width: fit-content;
+  margin: 0 auto;
+}
+.mg-cell {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all 0.15s;
+}
+.mg-corner {
+  background: transparent;
+  font-size: 16px;
+  color: var(--text3);
+}
+.mg-header {
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+  user-select: none;
+}
+.mg-header:hover { filter: brightness(1.25); transform: scale(1.08); }
+.mg-header.inactive {
+  background: var(--bg3);
+  color: var(--text3);
+  text-decoration: line-through;
+}
+.mg-val {
+  background: var(--card2);
+  color: var(--text2);
+  font-weight: 600;
+  font-size: 11px;
+  border: 1px solid transparent;
+}
+.mg-val.both-active {
+  background: color-mix(in srgb, var(--accent) 18%, var(--card2));
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.mg-val.inactive { opacity: 0.18; }
+.mult-info {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text2);
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ── ACHIEVEMENTS BUTTON ────────────────────────────────── */
+.ach-open-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 10px 14px; margin: 8px 0 4px;
+  background: var(--bg3); border: 1.5px solid var(--border); border-radius: 12px;
+  color: var(--text); font-size: 14px; font-weight: 700; font-family: var(--font-head);
+  cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+.ach-open-btn:hover { background: var(--card); border-color: var(--accent); }
+.ach-count-badge {
+  background: var(--accent); color: #fff; font-size: 12px; font-weight: 900;
+  border-radius: 999px; padding: 2px 8px; min-width: 24px; text-align: center;
+}
+
+/* ── ACHIEVEMENTS OVERLAY ───────────────────────────────── */
+.ach-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+  z-index: 1000; display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.ach-panel {
+  background: var(--card); border-radius: 18px; border: 1.5px solid var(--border);
+  width: 100%; max-width: 680px; max-height: 88vh;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.ach-header {
+  display: flex; align-items: center; gap: 12px; padding: 16px 20px;
+  border-bottom: 1.5px solid var(--border); flex-shrink: 0;
+}
+.ach-header-title { font-size: 20px; font-weight: 900; font-family: var(--font-head); flex: 1; }
+.ach-summary { font-size: 13px; color: var(--text2); text-align: right; line-height: 1.4; }
+.ach-close-btn {
+  background: none; border: none; color: var(--text2); font-size: 20px;
+  cursor: pointer; padding: 4px 8px; border-radius: 8px; line-height: 1;
+}
+.ach-close-btn:hover { background: var(--bg3); color: var(--text); }
+.ach-grid {
+  padding: 16px 20px 24px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 20px;
+}
+.ach-cat-title {
+  font-size: 12px; font-weight: 900; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--accent); margin: 0 0 8px;
+}
+.ach-cat-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.ach-item {
+  width: 76px; display: flex; flex-direction: column; align-items: center;
+  gap: 4px; padding: 8px 4px; border-radius: 12px; border: 1.5px solid var(--border);
+  background: var(--bg3); cursor: default; position: relative;
+  transition: border-color 0.15s;
+}
+.ach-item.unlocked { border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
+.ach-item.locked { opacity: 0.4; }
+.ach-icon { font-size: 28px; line-height: 1; }
+.ach-name {
+  font-size: 10px; font-weight: 700; text-align: center; color: var(--text);
+  line-height: 1.3; overflow: hidden; display: -webkit-box;
+  -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.ach-item.locked .ach-name { color: var(--text3); }
+/* Tooltip */
+.ach-item[data-desc]:hover::after {
+  content: attr(data-desc);
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 8px;
+  white-space: nowrap; max-width: 220px; white-space: normal;
+  z-index: 10; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* ── ACHIEVEMENT TOAST ──────────────────────────────────── */
+.ach-toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(30px);
+  background: linear-gradient(135deg, #f59e0b, #b45309);
+  color: #fff; font-weight: 800; font-size: 19px; font-family: var(--font-head);
+  padding: 18px 36px; border-radius: 18px; z-index: 2000;
+  box-shadow: 0 6px 32px rgba(245,158,11,0.6), 0 0 0 3px rgba(255,255,255,0.15);
+  opacity: 0; transition: opacity 0.35s, transform 0.35s;
+  pointer-events: none; text-align: center; max-width: 420px; min-width: 280px;
+  line-height: 1.5;
+}
+.ach-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── TOPIC ACHIEVEMENTS ──────────────────────────────────── */
+.tp-level { margin-bottom: 6px; border-radius: 10px; overflow: hidden; }
+.tp-level-summary {
+  cursor: pointer; padding: 7px 12px; font-size: 13px; font-weight: 700;
+  background: rgba(255,255,255,0.07); border-radius: 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  list-style: none; user-select: none;
+}
+.tp-level-summary::-webkit-details-marker { display: none; }
+.tp-level-summary::after { content: '▾'; margin-left: 6px; opacity: 0.6; }
+details[open] .tp-level-summary::after { content: '▴'; }
+.tp-level-count { font-size: 11px; font-weight: 600; opacity: 0.6; margin-left: auto; margin-right: 4px; }
+.tp-table { display: flex; flex-direction: column; gap: 4px; padding: 6px 4px 4px; }
+.tp-row { display: flex; align-items: center; gap: 10px; padding: 3px 8px; border-radius: 7px; background: rgba(255,255,255,0.03); }
+.tp-name { flex: 1; font-size: 12px; color: var(--text-secondary, #aaa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 165px; }
+.tp-miles { display: flex; gap: 5px; }
+.tp-mile { font-size: 18px; cursor: default; opacity: 0.2; transition: opacity 0.2s, transform 0.15s; }
+.tp-mile.unlocked { opacity: 1; }
+.tp-mile.reachable { opacity: 0.4; }
+.tp-mile.unlocked:hover { transform: scale(1.2); }
+
+/* ── PvP ─────────────────────────────────────────────────── */
+.pvp-sidebar-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 10px 14px; margin: 4px 0;
+  background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 12px; color: var(--text); font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+.pvp-sidebar-btn:hover { background: rgba(239,68,68,0.22); border-color: rgba(239,68,68,0.6); }
+@keyframes pvp-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); border-color: rgba(239,68,68,0.4); }
+  50%       { box-shadow: 0 0 0 7px rgba(239,68,68,0);  border-color: rgba(239,68,68,0.9); }
+}
+.pvp-sidebar-btn.pvp-attention { animation: pvp-pulse 1.2s ease-in-out infinite; }
+.pvp-sidebar-badge {
+  background: #ef4444; color: #fff; font-size: 11px; font-weight: 900;
+  padding: 2px 7px; border-radius: 10px; min-width: 20px; text-align: center;
+}
+.pvp-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+  z-index: 1000; display: flex; align-items: center; justify-content: center;
+}
+.pvp-panel {
+  background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+  width: min(560px, 96vw); max-height: 88vh; overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.pvp-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px 14px; border-bottom: 1px solid var(--border);
+  font-size: 20px; font-weight: 800; font-family: var(--font-head);
+}
+.pvp-close-btn {
+  background: none; border: none; color: var(--text); font-size: 20px;
+  cursor: pointer; opacity: 0.6; padding: 4px 8px;
+}
+.pvp-close-btn:hover { opacity: 1; }
+#pvpContent { padding: 18px 22px; }
+
+/* Challenge creation form */
+.pvp-form { display: flex; flex-direction: column; gap: 14px; }
+.pvp-form label { font-size: 13px; font-weight: 700; color: var(--text-secondary, #aaa); }
+.pvp-form select, .pvp-form input[type=number] {
+  width: 100%; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--text); font-size: 15px; margin-top: 4px;
+}
+.pvp-stake-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pvp-submit-btn {
+  padding: 12px; border: none; border-radius: 12px; font-size: 16px; font-weight: 800;
+  background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.pvp-submit-btn:hover { opacity: 0.88; }
+
+/* Challenge list */
+.pvp-challenge-list { display: flex; flex-direction: column; gap: 10px; }
+.pvp-challenge-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-radius: 12px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+}
+.pvp-challenge-info { font-size: 14px; }
+.pvp-challenge-info strong { font-size: 16px; display: block; }
+.pvp-accept-btn {
+  padding: 8px 16px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
+  background: linear-gradient(135deg, #22c55e, #15803d); color: #fff; cursor: pointer;
+}
+.pvp-accept-btn:hover { opacity: 0.88; }
+
+/* Match UI */
+.pvp-scoreboard {
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px;
+  align-items: center; text-align: center; margin-bottom: 16px;
+}
+.pvp-player-name { font-size: 15px; font-weight: 700; }
+.pvp-rounds-won { font-size: 36px; font-weight: 900; font-family: var(--font-head); }
+.pvp-vs { font-size: 18px; font-weight: 800; opacity: 0.5; }
+.pvp-round-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 14px; }
+.pvp-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); background: transparent; }
+.pvp-dot.win { background: #22c55e; border-color: #22c55e; }
+.pvp-dot.loss { background: #ef4444; border-color: #ef4444; }
+.pvp-dot.draw { background: #f59e0b; border-color: #f59e0b; }
+
+/* Topic picker */
+.pvp-topic-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;
+}
+.pvp-topic-btn {
+  padding: 14px 10px; border: 2px solid var(--border); border-radius: 12px;
+  background: rgba(255,255,255,0.04); color: var(--text); font-size: 13px; font-weight: 700;
+  cursor: pointer; text-align: center; transition: border-color 0.15s, background 0.15s;
+}
+.pvp-topic-btn:hover { border-color: #ef4444; background: rgba(239,68,68,0.1); }
+
+/* Timer */
+.pvp-timer-bar { text-align: center; margin-bottom: 14px; }
+.pvp-timer-num {
+  font-size: 52px; font-weight: 900; font-family: var(--font-head);
+  transition: color 0.3s;
+}
+.pvp-timer-num.urgent { color: #ef4444; }
+.pvp-live-score { font-size: 18px; font-weight: 700; opacity: 0.75; margin-top: 4px; }
+
+/* PvP exercise banner (wewnątrz exerciseCard, nad pytaniem) */
+.pvp-exercise-banner {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  background: rgba(99,102,241,0.10); border: 1px solid rgba(99,102,241,0.30);
+  border-radius: 12px; padding: 10px 20px; margin-bottom: 16px;
+  font-weight: 700; color: var(--text);
+}
+.pvp-banner-left  { display: flex; align-items: center; justify-content: flex-start; }
+.pvp-banner-center { display: flex; align-items: baseline; justify-content: center; gap: 6px; }
+.pvp-banner-right { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.pvp-exercise-label { font-size: 15px; opacity: 0.65; }
+.pvp-exercise-timer {
+  font-size: 44px; font-weight: 900; font-family: var(--font-head);
+  color: #818cf8; min-width: 58px; text-align: center;
+  transition: color 0.3s;
+}
+.pvp-exercise-sek { font-size: 15px; opacity: 0.55; }
+.pvp-banner-score-label { font-size: 18px; }
+.pvp-banner-score-num {
+  font-size: 32px; font-weight: 900; font-family: var(--font-head); color: #34d399;
+}
+
+/* Modal "Czas minął" */
+.pvp-timeup-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+  z-index: 1100; display: flex; align-items: center; justify-content: center;
+}
+.pvp-timeup-box {
+  background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+  padding: 36px 48px; text-align: center; max-width: 340px; width: 90%;
+}
+.pvp-timeup-icon  { font-size: 52px; margin-bottom: 8px; }
+.pvp-timeup-title { font-family: var(--font-head); font-size: 26px; font-weight: 900; margin-bottom: 12px; }
+.pvp-timeup-msg   { font-size: 14px; opacity: 0.65; margin-bottom: 8px; }
+.pvp-timeup-score {
+  font-family: var(--font-head); font-size: 64px; font-weight: 900;
+  color: #818cf8; line-height: 1; margin: 4px 0;
+}
+.pvp-timeup-sub   { font-size: 14px; opacity: 0.55; margin-bottom: 24px; }
+
+/* ── Szacowanie pierwiastków ─────────────────────────────────── */
+.sqrt-bounds-wrap { padding: 8px 0 4px; }
+.sqrt-instruction { font-size: 13px; opacity: 0.6; text-align: center; margin-bottom: 14px; }
+.sqrt-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; flex-wrap: wrap;
+}
+.sqrt-input {
+  width: 72px; text-align: center; font-size: 24px; font-weight: 800;
+  font-family: var(--font-head); padding: 10px 6px;
+  background: var(--bg); border: 2px solid var(--border); border-radius: 10px;
+  color: var(--text); outline: none; transition: border-color 0.2s;
+}
+.sqrt-input:focus { border-color: var(--accent); }
+.sqrt-input.correct { border-color: #22c55e; color: #22c55e; }
+.sqrt-input.wrong   { border-color: #ef4444; color: #ef4444; }
+.sqrt-lt   { font-size: 26px; font-weight: 700; opacity: 0.6; }
+.sqrt-expr { font-size: 30px; font-weight: 900; font-family: var(--font-head); color: var(--accent); }
+.sqrt-bound-fixed {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 72px; font-size: 22px; font-weight: 800; font-family: var(--font-head);
+  padding: 10px 6px; border-radius: 10px;
+  background: rgba(99,102,241,0.12); border: 2px solid rgba(99,102,241,0.3); color: #818cf8;
+}
+.sqrt-bound-fixed.correct { background: rgba(34,197,94,0.12); border-color: #22c55e; color: #22c55e; }
+.sqrt-hint { font-size: 13px; color: #f59e0b; text-align: center; margin-top: 12px; }
+
+/* Prime factorization */
+.pf-wrap { padding: 4px 0 8px; }
+.pf-note { background: rgba(99,102,241,0.12); border-left: 3px solid #818cf8; border-radius: 8px; padding: 8px 12px; font-size: 13px; margin-bottom: 12px; }
+.pf-howto { margin-bottom: 12px; font-size: 13px; }
+.pf-howto summary { cursor: pointer; font-weight: 600; color: #818cf8; }
+.pf-steps { margin: 8px 0 4px 18px; line-height: 1.7; opacity: 0.85; }
+.pf-question { font-size: 16px; margin-bottom: 14px; }
+.pf-number { font-size: 36px; font-weight: 900; font-family: var(--font-head); margin-left: 8px; color: #f59e0b; }
+.pf-input-row { display: flex; justify-content: center; margin-bottom: 6px; }
+.pf-input { width: 260px; padding: 10px 14px; font-size: 18px; text-align: center; border: 2px solid var(--border); border-radius: 10px; background: var(--input-bg, rgba(255,255,255,0.07)); color: inherit; outline: none; transition: border-color .2s; }
+.pf-input:focus { border-color: #818cf8; }
+.pf-input.correct { border-color: #4ade80; background: rgba(74,222,128,0.12); }
+.pf-input.wrong { border-color: #f87171; animation: shake .3s; }
+.pf-fmt-note { font-size: 12px; opacity: 0.5; text-align: center; margin-bottom: 6px; }
+.pf-hint { font-size: 13px; color: #f59e0b; text-align: center; margin-top: 10px; }
+.pf-ladder-wrap { display: flex; justify-content: center; margin: 14px 0 8px; }
+.prime-ladder { border-collapse: collapse; font-size: 16px; font-family: var(--font-mono, monospace); }
+.prime-ladder td { padding: 2px 6px; }
+.pl-num { text-align: right; min-width: 52px; border-right: 2px solid currentColor; padding-right: 8px; }
+.pl-one { border-right: none; }
+.pl-div { text-align: left; padding-left: 8px; font-weight: 700; color: #818cf8; }
+.pf-solution { text-align: center; font-size: 15px; font-weight: 700; margin-top: 4px; color: #4ade80; }
+
+/* NWD */
+.nwd-wrap { padding: 4px 0 8px; }
+.nwd-title { font-size: 18px; font-weight: 800; font-family: var(--font-head); margin-bottom: 10px; }
+.nwd-confirmed { font-size: 15px; opacity: 0.75; margin-bottom: 8px; padding: 6px 10px; border-left: 3px solid #4ade80; background: rgba(74,222,128,0.07); border-radius: 6px; }
+.nwd-step { margin-top: 12px; }
+.nwd-step-label { font-size: 14px; font-weight: 600; margin-bottom: 8px; opacity: 0.9; }
+.nwd-ladder-wrap { display: flex; justify-content: center; margin: 10px 0 6px; }
+.nwd-factors-result { text-align: center; font-size: 14px; color: #4ade80; font-weight: 700; margin-bottom: 4px; }
+.nwd-gcd-step { margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.1); }
+.nwd-gcd-row { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; justify-content: center; margin-top: 8px; }
+.nwd-gcd-input { width: 90px; padding: 8px 12px; font-size: 20px; font-weight: 800; text-align: center; border: 2px solid var(--border); border-radius: 10px; background: var(--input-bg, rgba(255,255,255,0.07)); color: inherit; outline: none; transition: border-color .2s; }
+.nwd-gcd-input:focus { border-color: #818cf8; }
+.nwd-gcd-input.correct { border-color: #4ade80; background: rgba(74,222,128,0.12); }
+.nwd-gcd-input.wrong { border-color: #f87171; animation: shake .3s; }
+.nwd-hint { font-size: 13px; color: #f59e0b; margin-top: 10px; }
+.nwd-factor-row { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; font-size: 15px; margin-bottom: 6px; padding: 6px 10px; border-radius: 8px; background: rgba(129,140,248,0.08); }
+.nwd-n { font-weight: 800; margin-right: 4px; }
+.nwd-factor-plain { display: inline-block; padding: 2px 6px; border-radius: 6px; }
+.nwd-factor-common { display: inline-block; padding: 2px 8px; border-radius: 6px; background: rgba(244,114,182,0.25); border: 2px solid #f472b6; font-weight: 800; color: #f472b6; }
+.nwd-times { opacity: 0.5; }
+.nwd-hl-note { font-size: 12px; color: #f472b6; text-align: center; margin-bottom: 8px; opacity: 0.85; }
+.nww-factor-crossed { display: inline-block; padding: 2px 6px; border-radius: 6px; color: #94a3b8; text-decoration: line-through; opacity: 0.55; }
+.nww-hint-note { font-size: 12px; color: #94a3b8; text-align: center; margin-bottom: 8px; font-style: italic; }
+
+/* Inline question hint */
+.question-hint-line { background: rgba(251,191,36,0.12); border-left: 3px solid #f59e0b; border-radius: 8px; padding: 8px 14px; font-size: 14px; color: #f59e0b; margin: 6px 0 10px; text-align: center; white-space: pre-line; }
+
+/* Wartość bezwzględna */
+.abs-wrap { padding: 4px 0 8px; }
+.abs-expr { text-align: center; font-size: 2.2em; margin: 10px 0 16px; }
+.abs-input-row { display: flex; justify-content: center; margin-bottom: 6px; }
+.abs-input { width: 240px; padding: 10px 14px; font-size: 18px; text-align: center; border: 2px solid var(--border); border-radius: 10px; background: var(--input-bg, rgba(255,255,255,0.07)); color: inherit; outline: none; transition: border-color .2s; font-family: inherit; }
+.abs-input:focus { border-color: #818cf8; }
+.abs-input.correct { border-color: #4ade80; background: rgba(74,222,128,0.12); }
+.abs-input.wrong { border-color: #f87171; animation: shake .3s; }
+.abs-symbols { display: flex; justify-content: center; gap: 8px; margin-bottom: 6px; }
+.abs-sym-btn { padding: 6px 14px; font-size: 18px; border: 1px solid var(--border); border-radius: 8px; background: rgba(129,140,248,0.12); color: inherit; cursor: pointer; font-family: inherit; transition: background .15s; }
+.abs-sym-btn:hover { background: rgba(129,140,248,0.25); }
+.abs-fmt-note { font-size: 12px; opacity: 0.5; text-align: center; margin-bottom: 4px; }
+.abs-hint { font-size: 13px; color: #f59e0b; text-align: center; margin-top: 10px; }
+.abs-solution { text-align: center; font-size: 1.3em; margin-top: 10px; }
+.abs-answer-val { color: #4ade80; font-weight: 700; }
+
+/* Result screen */
+.pvp-result { text-align: center; padding: 8px 0; }
+.pvp-result-icon { font-size: 64px; line-height: 1; }
+.pvp-result-title { font-size: 26px; font-weight: 900; font-family: var(--font-head); margin: 10px 0 6px; }
+.pvp-result-sub { font-size: 14px; opacity: 0.7; margin-bottom: 18px; }
+.pvp-result-reward { font-size: 16px; font-weight: 700; color: #f59e0b; margin-bottom: 20px; }
+.pvp-new-btn {
+  padding: 12px 28px; border: none; border-radius: 12px; font-size: 16px; font-weight: 800;
+  background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; cursor: pointer;
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+</head>
+<body>
+
+<!-- Background elements (za UI) -->
+<div class="stars-bg" id="starsContainer"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<!-- Warstwa kliksymboli – nad UI, ale pointer-events:none na warstwie,
+     auto na każdym symbolu – dzięki temu kliknięcia trafiają tylko w symbole -->
+<div id="decoOverlay" style="position:fixed;inset:0;z-index:5;pointer-events:none;">
+
+<!-- Planety (tylko space theme) – prawa strona + dolny pas środkowy -->
+<div class="deco-planet deco-clk" style="right:2%;top:28%;--fdur:8s;--fdelay:-2s"        onclick="decoClick(this,110,'sine')">🪐</div>
+<div class="deco-planet deco-clk" style="right:5%;bottom:22%;font-size:90px;--fdur:11s;--fdelay:-5s" onclick="decoClick(this,82,'sine')">🌍</div>
+<div class="deco-planet deco-clk" style="left:44%;bottom:3%;font-size:55px;--fdur:13s;--fdelay:-7s"  onclick="decoClick(this,196,'sine')">🚀</div>
+<div class="deco-planet deco-clk" style="right:3%;top:10%;font-size:70px;--fdur:10s;--fdelay:-3s"    onclick="decoClick(this,131,'sine')">🌙</div>
+<div class="deco-planet deco-clk" style="right:7%;bottom:38%;font-size:45px;--fdur:9s;--fdelay:-9s"  onclick="decoClick(this,165,'sine')">⭐</div>
+<div class="deco-planet deco-clk" style="right:6%;top:50%;font-size:50px;--fdur:12s;--fdelay:-1s"   onclick="decoClick(this,147,'sine')">☄️</div>
+
+<!-- Sport (tylko space theme) – dolny pas + prawa strona -->
+<div class="sport-deco deco-clk" style="left:34%;bottom:2%;--fdur:10s;--fdelay:-5s"               onclick="decoClick(this,261,'square')">⚽</div>
+<div class="sport-deco deco-clk" style="right:10%;top:60%;font-size:34px;--fdur:12s;--fdelay:-2s"  onclick="decoClick(this,330,'square')">🏀</div>
+<div class="sport-deco deco-clk" style="right:13%;top:72%;font-size:28px;--fdur:8s;--fdelay:-7s"   onclick="decoClick(this,440,'square')">🏆</div>
+<div class="sport-deco deco-clk" style="right:16%;bottom:6%;font-size:32px;--fdur:11s;--fdelay:-4s" onclick="decoClick(this,392,'square')">🎯</div>
+<div class="sport-deco deco-clk" style="left:58%;bottom:2%;font-size:26px;--fdur:9s;--fdelay:-6s"  onclick="decoClick(this,523,'square')">🏅</div>
+<div class="sport-deco deco-clk" style="right:18%;top:32%;font-size:30px;--fdur:7s;--fdelay:-3s"   onclick="decoClick(this,587,'square')">⚡</div>
+
+<!-- Kucyki / różowy motyw – prawa strona + środek (nie zasłaniają lewego paska) -->
+<div class="pony-deco deco-clk" style="right:3%;bottom:14%;--fdur:6s;--fdelay:-3s"                onclick="decoClick(this,1319,'triangle')">🦄</div>
+<div class="pony-deco deco-clk" style="right:4%;top:38%;font-size:44px;--fdur:8s;--fdelay:-1s"    onclick="decoClick(this,1175,'triangle')">🌸</div>
+<div class="pony-deco deco-clk" style="right:22%;top:14%;font-size:32px;--fdur:7s;--fdelay:-2s"   onclick="decoClick(this,1047,'triangle')">💖</div>
+<div class="pony-deco deco-clk" style="right:20%;bottom:28%;font-size:28px;--fdur:9s;--fdelay:-5s" onclick="decoClick(this,1568,'triangle')">🌷</div>
+<div class="pony-deco deco-clk" style="left:58%;bottom:6%;font-size:36px;--fdur:11s;--fdelay:-8s"  onclick="decoClick(this,1760,'triangle')">🌈</div>
+<div class="pony-deco deco-clk" style="left:42%;top:6%;font-size:30px;--fdur:10s;--fdelay:-4s"    onclick="decoClick(this,880,'triangle')">💫</div>
+<div class="pony-deco deco-clk" style="right:38%;top:18%;font-size:26px;--fdur:8s;--fdelay:-6s"   onclick="decoClick(this,1047,'triangle')">✨</div>
+<div class="pony-deco deco-clk" style="right:58%;bottom:4%;font-size:24px;--fdur:7s;--fdelay:-9s"  onclick="decoClick(this,1319,'triangle')">🍭</div>
+
+<!-- Symbole matematyczne – żaden nie jest na left<22% (poza lewym paskiem nav) -->
+<div class="math-deco deco-clk deco-hint" style="left:24%;top:14%;font-size:90px;--fdur:14s;--fdelay:-2s"  onclick="decoClick(this,523)">π</div>
+<div class="math-deco deco-clk" style="right:2%;top:34%;font-size:64px;--fdur:11s;--fdelay:-5s"           onclick="decoClick(this,659)">∑</div>
+<div class="math-deco deco-clk" style="right:17%;bottom:5%;font-size:54px;--fdur:9s;--fdelay:-3s"         onclick="decoClick(this,784)">√</div>
+<div class="math-deco deco-clk" style="right:15%;top:9%;font-size:44px;--fdur:12s;--fdelay:-8s"           onclick="decoClick(this,880)">∞</div>
+<div class="math-deco deco-clk" style="left:38%;bottom:2%;font-size:38px;--fdur:15s;--fdelay:-1s"         onclick="decoClick(this,440)">∫</div>
+<div class="math-deco deco-clk" style="right:28%;top:54%;font-size:50px;--fdur:10s;--fdelay:-6s"          onclick="decoClick(this,392)">×</div>
+<div class="math-deco deco-clk" style="left:26%;top:7%;font-size:46px;--fdur:13s;--fdelay:-4s"            onclick="decoClick(this,330)">÷</div>
+<div class="math-deco deco-clk" style="right:44%;bottom:14%;font-size:42px;--fdur:8s;--fdelay:-7s"        onclick="decoClick(this,587)">±</div>
+<div class="math-deco deco-clk" style="left:52%;top:4%;font-size:40px;--fdur:11s;--fdelay:-2s"            onclick="decoClick(this,294)">≠</div>
+<div class="math-deco deco-clk" style="right:36%;bottom:3%;font-size:36px;--fdur:9s;--fdelay:-10s"        onclick="decoClick(this,698)">≈</div>
+<div class="math-deco deco-clk" style="right:22%;top:22%;font-size:44px;--fdur:12s;--fdelay:-5s"          onclick="decoClick(this,261)">%</div>
+<div class="math-deco deco-clk" style="left:28%;bottom:17%;font-size:40px;--fdur:10s;--fdelay:-8s"        onclick="decoClick(this,349)">△</div>
+<div class="math-deco deco-clk" style="right:20%;top:7%;font-size:48px;--fdur:7s;--fdelay:-3s"            onclick="decoClick(this,1047)">²</div>
+<div class="math-deco deco-clk" style="right:4%;top:62%;font-size:42px;--fdur:14s;--fdelay:-6s"           onclick="decoClick(this,220)">α</div>
+<div class="math-deco deco-clk" style="left:46%;top:56%;font-size:38px;--fdur:11s;--fdelay:-9s"           onclick="decoClick(this,293)">θ</div>
+
+<!-- Różowy motyw – narożniki: lewa strona → środek górny/dolny żeby nie zasłaniać nav -->
+<div class="theme-corner-deco deco-clk" style="left:40%;top:5%;font-size:60px;animation:float 8s ease-in-out infinite"           onclick="decoClick(this,1175,'triangle')">🌸</div>
+<div class="theme-corner-deco deco-clk" style="right:2%;top:12%;font-size:45px;animation:float 10s ease-in-out infinite;animation-delay:-4s" onclick="decoClick(this,1047,'triangle')">🦋</div>
+<div class="theme-corner-deco deco-clk" style="left:40%;bottom:5%;font-size:50px;animation:float 9s ease-in-out infinite;animation-delay:-2s"  onclick="decoClick(this,1319,'triangle')">🌺</div>
+<div class="theme-corner-deco deco-clk" style="right:2%;bottom:12%;font-size:40px;animation:float 12s ease-in-out infinite;animation-delay:-6s" onclick="decoClick(this,880,'triangle')">💝</div>
+
+</div><!-- /decoOverlay -->
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <div class="modal-deco" id="loginDeco">🐀</div>
+    <div class="modal-title" id="loginTitle">Witaj w Pi-ratMath!</div>
+    <div class="modal-sub" id="loginSub">Zaloguj się, aby śledzić swoje postępy</div>
+    <div class="modal-error" id="loginError"></div>
+    <input class="modal-input" id="usernameInput" type="text" placeholder="Nazwa użytkownika" maxlength="20">
+    <input class="modal-input" id="passwordInput" type="password" placeholder="Hasło">
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:14px" id="loginBtn">
+      <span>🎯</span> Wejdź do gry!
+    </button>
+    <div class="modal-switch" id="loginSwitch">
+      Nie masz konta? <a onclick="switchToRegister()">Zarejestruj się</a>
+    </div>
+  </div>
+</div>
+
+<!-- SKLEP MODAL -->
+<div class="modal-overlay" id="avatarPickerModal" style="display:none" onclick="if(event.target===this)closeAvatarPicker()">
+  <div class="modal" style="max-width:420px">
+    <div style="font-family:var(--font-head);font-size:20px;font-weight:800;margin-bottom:8px">🏪 Sklep</div>
+    <div class="avatar-shop-balance" id="avatarShopBalance">🪙 0 dukatów</div>
+    <div class="shop-tabs">
+      <button class="shop-tab active" id="shopTabBtnAvatars" onclick="showShopTab('avatars')">🎨 Awatary</button>
+      <button class="shop-tab"        id="shopTabBtnTitles"  onclick="showShopTab('titles')">📜 Tytuły</button>
+    </div>
+    <div id="shopSectionAvatars">
+      <div class="avatar-shop-info">Awatary w cenach <strong>3–10 🪙</strong>. Dukaty zdobywasz za 10 odpowiedzi z rzędu na poziomie <strong>średnim lub wyższym</strong> (max 3 za temat).</div>
+      <div class="avatar-picker-grid" id="avatarPickerGrid"></div>
+    </div>
+    <div id="shopSectionTitles" style="display:none">
+      <div class="avatar-shop-info">Tytuł wyświetla się pod Twoją nazwą. Kliknij posiadany tytuł, by go aktywować lub zdjąć.</div>
+      <div class="titles-list" id="titlesGrid"></div>
+    </div>
+    <button class="btn btn-secondary" style="margin-top:16px;width:100%;justify-content:center" onclick="closeAvatarPicker()">Zamknij</button>
+  </div>
+</div>
+
+<!-- STREAK BANNER – pojawia się automatycznie, nie blokuje gry -->
+<div class="streak-banner" id="streakBanner">
+  <div class="streak-banner-fire">🔥</div>
+  <div><span class="streak-banner-num" id="streakBannerNum">10</span><span class="streak-banner-label"> z rzędu!</span></div>
+  <div class="streak-banner-pts" id="streakBannerPts">+5 pkt bonus!</div>
+  <div class="streak-banner-dukat" id="streakBannerDukat">🪙 +1 DUKAT!</div>
+</div>
+
+<!-- LEADERBOARD FULL MODAL -->
+<div class="lb-full-modal" id="lbFullModal">
+  <div class="lb-full">
+    <h2 id="lbFullTitle">Pełna lista <button class="close-btn" onclick="closeLbFull()">✕</button></h2>
+    <div id="lbFullEntries"></div>
+  </div>
+</div>
+
+<!-- FEEDBACK TOAST -->
+<div class="feedback-toast" id="feedbackToast">✓ Brawo!</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar-left">
+    <div class="sidebar-title">
+      <div class="logo-wrap">
+        <svg class="logo-rat" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Pirate hat -->
+          <ellipse cx="40" cy="24" rx="22" ry="6" fill="#1a1a2e"/>
+          <rect x="28" y="10" width="24" height="16" rx="4" fill="#1a1a2e"/>
+          <!-- Pi on hat -->
+          <text x="40" y="23" font-family="serif" font-size="11" font-weight="900" fill="#ffd700" text-anchor="middle">π</text>
+          <!-- Skull crossbones small -->
+          <circle cx="40" cy="14" r="3" fill="#ffd700" opacity="0.7"/>
+          <!-- Rat face -->
+          <ellipse cx="40" cy="46" rx="18" ry="16" fill="#c8a878"/>
+          <!-- Ears -->
+          <circle cx="24" cy="36" r="7" fill="#c8a878"/>
+          <circle cx="56" cy="36" r="7" fill="#c8a878"/>
+          <circle cx="24" cy="36" r="4" fill="#e8c0b0"/>
+          <circle cx="56" cy="36" r="4" fill="#e8c0b0"/>
+          <!-- Eyes -->
+          <circle cx="34" cy="44" r="3.5" fill="#1a1a2e"/>
+          <circle cx="46" cy="44" r="3.5" fill="#1a1a2e"/>
+          <circle cx="35" cy="43" r="1" fill="white"/>
+          <circle cx="47" cy="43" r="1" fill="white"/>
+          <!-- Eyepatch (pirate!) -->
+          <ellipse cx="34" cy="44" rx="5" ry="4" fill="#1a1a2e" opacity="0.85"/>
+          <line x1="29" y1="44" x2="22" y2="42" stroke="#1a1a2e" stroke-width="1.5"/>
+          <line x1="39" y1="44" x2="42" y2="42" stroke="#1a1a2e" stroke-width="1.5"/>
+          <!-- Nose -->
+          <ellipse cx="40" cy="52" rx="4" ry="3" fill="#d4887a"/>
+          <!-- Whiskers -->
+          <line x1="36" y1="52" x2="22" y2="49" stroke="#8a7060" stroke-width="0.8"/>
+          <line x1="36" y1="53" x2="22" y2="55" stroke="#8a7060" stroke-width="0.8"/>
+          <line x1="44" y1="52" x2="58" y2="49" stroke="#8a7060" stroke-width="0.8"/>
+          <line x1="44" y1="53" x2="58" y2="55" stroke="#8a7060" stroke-width="0.8"/>
+          <!-- Smile -->
+          <path d="M35 57 Q40 62 45 57" stroke="#8a5040" stroke-width="1.5" fill="none"/>
+          <!-- Teeth -->
+          <rect x="37" y="57" width="3" height="4" rx="1" fill="white"/>
+          <rect x="40" y="57" width="3" height="4" rx="1" fill="white"/>
+          <!-- Body hint -->
+          <ellipse cx="40" cy="70" rx="12" ry="8" fill="#b09060"/>
+        </svg>
+        <span>Pi-ratMath</span>
+      </div>
+    </div>
+    
+    <!-- Level 1 -->
+    <div class="level-group">
+      <button class="level-btn" onclick="toggleLevel(0, this)">
+        <span>🌱 Klasy 1–3</span>
+        <div style="display:flex;align-items:center;gap:6px"><span class="level-badge">SP</span><span class="chevron">▾</span></div>
+      </button>
+      <div class="topics-list" id="topics-0">
+        <button class="topic-btn" onclick="selectTopic('Dodawanie i odejmowanie', this)"><span class="topic-dot"></span>Dodawanie i odejmowanie</button>
+        <button class="topic-btn" onclick="selectTopic('Mnożenie i dzielenie', this)"><span class="topic-dot"></span>Mnożenie i dzielenie</button>
+        <button class="topic-btn" onclick="selectTopic('Tabliczka mnożenia', this)"><span class="topic-dot"></span>Tabliczka mnożenia</button>
+        <button class="topic-btn" onclick="selectTopic('Porządkowanie liczb', this)"><span class="topic-dot"></span>Porządkowanie liczb</button>
+        <button class="topic-btn" onclick="selectTopic('Zegar i czas', this)"><span class="topic-dot"></span>Zegar i czas</button>
+        <button class="topic-btn" onclick="selectTopic('Figury geometryczne', this)"><span class="topic-dot"></span>Figury geometryczne</button>
+      </div>
+    </div>
+
+    <!-- Level 2 -->
+    <div class="level-group">
+      <button class="level-btn" onclick="toggleLevel(1, this)">
+        <span>🌿 Klasy 4–6</span>
+        <div style="display:flex;align-items:center;gap:6px"><span class="level-badge">SP</span><span class="chevron">▾</span></div>
+      </button>
+      <div class="topics-list" id="topics-1">
+        <div class="topic-section-label">Liczby i obliczenia</div>
+        <button class="topic-btn" onclick="selectTopic('Świat liczb', this)"><span class="topic-dot"></span>Świat liczb</button>
+        <button class="topic-btn" onclick="selectTopic('Liczenie w głowie', this)"><span class="topic-dot"></span>Liczenie w głowie</button>
+        <button class="topic-btn" onclick="selectTopic('Własności działań', this)"><span class="topic-dot"></span>Własności działań</button>
+        <button class="topic-btn" onclick="selectTopic('Dodawanie pisemne', this)"><span class="topic-dot"></span>Dodawanie pisemne</button>
+        <button class="topic-btn" onclick="selectTopic('Odejmowanie pisemne', this)"><span class="topic-dot"></span>Odejmowanie pisemne</button>
+        <button class="topic-btn" onclick="selectTopic('Mnożenie pisemne', this)"><span class="topic-dot"></span>Mnożenie pisemne</button>
+        <button class="topic-btn" onclick="selectTopic('Dzielenie pisemne', this)"><span class="topic-dot"></span>Dzielenie pisemne</button>
+        <button class="topic-btn" onclick="selectTopic('O ile? Ile razy?', this)"><span class="topic-dot"></span>O ile? Ile razy?</button>
+        <button class="topic-btn" onclick="selectTopic('Kolejność działań', this)"><span class="topic-dot"></span>Kolejność działań</button>
+        <button class="topic-btn" onclick="selectTopic('Potęgowanie', this)"><span class="topic-dot"></span>Potęgowanie</button>
+        <button class="topic-btn" onclick="selectTopic('Podzielność liczb', this)"><span class="topic-dot"></span>Podzielność liczb</button>
+        <button class="topic-btn" onclick="selectTopic('Zaokrąglanie', this)"><span class="topic-dot"></span>Zaokrąglanie</button>
+        <button class="topic-btn" onclick="selectTopic('Systemy liczbowe', this)"><span class="topic-dot"></span>Systemy liczbowe</button>
+        <button class="topic-btn" onclick="selectTopic('Porównywanie liczb całkowitych', this)"><span class="topic-dot"></span>Porównywanie liczb całkowitych</button>
+        <button class="topic-btn" onclick="selectTopic('Działania na liczbach całkowitych', this)"><span class="topic-dot"></span>Działania na liczbach całkowitych</button>
+        <div class="topic-section-label">Ułamki i procenty</div>
+        <button class="topic-btn" onclick="selectTopic('Zapisywanie ułamka zwykłego', this)"><span class="topic-dot"></span>Zapisywanie ułamka zwykłego</button>
+        <button class="topic-btn" onclick="selectTopic('Skracanie i rozszerzanie ułamków', this)"><span class="topic-dot"></span>Skracanie i rozszerzanie ułamków</button>
+        <button class="topic-btn" onclick="selectTopic('Zapisywanie liczby mieszanej', this)"><span class="topic-dot"></span>Zapisywanie liczby mieszanej</button>
+        <button class="topic-btn" onclick="selectTopic('Zamiana liczb mieszanych na ułamki niewłaściwe', this)"><span class="topic-dot"></span>Zamiana liczb mieszanych na ułamki niewłaściwe</button>
+        <button class="topic-btn" onclick="selectTopic('Dodawanie i odejmowanie ułamków', this)"><span class="topic-dot"></span>Dodawanie i odejmowanie ułamków</button>
+        <button class="topic-btn" onclick="selectTopic('Mnożenie ułamków', this)"><span class="topic-dot"></span>Mnożenie ułamków</button>
+        <button class="topic-btn" onclick="selectTopic('Dzielenie ułamków', this)"><span class="topic-dot"></span>Dzielenie ułamków</button>
+        <button class="topic-btn" onclick="selectTopic('Zapisywanie i odczytywanie ułamków dziesiętnych', this)"><span class="topic-dot"></span>Zapisywanie i odczytywanie ułamków dziesiętnych</button>
+        <button class="topic-btn" onclick="selectTopic('Dodawanie ułamków dziesiętnych', this)"><span class="topic-dot"></span>Dodawanie ułamków dziesiętnych</button>
+        <button class="topic-btn" onclick="selectTopic('Odejmowanie ułamków dziesiętnych', this)"><span class="topic-dot"></span>Odejmowanie ułamków dziesiętnych</button>
+        <button class="topic-btn" onclick="selectTopic('Mnożenie ułamków dziesiętnych', this)"><span class="topic-dot"></span>Mnożenie ułamków dziesiętnych</button>
+        <button class="topic-btn" onclick="selectTopic('Dzielenie ułamków dziesiętnych', this)"><span class="topic-dot"></span>Dzielenie ułamków dziesiętnych</button>
+        <button class="topic-btn" onclick="selectTopic('Zamiana ułamków dziesiętnych na zwykłe i odwrotnie', this)"><span class="topic-dot"></span>Zamiana ułamków dziesiętnych na zwykłe i odwrotnie</button>
+        <button class="topic-btn" onclick="selectTopic('Zamiana ułamków na procenty', this)"><span class="topic-dot"></span>Zamiana ułamków na procenty</button>
+        <button class="topic-btn" onclick="selectTopic('Obliczanie ułamka danej liczby', this)"><span class="topic-dot"></span>Obliczanie ułamka danej liczby</button>
+        <button class="topic-btn" onclick="selectTopic('Obliczanie liczby, gdy dany jest jej procent', this)"><span class="topic-dot"></span>Obliczanie liczby, gdy dany jest jej procent</button>
+        <button class="topic-btn" onclick="selectTopic('Liczby wymierne', this)"><span class="topic-dot"></span>Liczby wymierne</button>
+        <div class="topic-section-label">Algebra</div>
+        <button class="topic-btn" onclick="selectTopic('Tworzenie i odczytywanie wyrażeń algebraicznych', this)"><span class="topic-dot"></span>Tworzenie i odczytywanie wyrażeń algebraicznych</button>
+        <button class="topic-btn" onclick="selectTopic('Obliczanie wartości wyrażeń algebraicznych', this)"><span class="topic-dot"></span>Obliczanie wartości wyrażeń algebraicznych</button>
+        <button class="topic-btn" onclick="selectTopic('Porządkowanie wyrażeń algebraicznych', this)"><span class="topic-dot"></span>Porządkowanie wyrażeń algebraicznych</button>
+        <button class="topic-btn" onclick="selectTopic('Równania', this)"><span class="topic-dot"></span>Równania</button>
+        <div class="topic-section-label">Geometria płaska</div>
+        <button class="topic-btn" onclick="selectTopic('Kąty i proste', this)"><span class="topic-dot"></span>Kąty i proste</button>
+        <button class="topic-btn" onclick="selectTopic('Figury płaskie', this)"><span class="topic-dot"></span>Figury płaskie</button>
+        <button class="topic-btn" onclick="selectTopic('Trójkąty', this)"><span class="topic-dot"></span>Trójkąty</button>
+        <button class="topic-btn" onclick="selectTopic('Czworokąty', this)"><span class="topic-dot"></span>Czworokąty</button>
+        <button class="topic-btn" onclick="selectTopic('Pola i obwody', this)"><span class="topic-dot"></span>Pola i obwody</button>
+        <button class="topic-btn" onclick="selectTopic('Skala', this)"><span class="topic-dot"></span>Skala</button>
+        <div class="topic-section-label">Bryły</div>
+        <button class="topic-btn" onclick="selectTopic('Graniastosłupy i ich podstawowe własności', this)"><span class="topic-dot"></span>Graniastosłupy i ich podstawowe własności</button>
+        <button class="topic-btn" onclick="selectTopic('Ostrosłupy i ich podstawowe własności', this)"><span class="topic-dot"></span>Ostrosłupy i ich podstawowe własności</button>
+        <button class="topic-btn" onclick="selectTopic('Walec, stożek, kula', this)"><span class="topic-dot"></span>Walec, stożek, kula</button>
+        <div class="topic-section-label">Zastosowania</div>
+        <button class="topic-btn" onclick="selectTopic('Czas i zegar', this)"><span class="topic-dot"></span>Czas i zegar</button>
+        <button class="topic-btn" onclick="selectTopic('Jednostki miar', this)"><span class="topic-dot"></span>Jednostki miar</button>
+        <button class="topic-btn" onclick="selectTopic('Szybkość, droga, czas', this)"><span class="topic-dot"></span>Szybkość, droga, czas</button>
+        <button class="topic-btn" onclick="selectTopic('Średnia arytmetyczna', this)"><span class="topic-dot"></span>Średnia arytmetyczna</button>
+      </div>
+    </div>
+
+    <!-- Level 3 -->
+    <div class="level-group">
+      <button class="level-btn" onclick="toggleLevel(2, this)">
+        <span>🌲 Klasy 7–8</span>
+        <div style="display:flex;align-items:center;gap:6px"><span class="level-badge">SP</span><span class="chevron">▾</span></div>
+      </button>
+      <div class="topics-list" id="topics-2">
+        <div class="topic-section-label">Liczby i działania</div>
+        <button class="topic-btn" onclick="selectTopic('Liczby wymierne i rzeczywiste', this)"><span class="topic-dot"></span>Liczby wymierne i rzeczywiste</button>
+        <button class="topic-btn" onclick="selectTopic('Wartość bezwzględna', this)"><span class="topic-dot"></span>Wartość bezwzględna</button>
+        <button class="topic-btn" onclick="selectTopic('Liczby pierwsze i złożone', this)"><span class="topic-dot"></span>Liczby pierwsze i złożone</button>
+        <button class="topic-btn" onclick="selectTopic('Rozkład liczby na czynniki pierwsze', this)"><span class="topic-dot"></span>Rozkład liczby na czynniki pierwsze</button>
+        <button class="topic-btn" onclick="selectTopic('Wyznaczanie NWD', this)"><span class="topic-dot"></span>Wyznaczanie NWD</button>
+        <button class="topic-btn" onclick="selectTopic('Wyznaczanie NWW', this)"><span class="topic-dot"></span>Wyznaczanie NWW</button>
+        <button class="topic-btn" onclick="selectTopic('Rozwinięcia dziesiętne', this)"><span class="topic-dot"></span>Rozwinięcia dziesiętne</button>
+        <div class="topic-section-label">Procenty</div>
+        <button class="topic-btn" onclick="selectTopic('Obliczanie procentu danej liczby', this)"><span class="topic-dot"></span>Obliczanie procentu danej liczby</button>
+        <button class="topic-btn" onclick="selectTopic('Obliczanie liczby na podstawie jej procentu', this)"><span class="topic-dot"></span>Obliczanie liczby na podstawie jej procentu</button>
+        <button class="topic-btn" onclick="selectTopic('Jakim procentem jednej liczby jest druga?', this)"><span class="topic-dot"></span>Jakim procentem jednej liczby jest druga?</button>
+        <button class="topic-btn" onclick="selectTopic('Obliczenia procentowe w praktyce', this)"><span class="topic-dot"></span>Obliczenia procentowe w praktyce</button>
+        <div class="topic-section-label">Potęgi</div>
+        <button class="topic-btn" onclick="selectTopic('Potęga liczby wymiernej', this)"><span class="topic-dot"></span>Potęga liczby wymiernej</button>
+        <button class="topic-btn" onclick="selectTopic('Mnożenie i dzielenie potęg (ta sama podstawa)', this)"><span class="topic-dot"></span>Mnożenie i dzielenie potęg (ta sama podstawa)</button>
+        <button class="topic-btn" onclick="selectTopic('Mnożenie i dzielenie potęg (ten sam wykładnik)', this)"><span class="topic-dot"></span>Mnożenie i dzielenie potęg (ten sam wykładnik)</button>
+        <button class="topic-btn" onclick="selectTopic('Potęga potęgi', this)"><span class="topic-dot"></span>Potęga potęgi</button>
+        <button class="topic-btn" onclick="selectTopic('Notacja wykładnicza', this)"><span class="topic-dot"></span>Notacja wykładnicza</button>
+        <div class="topic-section-label">Pierwiastki</div>
+        <button class="topic-btn" onclick="selectTopic('Pierwiastek kwadratowy i sześcienny', this)"><span class="topic-dot"></span>Pierwiastek kwadratowy i sześcienny</button>
+        <button class="topic-btn" onclick="selectTopic('Szacowanie pierwiastków', this)"><span class="topic-dot"></span>Szacowanie pierwiastków</button>
+        <button class="topic-btn" onclick="selectTopic('Działania na pierwiastkach', this)"><span class="topic-dot"></span>Działania na pierwiastkach</button>
+        <div class="topic-section-label">Wyrażenia algebraiczne</div>
+        <button class="topic-btn" onclick="selectTopic('Dodawanie i odejmowanie sum algebraicznych', this)"><span class="topic-dot"></span>Dodawanie i odejmowanie sum algebraicznych</button>
+        <button class="topic-btn" onclick="selectTopic('Mnożenie sumy przez jednomian', this)"><span class="topic-dot"></span>Mnożenie sumy przez jednomian</button>
+        <button class="topic-btn" onclick="selectTopic('Mnożenie sum algebraicznych', this)"><span class="topic-dot"></span>Mnożenie sum algebraicznych</button>
+        <button class="topic-btn" onclick="selectTopic('Porządkowanie wyrażeń algebraicznych', this)"><span class="topic-dot"></span>Porządkowanie wyrażeń algebraicznych</button>
+        <div class="topic-section-label">Równania</div>
+        <button class="topic-btn" onclick="selectTopic('Sprawdzanie, czy dana liczba spełnia równanie', this)"><span class="topic-dot"></span>Sprawdzanie, czy dana liczba spełnia równanie</button>
+        <button class="topic-btn" onclick="selectTopic('Równania I stopnia z jedną niewiadomą', this)"><span class="topic-dot"></span>Równania I stopnia z jedną niewiadomą</button>
+        <button class="topic-btn" onclick="selectTopic('Przekształcanie wzorów', this)"><span class="topic-dot"></span>Przekształcanie wzorów</button>
+        <div class="topic-section-label">Proporcjonalność</div>
+        <button class="topic-btn" onclick="selectTopic('Proporcja i jej własności', this)"><span class="topic-dot"></span>Proporcja i jej własności</button>
+        <button class="topic-btn" onclick="selectTopic('Wielkości wprost proporcjonalne', this)"><span class="topic-dot"></span>Wielkości wprost proporcjonalne</button>
+        <button class="topic-btn" onclick="selectTopic('Podział proporcjonalny', this)"><span class="topic-dot"></span>Podział proporcjonalny</button>
+        <div class="topic-section-label">Geometria płaska</div>
+        <button class="topic-btn" onclick="selectTopic('Twierdzenie Pitagorasa', this)"><span class="topic-dot"></span>Twierdzenie Pitagorasa</button>
+        <button class="topic-btn" onclick="selectTopic('Twierdzenie odwrotne do twierdzenia Pitagorasa', this)"><span class="topic-dot"></span>Twierdzenie odwrotne do tw. Pitagorasa</button>
+        <button class="topic-btn" onclick="selectTopic('Trójkąt 30-60-90', this)"><span class="topic-dot"></span>Trójkąt 30-60-90</button>
+        <button class="topic-btn" onclick="selectTopic('Trójkąt 45-45-90', this)"><span class="topic-dot"></span>Trójkąt 45-45-90</button>
+        <button class="topic-btn" onclick="selectTopic('Wielokąty i ich pola', this)"><span class="topic-dot"></span>Wielokąty i ich pola</button>
+        <button class="topic-btn" onclick="selectTopic('Okrąg i koło — długość i pole', this)"><span class="topic-dot"></span>Okrąg i koło — długość i pole</button>
+        <button class="topic-btn" onclick="selectTopic('Układ współrzędnych', this)"><span class="topic-dot"></span>Układ współrzędnych</button>
+        <div class="topic-section-label">Bryły</div>
+        <button class="topic-btn" onclick="selectTopic('Graniastosłupy — pole powierzchni i objętość', this)"><span class="topic-dot"></span>Graniastosłupy — pole powierzchni i objętość</button>
+        <button class="topic-btn" onclick="selectTopic('Ostrosłupy — pole powierzchni i objętość', this)"><span class="topic-dot"></span>Ostrosłupy — pole powierzchni i objętość</button>
+        <div class="topic-section-label">Statystyka i prawdopodobieństwo</div>
+        <button class="topic-btn" onclick="selectTopic('Średnia arytmetyczna', this)"><span class="topic-dot"></span>Średnia arytmetyczna</button>
+        <button class="topic-btn" onclick="selectTopic('Prawdopodobieństwo zdarzenia', this)"><span class="topic-dot"></span>Prawdopodobieństwo zdarzenia</button>
+        <button class="topic-btn" onclick="selectTopic('Reguła mnożenia i dodawania', this)"><span class="topic-dot"></span>Reguła mnożenia i dodawania</button>
+      </div>
+    </div>
+
+    <!-- Level 4 -->
+    <div class="level-group">
+      <button class="level-btn" onclick="toggleLevel(3, this)">
+        <span>🏔️ Szkoła średnia</span>
+        <div style="display:flex;align-items:center;gap:6px"><span class="level-badge">SŚ</span><span class="chevron">▾</span></div>
+      </button>
+      <div class="topics-list" id="topics-3">
+        <div class="topic-section-label">Liczby i wyrażenia</div>
+        <button class="topic-btn" onclick="selectTopic('Liczby wymierne i niewymierne', this)"><span class="topic-dot"></span>Liczby wymierne i niewymierne</button>
+        <button class="topic-btn" onclick="selectTopic('Wyrażenia algebraiczne', this)"><span class="topic-dot"></span>Wyrażenia algebraiczne</button>
+        <button class="topic-btn" onclick="selectTopic('Wzory skróconego mnożenia', this)"><span class="topic-dot"></span>Wzory skróconego mnożenia</button>
+        <button class="topic-btn" onclick="selectTopic('Pierwiastki — upraszczanie i działania', this)"><span class="topic-dot"></span>Pierwiastki — upraszczanie i działania</button>
+        <button class="topic-btn" onclick="selectTopic('Potęga o wykładniku wymiernym', this)"><span class="topic-dot"></span>Potęga o wykładniku wymiernym</button>
+        <div class="topic-section-label">Równania i nierówności</div>
+        <button class="topic-btn" onclick="selectTopic('Nierówności liniowe i przedziały', this)"><span class="topic-dot"></span>Nierówności liniowe i przedziały</button>
+        <button class="topic-btn" onclick="selectTopic('Działania na zbiorach', this)"><span class="topic-dot"></span>Działania na zbiorach</button>
+        <button class="topic-btn" onclick="selectTopic('Wartość bezwzględna — równania i nierówności', this)"><span class="topic-dot"></span>Wartość bezwzględna — równania i nierówności</button>
+        <button class="topic-btn" onclick="selectTopic('Układ równań liniowych', this)"><span class="topic-dot"></span>Układ równań liniowych</button>
+        <button class="topic-btn" onclick="selectTopic('Równanie liniowe z parametrem', this)"><span class="topic-dot"></span>Równanie liniowe z parametrem</button>
+        <button class="topic-btn" onclick="selectTopic('Nierówności kwadratowe', this)"><span class="topic-dot"></span>Nierówności kwadratowe</button>
+        <button class="topic-btn" onclick="selectTopic('Równanie kwadratowe z parametrem', this)"><span class="topic-dot"></span>Równanie kwadratowe z parametrem</button>
+        <button class="topic-btn" onclick="selectTopic('Równania wymierne', this)"><span class="topic-dot"></span>Równania wymierne</button>
+        <div class="topic-section-label">Funkcje</div>
+        <button class="topic-btn" onclick="selectTopic('Pojęcie funkcji', this)"><span class="topic-dot"></span>Pojęcie funkcji</button>
+        <button class="topic-btn" onclick="selectTopic('Monotoniczność i miejsce zerowe', this)"><span class="topic-dot"></span>Monotoniczność i miejsce zerowe</button>
+        <button class="topic-btn" onclick="selectTopic('Przekształcenia wykresów funkcji', this)"><span class="topic-dot"></span>Przekształcenia wykresów funkcji</button>
+        <button class="topic-btn" onclick="selectTopic('Wektory', this)"><span class="topic-dot"></span>Wektory</button>
+        <button class="topic-btn" onclick="selectTopic('Funkcja liniowa', this)"><span class="topic-dot"></span>Funkcja liniowa</button>
+        <button class="topic-btn" onclick="selectTopic('Funkcja kwadratowa — postaci', this)"><span class="topic-dot"></span>Funkcja kwadratowa — postaci</button>
+        <button class="topic-btn" onclick="selectTopic('Funkcja wykładnicza', this)"><span class="topic-dot"></span>Funkcja wykładnicza</button>
+        <button class="topic-btn" onclick="selectTopic('Funkcja logarytmiczna', this)"><span class="topic-dot"></span>Funkcja logarytmiczna</button>
+        <div class="topic-section-label">Logarytmy</div>
+        <button class="topic-btn" onclick="selectTopic('Pojęcie logarytmu', this)"><span class="topic-dot"></span>Pojęcie logarytmu</button>
+        <button class="topic-btn" onclick="selectTopic('Własności logarytmów', this)"><span class="topic-dot"></span>Własności logarytmów</button>
+        <button class="topic-btn" onclick="selectTopic('Równania wykładnicze', this)"><span class="topic-dot"></span>Równania wykładnicze</button>
+        <button class="topic-btn" onclick="selectTopic('Równania logarytmiczne', this)"><span class="topic-dot"></span>Równania logarytmiczne</button>
+        <div class="topic-section-label">Wielomiany i wyrażenia wymierne</div>
+        <button class="topic-btn" onclick="selectTopic('Działania na wielomianach', this)"><span class="topic-dot"></span>Działania na wielomianach</button>
+        <button class="topic-btn" onclick="selectTopic('Dzielenie wielomianów', this)"><span class="topic-dot"></span>Dzielenie wielomianów</button>
+        <button class="topic-btn" onclick="selectTopic('Równania wielomianowe', this)"><span class="topic-dot"></span>Równania wielomianowe</button>
+        <button class="topic-btn" onclick="selectTopic('Wyrażenia wymierne — upraszczanie', this)"><span class="topic-dot"></span>Wyrażenia wymierne — upraszczanie</button>
+        <div class="topic-section-label">Trygonometria</div>
+        <button class="topic-btn" onclick="selectTopic('Trygonometria kąta ostrego', this)"><span class="topic-dot"></span>Trygonometria kąta ostrego</button>
+        <button class="topic-btn" onclick="selectTopic('Trygonometria kąta rozwartego', this)"><span class="topic-dot"></span>Trygonometria kąta rozwartego</button>
+        <button class="topic-btn" onclick="selectTopic('Wzory trygonometryczne', this)"><span class="topic-dot"></span>Wzory trygonometryczne</button>
+        <button class="topic-btn" onclick="selectTopic('Twierdzenie sinusów', this)"><span class="topic-dot"></span>Twierdzenie sinusów</button>
+        <button class="topic-btn" onclick="selectTopic('Twierdzenie cosinusów', this)"><span class="topic-dot"></span>Twierdzenie cosinusów</button>
+        <div class="topic-section-label">Geometria analityczna</div>
+        <button class="topic-btn" onclick="selectTopic('Równanie prostej na płaszczyźnie', this)"><span class="topic-dot"></span>Równanie prostej na płaszczyźnie</button>
+        <button class="topic-btn" onclick="selectTopic('Odległość punktów i prostych', this)"><span class="topic-dot"></span>Odległość punktów i prostych</button>
+        <button class="topic-btn" onclick="selectTopic('Równanie okręgu', this)"><span class="topic-dot"></span>Równanie okręgu</button>
+        <button class="topic-btn" onclick="selectTopic('Symetrie na płaszczyźnie', this)"><span class="topic-dot"></span>Symetrie na płaszczyźnie</button>
+        <div class="topic-section-label">Planimetria</div>
+        <button class="topic-btn" onclick="selectTopic('Kąty w okręgu', this)"><span class="topic-dot"></span>Kąty w okręgu</button>
+        <button class="topic-btn" onclick="selectTopic('Twierdzenie Talesa i podobieństwo', this)"><span class="topic-dot"></span>Twierdzenie Talesa i podobieństwo</button>
+        <button class="topic-btn" onclick="selectTopic('Pola i obwody figur', this)"><span class="topic-dot"></span>Pola i obwody figur</button>
+        <div class="topic-section-label">Ciągi</div>
+        <button class="topic-btn" onclick="selectTopic('Ciąg arytmetyczny', this)"><span class="topic-dot"></span>Ciąg arytmetyczny</button>
+        <button class="topic-btn" onclick="selectTopic('Ciąg geometryczny', this)"><span class="topic-dot"></span>Ciąg geometryczny</button>
+        <button class="topic-btn" onclick="selectTopic('Zastosowania ciągów', this)"><span class="topic-dot"></span>Zastosowania ciągów</button>
+        <div class="topic-section-label">Kombinatoryka i prawdopodobieństwo</div>
+        <button class="topic-btn" onclick="selectTopic('Permutacje i kombinacje', this)"><span class="topic-dot"></span>Permutacje i kombinacje</button>
+        <button class="topic-btn" onclick="selectTopic('Prawdopodobieństwo klasyczne', this)"><span class="topic-dot"></span>Prawdopodobieństwo klasyczne</button>
+        <button class="topic-btn" onclick="selectTopic('Prawdopodobieństwo warunkowe', this)"><span class="topic-dot"></span>Prawdopodobieństwo warunkowe</button>
+        <button class="topic-btn" onclick="selectTopic('Statystyka opisowa', this)"><span class="topic-dot"></span>Statystyka opisowa</button>
+        <div class="topic-section-label">Stereometria</div>
+        <button class="topic-btn" onclick="selectTopic('Graniastosłupy — pola i objętości', this)"><span class="topic-dot"></span>Graniastosłupy — pola i objętości</button>
+        <button class="topic-btn" onclick="selectTopic('Ostrosłupy — pola i objętości', this)"><span class="topic-dot"></span>Ostrosłupy — pola i objętości</button>
+        <button class="topic-btn" onclick="selectTopic('Walec i stożek — pola i objętości', this)"><span class="topic-dot"></span>Walec i stożek — pola i objętości</button>
+        <button class="topic-btn" onclick="selectTopic('Kula — pole i objętość', this)"><span class="topic-dot"></span>Kula — pole i objętość</button>
+        <div class="topic-section-label">Pochodna [rozszerzony]</div>
+        <button class="topic-btn" onclick="selectTopic('Granica funkcji', this)"><span class="topic-dot"></span>Granica funkcji</button>
+        <button class="topic-btn" onclick="selectTopic('Pochodna — definicja i wzory', this)"><span class="topic-dot"></span>Pochodna — definicja i wzory</button>
+        <button class="topic-btn" onclick="selectTopic('Zastosowania pochodnej', this)"><span class="topic-dot"></span>Zastosowania pochodnej</button>
+      </div>
+    </div>
+
+    <div class="planet-deco">
+      <div class="planet">🪐</div>
+      <div class="planet">⭐</div>
+    </div>
+  </aside>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-top">
+      <div class="social-links">
+        <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1" target="_blank" class="social-btn yt">
+          <span class="icon">▶️</span>YouTube
+        </a>
+        <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1" target="_blank" class="social-btn tt">
+          <span class="icon">🎵</span>TikTok
+        </a>
+        <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1" target="_blank" class="social-btn tw">
+          <span class="icon">💜</span>Twitch
+        </a>
+        <a href="https://forms.gle/QwkWPkEX3JBTtkhE7" target="_blank" class="social-btn survey">
+          <span class="icon">📋</span>Ankieta
+        </a>
+      </div>
+
+      <div class="season-box">
+        <div class="label">⏳ Koniec sezonu</div>
+        <div class="timer" id="seasonTimer">00:00:00</div>
+      </div>
+    </div>
+
+    <div class="fact-box">
+      <span class="fact-icon">💡</span>
+      <span class="fact-label">Ciekawostka</span>
+      <span class="fact-text" id="factText">Ładowanie ciekawostki dnia...</span>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main>
+    <!-- WELCOME SCREEN -->
+    <div class="welcome-screen" id="welcomeScreen">
+      <div class="welcome-title">Witaj w Pi-ratMath! 🐀</div>
+      <div class="welcome-sub">Wybierz poziom i temat z menu po lewej stronie, żeby zacząć ćwiczyć.</div>
+      <div class="welcome-hint">
+        <span style="font-size:24px">👈</span>
+        <span>Wybierz poziom edukacyjny, a następnie kliknij temat, który chcesz ćwiczyć.</span>
+      </div>
+      <div class="welcome-hint" style="border-style:solid;border-color:var(--accent3);color:var(--accent3)">
+        <span style="font-size:24px">✏️</span>
+        <span>Weź kartkę i coś do pisania — na pewno się przyda!</span>
+      </div>
+      <div class="stats-row" id="globalStatsRow"></div>
+    </div>
+
+    <!-- EXERCISE AREA -->
+    <div class="exercise-area" id="exerciseArea">
+      <div class="exercise-header">
+        <div class="topic-title" id="topicTitle">Temat</div>
+        <div class="difficulty-tabs" id="difficultyTabs">
+          <button class="diff-tab active" id="tab-easy" onclick="setDifficulty('easy', this)">😊 Łatwe</button>
+          <button class="diff-tab" id="tab-medium" onclick="setDifficulty('medium', this)">🤔 Średnie</button>
+          <button class="diff-tab" id="tab-challenge" onclick="setDifficulty('challenge', this)">⏱️ Wyzwanie</button>
+        </div>
+      </div>
+
+      <!-- STATS ROW -->
+      <div class="stats-row" id="statsRow"></div>
+
+      <!-- MULTIPLICATION TABLE PANEL (only for Tabliczka mnożenia) -->
+      <div class="mult-table-panel" id="multTablePanel" style="display:none">
+        <div class="mult-table-title">📊 Kliknij wiersz lub kolumnę, żeby włączyć / wyłączyć z ćwiczeń</div>
+        <div class="mult-grid-wrap">
+          <div class="mult-grid" id="multGrid"></div>
+        </div>
+        <div class="mult-info" id="multInfo"></div>
+      </div>
+
+      <!-- TIMER for challenge mode -->
+      <div class="timer-bar-wrap" id="timerBarWrap">
+        <div class="timer-display" id="challengeTimer">60</div>
+        <div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+        <div class="timer-score">✅ <span id="challengeScore">0</span></div>
+      </div>
+
+      <!-- TIME SELECT (challenge setup) -->
+      <div class="exercise-card" id="challengeSetupCard" style="display:none">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:36px;margin-bottom:8px">⏱️</div>
+          <div style="font-family:var(--font-head);font-size:22px;font-weight:800;margin-bottom:8px">Wyzwanie na czas!</div>
+          <div style="color:var(--text2);font-size:14px">Rozwiąż jak najwięcej zadań w wybranym czasie</div>
+        </div>
+        <div style="margin-bottom:16px;text-align:center;font-weight:700;color:var(--text2);font-size:13px;text-transform:uppercase;letter-spacing:1px">Wybierz czas:</div>
+        <div class="time-select-row" style="justify-content:center;margin-bottom:20px">
+          <button class="time-btn active" onclick="selectTime(30, this)">⚡ 30 sekund</button>
+          <button class="time-btn" onclick="selectTime(60, this)">🔥 60 sekund</button>
+          <button class="time-btn" onclick="selectTime(90, this)">💪 90 sekund</button>
+        </div>
+        <div style="text-align:center">
+          <button class="btn btn-primary" style="padding:14px 32px;font-size:16px" onclick="startChallenge()">🚀 Start!</button>
+        </div>
+      </div>
+
+      <!-- EXERCISE CARD -->
+      <div class="exercise-card" id="exerciseCard">
+        <!-- PvP: timer + score (widoczny tylko w trybie PvP) -->
+        <div class="pvp-exercise-banner" id="pvpExerciseBanner" style="display:none">
+          <div class="pvp-banner-left">
+            <span class="pvp-exercise-label">⚔️ PvP</span>
+          </div>
+          <div class="pvp-banner-center">
+            <span class="pvp-exercise-timer" id="pvpExerciseTimer">60</span>
+            <span class="pvp-exercise-sek">sek</span>
+          </div>
+          <div class="pvp-banner-right">
+            <span class="pvp-banner-score-label">✅</span>
+            <span class="pvp-banner-score-num" id="pvpExerciseScore">0</span>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text3);font-weight:700">
+          <span id="questionNum">Zadanie #1</span>
+          <span id="pointsInfo" style="color:var(--accent)">+10 pkt za poprawną odpowiedź</span>
+        </div>
+
+        <div class="exercise-question" id="questionText">3 + 7 = ?</div>
+        <div id="writtenAddArea" style="display:none"></div>
+
+        <div class="answer-area">
+          <input class="answer-input" id="answerInput" type="number" placeholder="?"
+            onkeydown="handleAnswerKey(event)">
+          
+          <div class="mistake-counter">
+            <div class="mistake-dot" id="dot0"></div>
+            <div class="mistake-dot" id="dot1"></div>
+            <div class="mistake-dot" id="dot2"></div>
+          </div>
+
+          <div class="solution-reveal" id="solutionReveal">
+            <div class="sol-label">Poprawna odpowiedź:</div>
+            <div class="sol-val" id="solutionText"></div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" id="checkBtn" onclick="checkAnswer()">✓ Sprawdź</button>
+            <button class="btn btn-secondary" id="nextExampleBtn" onclick="nextQuestion()">↻ Inny przykład</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- PvP: modal "Czas minął" -->
+  <div class="pvp-timeup-overlay" id="pvpTimeUpOverlay" style="display:none">
+    <div class="pvp-timeup-box">
+      <div class="pvp-timeup-icon">⏰</div>
+      <div class="pvp-timeup-title">Czas minął!</div>
+      <div class="pvp-timeup-msg">Twój wynik w tej turze:</div>
+      <div class="pvp-timeup-score" id="pvpTimeUpScore">0</div>
+      <div class="pvp-timeup-sub">poprawnych odpowiedzi</div>
+      <button class="pvp-submit-btn" onclick="dismissTimeUp()">OK</button>
+    </div>
+  </div>
+
+  <!-- RIGHT SIDEBAR -->
+  <aside class="sidebar-right">
+
+    <!-- USER PANEL -->
+    <div class="user-panel" id="userPanel">
+      <div class="avatar-wrap" onclick="openAvatarPicker()" title="Kliknij aby zmienić awatar">
+        <div class="user-avatar" id="userAvatarEl">?</div>
+        <div class="avatar-edit-hint">✏️</div>
+      </div>
+      <div class="user-name" id="userNameEl">Gość</div>
+      <div class="user-title-display" id="userTitleEl" style="display:none"></div>
+      <div class="user-level-badge" id="userLevelEl" style="display:none">
+        <span class="lvl-num" id="lvlNum">1</span>
+        <span id="lvlTitle">Nowicjusz</span>
+      </div>
+      <div class="xp-bar-wrap" id="xpBarWrap" style="display:none">
+        <div class="xp-bar" id="xpBarFill" style="width:0%"></div>
+      </div>
+      <div class="xp-label" id="xpLabel"></div>
+      <div class="user-points">
+        <div class="pts" id="userPtsEl">0</div>
+        <div>punktów sezonowych</div>
+        <div class="pts-label">Łącznie: <span id="userTotalEl">0</span> pkt</div>
+      </div>
+      <div class="daily-streak-badge" id="dailyStreakEl" style="display:none">
+        🔥 <span id="dailyStreakNum">1</span> dni z rzędu!
+      </div>
+      <div class="dukaty-display" id="dukatyEl" style="display:none">🪙 0 dukatów</div>
+    </div>
+
+    <!-- ACHIEVEMENTS BUTTON -->
+    <button class="ach-open-btn" id="achBtn" onclick="openAchievements()" style="display:none">
+      🏆 Osiągnięcia <span class="ach-count-badge" id="achCount">0</span>
+    </button>
+
+    <!-- PvP BUTTON -->
+    <button class="pvp-sidebar-btn" id="pvpBtn" onclick="openPvp()" style="display:none">
+      ⚔️ PvP <span class="pvp-sidebar-badge" id="pvpBadge"></span>
+    </button>
+
+    <!-- THEME SELECTOR -->
+    <div class="theme-selector">
+      <div class="theme-title">🎨 Motyw</div>
+      <div class="theme-btns">
+        <div class="theme-dot space active" title="Kosmos" onclick="setTheme('space', this)"></div>
+        <div class="theme-dot pink" title="Różowy" onclick="setTheme('pink', this)"></div>
+        <div class="theme-dot classic" title="Klasyczny" onclick="setTheme('classic', this)"></div>
+      </div>
+    </div>
+
+    <!-- SEASONAL LEADERBOARD -->
+    <div class="leaderboard-card">
+      <div class="lb-title">🏆 Sezon – Top 10</div>
+      <div id="lb-seasonal"></div>
+      <a class="lb-link" onclick="showFullLb('seasonal')">→ Pełna lista wyników</a>
+    </div>
+
+    <!-- GLOBAL LEADERBOARD -->
+    <div class="leaderboard-card">
+      <div class="lb-title">🌍 Globalnie – Top 10</div>
+      <div id="lb-global"></div>
+      <a class="lb-link" onclick="showFullLb('global')">→ Pełna lista wyników</a>
+    </div>
+
+  </aside>
+</div>
+
+
+<!-- SOUND TOGGLE – poza layoutem, żeby uniknąć stacking context z-index: 1 -->
+<button class="sound-toggle" id="soundToggle" onclick="toggleSound()" title="Włącz/wyłącz dźwięk">🔊</button>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="/app.js"></script>
+
+<!-- ACHIEVEMENTS OVERLAY -->
+<div class="ach-overlay" id="achOverlay" style="display:none" onclick="closeAchIfBg(event)">
+  <div class="ach-panel">
+    <div class="ach-header">
+      <span class="ach-header-title">🏆 Osiągnięcia</span>
+      <div class="ach-summary" id="achSummary"></div>
+      <button class="ach-close-btn" onclick="closeAchievements()">✕</button>
+    </div>
+    <div class="ach-grid" id="achGrid"></div>
+  </div>
+</div>
+
+<!-- PvP OVERLAY -->
+<div class="pvp-overlay" id="pvpOverlay" style="display:none" onclick="closePvpIfBg(event)">
+  <div class="pvp-panel">
+    <div class="pvp-panel-header">
+      <span>⚔️ Pojedynek PvP</span>
+      <button class="pvp-close-btn" onclick="closePvp()">✕</button>
+    </div>
+    <div id="pvpContent"></div>
+  </div>
+</div>
+</body>
+</html>
