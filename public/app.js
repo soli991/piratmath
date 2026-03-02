@@ -2114,7 +2114,7 @@ const TOPIC_GENERATORS = {
 
     const SYMBOLS_HINT = `I=1, V=5, X=10, L=50, C=100, D=500, M=1000\nSubtraktywne: IV=4, IX=9, XL=40, XC=90, CD=400, CM=900`;
 
-    const num   = isEasy ? rand(1, 39) : rand(1, 3999);
+    const num   = isEasy ? rand(1, 69) : rand(1, 3999);
     const roman = toRoman(num);
 
     if (rand(0, 1) === 0) {
