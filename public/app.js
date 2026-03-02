@@ -2491,8 +2491,8 @@ const TOPIC_GENERATORS = {
       return {
         q:     `${logStr(p.base)}(${p.arg}) = ?`,
         a:     p.ans,
-        hint:  `Wzór: log_a(b) = log_c(b) ÷ log_c(a),  tu c = ${p.c}`,
-        hint2: `${logStr(p.c)}(${p.arg}) = ${logCarg},  ${logStr(p.c)}(${p.base}) = ${logCb}  →  ${logCarg} ÷ ${logCb}${decStr}`,
+        hint:  `Wzór zamiany podstawy (c = ${p.c}):\n${logStr(p.base)}(${p.arg}) = ${logStr(p.c)}(${p.arg}) / ${logStr(p.c)}(${p.base})`,
+        hint2: `= ${logCarg} / ${logCb}${decStr}`,
       };
     } else if (mode === 8) {
       // Trudny iloczyn — składniki NIE są potęgami podstawy
