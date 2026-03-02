@@ -2056,8 +2056,20 @@ const TOPIC_GENERATORS = {
       { base: 6,  a: 2,   b: 3,   ans: 1 },
       { base: 6,  a: 4,   b: 9,   ans: 2 },
       { base: 6,  a: 12,  b: 3,   ans: 2 },
+      { base: 6,  a: 8,   b: 27,  ans: 3 },  // 8×27=216=6³
+      { base: 6,  a: 18,  b: 2,   ans: 2 },  // 18×2=36=6²
       { base: 12, a: 3,   b: 4,   ans: 1 },
+      { base: 12, a: 2,   b: 6,   ans: 1 },  // 2×6=12
+      { base: 12, a: 9,   b: 16,  ans: 2 },  // 9×16=144=12²
+      { base: 12, a: 4,   b: 36,  ans: 2 },  // 4×36=144=12²
+      { base: 14, a: 2,   b: 7,   ans: 1 },  // 2×7=14
       { base: 15, a: 3,   b: 5,   ans: 1 },
+      { base: 15, a: 9,   b: 25,  ans: 2 },  // 9×25=225=15²
+      { base: 15, a: 45,  b: 5,   ans: 2 },  // 45×5=225=15²
+      { base: 21, a: 3,   b: 7,   ans: 1 },  // 3×7=21
+      { base: 21, a: 9,   b: 49,  ans: 2 },  // 9×49=441=21²
+      { base: 35, a: 5,   b: 7,   ans: 1 },  // 5×7=35
+      { base: 35, a: 25,  b: 49,  ans: 2 },  // 25×49=1225=35²
     ];
     const trickyQuotient = [
       { base: 10, a: 20,  b: 2,   ans: 1 },
@@ -2067,9 +2079,21 @@ const TOPIC_GENERATORS = {
       { base: 10, a: 250, b: 25,  ans: 1 },
       { base: 6,  a: 18,  b: 3,   ans: 1 },
       { base: 6,  a: 12,  b: 2,   ans: 1 },
+      { base: 6,  a: 54,  b: 9,   ans: 1 },  // 54÷9=6
+      { base: 6,  a: 24,  b: 4,   ans: 1 },  // 24÷4=6
       { base: 6,  a: 72,  b: 2,   ans: 2 },
       { base: 12, a: 36,  b: 3,   ans: 1 },
       { base: 12, a: 24,  b: 2,   ans: 1 },
+      { base: 12, a: 48,  b: 4,   ans: 1 },  // 48÷4=12
+      { base: 12, a: 72,  b: 6,   ans: 1 },  // 72÷6=12
+      { base: 14, a: 28,  b: 2,   ans: 1 },  // 28÷2=14
+      { base: 14, a: 98,  b: 7,   ans: 1 },  // 98÷7=14
+      { base: 15, a: 45,  b: 3,   ans: 1 },  // 45÷3=15
+      { base: 15, a: 75,  b: 5,   ans: 1 },  // 75÷5=15
+      { base: 21, a: 63,  b: 3,   ans: 1 },  // 63÷3=21
+      { base: 21, a: 147, b: 7,   ans: 1 },  // 147÷7=21
+      { base: 35, a: 175, b: 5,   ans: 1 },  // 175÷5=35
+      { base: 35, a: 245, b: 7,   ans: 1 },  // 245÷7=35
     ];
 
     // Zadania ze zmianą podstawy
@@ -2085,15 +2109,15 @@ const TOPIC_GENERATORS = {
       { base: 25, arg: 625, ans: 2, c: 5 },
     ];
 
-    // Łatwy: 0-3 (wzory widoczne w treści), Średni/Wyzwanie: 0-7
-    const mode = isEasy ? rand(0, 3) : rand(0, 7);
+    // Łatwy: 0-3 (wzory widoczne w treści), Średni/Wyzwanie: 0-9 (w tym tricky)
+    const mode = isEasy ? rand(0, 3) : rand(0, 9);
 
     if (mode === 0) {
       // log_b(x·y) = log_b(x) + log_b(?)  →  znajdź brakujący argument
       const n1 = rand(1, 4), n2 = rand(1, 4);
       const x  = b ** n1, y = b ** n2;
       return {
-        q:     `${logStr(b)}(${x * y}) = ${logStr(b)}(${x}) + ${logStr(b)}(?) = ?`,
+        q:     `${logStr(b)}(${x * y}) = ${logStr(b)}(${x}) + ${logStr(b)}(?)`,
         a:     y,
         hint:  `log(a·b) = log(a) + log(b), więc ? = ${x * y} ÷ ${x}`,
       };
@@ -2102,7 +2126,7 @@ const TOPIC_GENERATORS = {
       const n1 = rand(2, 5), n2 = rand(1, n1 - 1);
       const x  = b ** n1, y = b ** n2;
       return {
-        q:     `${logStr(b)}(${x / y}) = ${logStr(b)}(${x}) − ${logStr(b)}(?) = ?`,
+        q:     `${logStr(b)}(${x / y}) = ${logStr(b)}(${x}) − ${logStr(b)}(?)`,
         a:     y,
         hint:  `log(a÷b) = log(a) − log(b), więc ? = ${x} ÷ ${x / y}`,
       };
