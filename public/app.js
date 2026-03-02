@@ -305,6 +305,42 @@ function switchToLogin() {
   document.getElementById('loginBtn').innerHTML = '<span>🎯</span> Wejdź do gry!';
   document.getElementById('loginSwitch').innerHTML = 'Nie masz konta? <a onclick="switchToRegister()">Zarejestruj się</a>';
   document.getElementById('loginDeco').textContent = '🐀';
+  document.getElementById('resetForm').style.display  = 'none';
+  document.getElementById('loginBtn').style.display   = '';
+  document.getElementById('usernameInput').style.display = '';
+  document.getElementById('passwordInput').style.display = '';
+  document.getElementById('resetSwitch').style.display   = '';
+  document.getElementById('loginError').textContent = '';
+}
+
+function switchToReset() {
+  document.getElementById('resetForm').style.display   = 'block';
+  document.getElementById('loginBtn').style.display    = 'none';
+  document.getElementById('usernameInput').style.display = 'none';
+  document.getElementById('passwordInput').style.display = 'none';
+  document.getElementById('loginSwitch').style.display   = 'none';
+  document.getElementById('resetSwitch').style.display   = 'none';
+  document.getElementById('loginTitle').textContent = 'Reset hasła';
+  document.getElementById('loginDeco').textContent  = '🔑';
+  document.getElementById('loginError').textContent = '';
+}
+
+async function submitReset() {
+  const token       = document.getElementById('resetTokenInput').value.trim().toUpperCase();
+  const newPassword = document.getElementById('resetPassInput').value;
+  const err         = document.getElementById('loginError');
+  err.textContent   = '';
+
+  if (!token || !newPassword) { err.textContent = 'Wypełnij oba pola'; return; }
+
+  const data = await api('POST', '/api/reset-password', { token, newPassword });
+  if (data.error) { err.textContent = data.error; return; }
+
+  err.style.color = 'var(--green)';
+  err.textContent = '✓ Hasło zmienione! Możesz się zalogować.';
+  document.getElementById('resetTokenInput').value = '';
+  document.getElementById('resetPassInput').value  = '';
+  setTimeout(() => { err.style.color = ''; switchToLogin(); }, 2000);
 }
 
 document.getElementById('loginBtn').addEventListener('click', async () => {

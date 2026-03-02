@@ -2164,6 +2164,20 @@ details[open] .tp-level-summary::after { content: '▴'; }
     <div class="modal-switch" id="loginSwitch">
       Nie masz konta? <a onclick="switchToRegister()">Zarejestruj się</a>
     </div>
+    <div class="modal-switch" id="resetSwitch">
+      <a onclick="switchToReset()">Zapomniałem hasła</a>
+    </div>
+
+    <!-- Formularz resetu hasła (domyślnie ukryty) -->
+    <div id="resetForm" style="display:none;width:100%">
+      <div class="modal-sub">Wpisz kod otrzymany od admina oraz nowe hasło.</div>
+      <input class="modal-input" id="resetTokenInput" type="text" placeholder="Kod resetu (np. A3F7C2B1)" maxlength="8" style="text-transform:uppercase">
+      <input class="modal-input" id="resetPassInput"  type="password" placeholder="Nowe hasło (min. 4 znaki)">
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:14px" onclick="submitReset()">
+        🔑 Ustaw nowe hasło
+      </button>
+      <div class="modal-switch"><a onclick="switchToLogin()">Wróć do logowania</a></div>
+    </div>
   </div>
 </div>
 

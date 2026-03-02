@@ -102,4 +102,14 @@ db.exec(`
   );
 `);
 
+// Jednorazowe tokeny resetu hasła (v7)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS reset_tokens (
+    token      TEXT    PRIMARY KEY,
+    user_id    INTEGER NOT NULL REFERENCES users(id),
+    expires_at INTEGER NOT NULL,
+    used       INTEGER DEFAULT 0
+  );
+`);
+
 module.exports = db;

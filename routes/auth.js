@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt  = require('bcrypt');
+const crypto  = require('crypto');
 const db      = require('../db');
 const { checkAndUnlock } = require('../achievements');
 
@@ -144,5 +145,51 @@ function buildTopicsMap(userId) {
   }
   return topics;
 }
+
+// ── POST /api/admin/reset-token ──────────────────────────────
+// Tylko dla admina (zna ADMIN_SECRET). Zwraca jednorazowy kod.
+router.post('/admin/reset-token', (req, res) => {
+  const { secret, name } = req.body;
+  if (!secret || secret !== process.env.ADMIN_SECRET)
+    return res.status(403).json({ error: 'Brak dostępu' });
+
+  const user = db.prepare('SELECT id FROM users WHERE LOWER(name) = LOWER(?)').get(name);
+  if (!user)
+    return res.status(404).json({ error: 'Nie znaleziono użytkownika' });
+
+  // Usuń stare tokeny tego usera
+  db.prepare('DELETE FROM reset_tokens WHERE user_id = ?').run(user.id);
+
+  const token     = crypto.randomBytes(4).toString('hex').toUpperCase(); // np. A3F7C2B1
+  const expiresAt = Math.floor(Date.now() / 1000) + 15 * 60; // 15 minut
+  db.prepare('INSERT INTO reset_tokens (token, user_id, expires_at) VALUES (?, ?, ?)')
+    .run(token, user.id, expiresAt);
+
+  res.json({ token, expiresIn: '15 minut' });
+});
+
+// ── POST /api/reset-password ─────────────────────────────────
+// Użytkownik wpisuje token (od admina) + nowe hasło
+router.post('/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword)
+    return res.status(400).json({ error: 'Wypełnij oba pola' });
+  if (newPassword.length < 4)
+    return res.status(400).json({ error: 'Hasło musi mieć min. 4 znaki' });
+
+  const row = db.prepare('SELECT * FROM reset_tokens WHERE token = ?').get(token.toUpperCase().trim());
+  if (!row)
+    return res.status(400).json({ error: 'Nieprawidłowy kod' });
+  if (row.used)
+    return res.status(400).json({ error: 'Kod już został wykorzystany' });
+  if (Math.floor(Date.now() / 1000) > row.expires_at)
+    return res.status(400).json({ error: 'Kod wygasł' });
+
+  const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, row.user_id);
+  db.prepare('UPDATE reset_tokens SET used = 1 WHERE token = ?').run(row.token);
+
+  res.json({ ok: true });
+});
 
 module.exports = router;
