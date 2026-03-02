@@ -2144,66 +2144,69 @@ const TOPIC_GENERATORS = {
   'Działania na liczbach całkowitych': (d) => {
     const isEasy = d === 'easy';
 
-    // Ujemne liczby w nawiasach; dodatnie bez
+    // Ujemne w nawiasach; dodatnie bez (używaj do 2. argumentu i mnożenia/dzielenia)
     function fmt(n) { return n < 0 ? `(${n})` : `${n}`; }
     // Niezerowa losowa liczba całkowita
     function ri(lo, hi) { let v = 0; while (v === 0) v = rand(lo, hi); return v; }
+    // Superskrypt unicode (obsługuje wielocyfrowe, np. 10 → ¹⁰)
+    function sup(n) { return String(n).split('').map(c => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+c]).join(''); }
 
     const SIGN_HINT = '(+)×(+) = +,   (−)×(−) = +,   (+)×(−) = −';
-    const SUP = ['⁰','¹','²','³','⁴','⁵'];
-    function sup(n) { return SUP[n] ?? `^${n}`; }
 
     if (isEasy) {
-      const type = rand(0, 3); // 0=dodawanie, 1=odejmowanie, 2=mnożenie, 3=dzielenie
+      const type = rand(0, 3); // 0=add, 1=sub, 2=mul, 3=div
       let a, b, ans, q, hint, hint2;
 
       if (type === 0) {
-        // Dodawanie – co najmniej jeden ujemny
-        a = rand(-10, 10); if (a === 0) a = -3;
-        b = rand(-10, 10); if (b === 0) b = 5;
-        if (a > 0 && b > 0) b = -b;
+        // Dodawanie – wszystkie kombinacje znaków
+        a = rand(-12, 12); if (a === 0) a = -5;
+        b = rand(-12, 12); if (b === 0) b = 4;
         ans = a + b;
-        q = `${fmt(a)} + ${fmt(b)}`;
+        // Pierwsza liczba bez nawiasów (nawet ujemna), druga w nawiasach jeśli ujemna
+        q = `${a} + ${fmt(b)}`;
         if (a < 0 && b < 0) {
           hint  = 'Suma dwóch ujemnych — dodaj moduły i daj minus';
           hint2 = `|${a}| + |${b}| = ${Math.abs(a) + Math.abs(b)}, wynik: −${Math.abs(a) + Math.abs(b)}`;
-        } else {
+        } else if (a < 0 || b < 0) {
           hint  = 'Różne znaki — odejmij mniejszy moduł od większego; znak jak ten z większym modułem';
           hint2 = `|${a}| = ${Math.abs(a)},  |${b}| = ${Math.abs(b)} → wynik: ${ans}`;
+        } else {
+          hint  = 'Oba składniki dodatnie';
+          hint2 = `${a} + ${b} = ${ans}`;
         }
 
       } else if (type === 1) {
-        // Odejmowanie – co najmniej jeden ujemny
-        a = rand(-10, 10); if (a === 0) a = -4;
-        b = rand(-10, 10); if (b === 0) b = 3;
-        if (a > 0 && b > 0) b = -b;
+        // Odejmowanie – wszystkie kombinacje
+        a = rand(-12, 12); if (a === 0) a = 6;
+        b = rand(-12, 12); if (b === 0) b = -3;
         ans = a - b;
-        q = `${fmt(a)} − ${fmt(b)}`;
+        q = `${a} − ${fmt(b)}`;
         if (b < 0) {
-          hint  = 'Odejmowanie ujemnej liczby = dodawanie jej wartości bezwzględnej';
-          hint2 = `${fmt(a)} − (${b}) = ${fmt(a)} + ${Math.abs(b)} = ${ans}`;
-        } else {
-          hint  = `Przesuń ${a} o ${b} w lewo na osi liczbowej`;
+          hint  = 'Odejmowanie ujemnej = dodawanie jej wartości bezwzględnej';
+          hint2 = `${a} − (${b}) = ${a} + ${Math.abs(b)} = ${ans}`;
+        } else if (a < 0) {
+          hint  = `Obie liczby mają różne znaki — wynik bardziej ujemny`;
           hint2 = `${a} − ${b} = ${ans}`;
+        } else {
+          hint  = ans < 0 ? `${a} < ${b}, więc wynik jest ujemny` : null;
+          hint2 = null;
         }
 
       } else if (type === 2) {
-        // Mnożenie – co najmniej jeden ujemny
+        // Mnożenie – wszystkie kombinacje znaków
         a = ri(-9, 9);
         b = ri(-9, 9);
-        if (a > 0 && b > 0) { rand(0, 1) ? (a = -a) : (b = -b); }
         ans = a * b;
         q = `${fmt(a)} × ${fmt(b)}`;
         hint  = SIGN_HINT;
         hint2 = `${Math.abs(a)} × ${Math.abs(b)} = ${Math.abs(ans)},  znak: ${ans >= 0 ? '+' : '−'}`;
 
       } else {
-        // Dzielenie – wynik całkowity, co najmniej jeden ujemny
-        const res = ri(-9, 9);
-        b = ri(-9, 9);
+        // Dzielenie – wynik całkowity, wszystkie kombinacje znaków
+        const res = ri(-6, 6);
+        b = ri(-6, 6);
         a = b * res;
-        if (a > 0 && b > 0) { rand(0, 1) ? (a = -a) : (b = -b); }
-        ans = a / b;
+        ans = res; // a / b = res
         q = `${fmt(a)} ÷ ${fmt(b)}`;
         hint  = SIGN_HINT;
         hint2 = `${Math.abs(a)} ÷ ${Math.abs(b)} = ${Math.abs(ans)},  znak: ${ans >= 0 ? '+' : '−'}`;
@@ -2212,65 +2215,103 @@ const TOPIC_GENERATORS = {
       return { q: `${q} = ?`, a: ans, hint, hint2 };
     }
 
-    // ── MEDIUM ────────────────────────────────────────────────
-    const type = rand(0, 4);
+    // ── MEDIUM – 9 typów ─────────────────────────────────────
+    const type = rand(0, 8);
     let a, b, c, d, ans, q, hint, hint2;
 
     if (type === 0) {
-      // Potęga liczby ujemnej: (-n)^exp
+      // Potęga dowolnej ujemnej podstawy (-2 do -5), wykładnik 2–4
       const base = ri(-5, -2);
       const exp  = rand(2, 4);
       ans = Math.pow(base, exp);
       q     = `(${base})${sup(exp)}`;
-      const parStr = exp % 2 === 0 ? 'parzysty → wynik dodatni' : 'nieparzysty → wynik ujemny';
+      const parStr = exp % 2 === 0 ? 'parzysty → wynik +' : 'nieparzysty → wynik −';
       hint  = `Wykładnik ${parStr}`;
       hint2 = `${Array(exp).fill(`(${base})`).join(' × ')} = ${ans}`;
 
     } else if (type === 1) {
-      // a × (b + c) – rozdzielność mnożenia
+      // Potęgi (−2): wykładnik 0–8 — ważny wzorzec!
+      const exp = rand(0, 8);
+      ans = Math.pow(-2, exp);
+      q     = `(−2)${sup(exp)}`;
+      const pow2 = Math.pow(2, exp);
+      const parStr = exp % 2 === 0 ? 'parzysty → wynik +' : 'nieparzysty → wynik −';
+      hint  = `2${sup(exp)} = ${pow2},  wykładnik ${parStr}`;
+      hint2 = exp <= 3
+        ? `${Array(exp).fill('(−2)').join(' × ')}${exp === 0 ? ' (def.)' : ''} = ${ans}`
+        : `2${sup(exp)} = ${pow2},  znak: ${ans > 0 ? '+' : '−'} → wynik: ${ans}`;
+
+    } else if (type === 2) {
+      // a × (b + c) — rozdzielność z dodawaniem
       a = ri(-6, 6);
       b = rand(-6, 6); if (b === 0) b = -2;
       c = rand(-6, 6); if (c === 0) c = 3;
-      if (b > 0 && c > 0) b = -b;
-      const inner = b + c;
-      ans = a * inner;
+      const inner2 = b + c;
+      ans = a * inner2;
       q     = `${fmt(a)} × (${b} + ${fmt(c)})`;
-      hint  = `Najpierw oblicz wartość w nawiasie: ${b} + ${fmt(c)}`;
-      hint2 = `= ${b + c},  więc ${fmt(a)} × ${fmt(inner)} = ${ans}`;
-
-    } else if (type === 2) {
-      // -(a − b) – opuszczanie nawiasu z minusem
-      a = rand(-6, 6); if (a === 0) a = 4;
-      b = rand(-6, 6); if (b === 0) b = -3;
-      if (a > 0 && b > 0) b = -b;
-      ans = -(a - b);
-      q     = `−(${fmt(a)} − ${fmt(b)})`;
-      hint  = 'Minus przed nawiasem zmienia znaki wszystkich składników';
-      hint2 = `= ${fmt(-a)} + ${fmt(b)} = ${ans}`;
+      hint  = `Najpierw oblicz nawiasie: ${b} + ${fmt(c)}`;
+      hint2 = `= ${inner2},  więc ${fmt(a)} × ${fmt(inner2)} = ${ans}`;
 
     } else if (type === 3) {
-      // a + b × c – kolejność działań
+      // a × (b − c) — rozdzielność z odejmowaniem
+      a = ri(-6, 6);
+      b = rand(-6, 6); if (b === 0) b = 5;
+      c = rand(-6, 6); if (c === 0) c = -2;
+      const inner3 = b - c;
+      ans = a * inner3;
+      q     = `${fmt(a)} × (${b} − ${fmt(c)})`;
+      hint  = `Najpierw oblicz nawiasie: ${b} − ${fmt(c)}`;
+      hint2 = `= ${inner3},  więc ${fmt(a)} × ${fmt(inner3)} = ${ans}`;
+
+    } else if (type === 4) {
+      // −(a − b) — opuszczanie nawiasu poprzedzonego minusem
+      a = rand(1, 8); // a > 0 dla czytelności
+      b = rand(-8, 8); if (b === 0) b = -3;
+      ans = -(a - b); // = -a + b
+      q     = `−(${a} − ${fmt(b)})`;
+      hint  = 'Minus przed nawiasem zmienia znaki wszystkich składników';
+      hint2 = `= ${-a} + ${fmt(b)} = ${ans}`;
+
+    } else if (type === 5) {
+      // a + b × c — kolejność działań
       a = rand(-8, 8); if (a === 0) a = -3;
       b = ri(-5, 5);
       c = ri(-5, 5);
-      if (b > 0 && c > 0) b = -b;
-      const product = b * c;
-      ans = a + product;
-      q     = `${fmt(a)} + ${fmt(b)} × ${fmt(c)}`;
-      hint  = 'Kolejność działań: najpierw mnożenie, potem dodawanie';
-      hint2 = `${fmt(b)} × ${fmt(c)} = ${fmt(product)},  następnie ${fmt(a)} + ${fmt(product)} = ${ans}`;
+      const prod5 = b * c;
+      ans = a + prod5;
+      q     = `${a} + ${fmt(b)} × ${fmt(c)}`;
+      hint  = 'Kolejność działań: najpierw mnożenie!';
+      hint2 = `${fmt(b)} × ${fmt(c)} = ${fmt(prod5)},  następnie ${a} + ${fmt(prod5)} = ${ans}`;
 
-    } else {
-      // a × b − c × d – dwa iloczyny
+    } else if (type === 6) {
+      // a × b − c × d — dwa iloczyny
       a = ri(-5, 5); b = ri(-5, 5);
       c = ri(-5, 5); d = ri(-5, 5);
-      if (a > 0 && b > 0) a = -a;
-      if (c > 0 && d > 0) c = -c;
       const p1 = a * b, p2 = c * d;
       ans = p1 - p2;
       q     = `${fmt(a)} × ${fmt(b)} − ${fmt(c)} × ${fmt(d)}`;
       hint  = 'Policz osobno każdy iloczyn, potem odejmij';
-      hint2 = `${fmt(a)}×${fmt(b)} = ${fmt(p1)},  ${fmt(c)}×${fmt(d)} = ${fmt(p2)},  wynik: ${fmt(p1)} − ${fmt(p2)} = ${ans}`;
+      hint2 = `${fmt(a)}×${fmt(b)} = ${fmt(p1)},  ${fmt(c)}×${fmt(d)} = ${fmt(p2)},  wynik: ${p1} − ${fmt(p2)} = ${ans}`;
+
+    } else if (type === 7) {
+      // (a + b)² — potęgowanie sumy
+      a = rand(-5, 5); if (a === 0) a = 2;
+      b = rand(-5, 5); if (b === 0) b = -3;
+      const sum7 = a + b;
+      ans = sum7 * sum7;
+      q     = `(${a} + ${fmt(b)})${sup(2)}`;
+      hint  = `Najpierw oblicz sumę w nawiasie: ${a} + ${fmt(b)}`;
+      hint2 = `= ${sum7},  następnie (${sum7})${sup(2)} = ${ans}`;
+
+    } else {
+      // fmt(base)^2 + b — potęga potem dodawanie
+      const base = ri(-6, 6);
+      b = rand(-10, 10); if (b === 0) b = 5;
+      const pw = base * base;
+      ans = pw + b;
+      q     = `${fmt(base)}${sup(2)} + ${fmt(b)}`;
+      hint  = `Najpierw policz potęgę: ${fmt(base)}${sup(2)}`;
+      hint2 = `= ${pw},  następnie ${pw} + ${fmt(b)} = ${ans}`;
     }
 
     return { q: `${q} = ?`, a: ans, hint, hint2 };
