@@ -103,9 +103,24 @@ function playDecoNote(freq, wave = 'sine') {
   } catch(e) { /* audio not available */ }
 }
 
+function toggleLeftPanel() {
+  const isOpening = !document.querySelector('.sidebar-left')?.classList.contains('open');
+  document.querySelector('.sidebar-left')?.classList.toggle('open');
+  document.getElementById('left-backdrop')?.classList.toggle('show');
+  if (isOpening) {
+    document.querySelector('.sidebar-right')?.classList.remove('open');
+    document.getElementById('right-backdrop')?.classList.remove('show');
+  }
+}
+
 function toggleRightPanel() {
+  const isOpening = !document.querySelector('.sidebar-right')?.classList.contains('open');
   document.querySelector('.sidebar-right')?.classList.toggle('open');
   document.getElementById('right-backdrop')?.classList.toggle('show');
+  if (isOpening) {
+    document.querySelector('.sidebar-left')?.classList.remove('open');
+    document.getElementById('left-backdrop')?.classList.remove('show');
+  }
 }
 
 function decoClick(el, freq, wave) {

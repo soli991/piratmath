@@ -1341,11 +1341,35 @@ body.theme-pink .answer-input.correct {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 @media (max-width: 900px) {
+  /* Jeden kolumnowy layout — sidebary jako szuflady */
   .layout {
-    grid-template-columns: 220px 1fr;
-    grid-template-rows: auto auto 1fr;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
   }
-  header { grid-column: 2; }
+  header { grid-column: 1; }
+
+  /* Lewy sidebar jako szuflada */
+  .sidebar-left {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    height: 100vh;
+    width: 260px;
+    z-index: 202;
+    transition: left 0.3s ease;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+    grid-row: unset;
+  }
+  .sidebar-left.open { left: 0; }
+  #left-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 201;
+    cursor: pointer;
+  }
+  #left-backdrop.show { display: block; }
 
   /* Prawy panel jako szuflada */
   .sidebar-right {
@@ -1370,16 +1394,20 @@ body.theme-pink .answer-input.correct {
   }
   #right-backdrop.show { display: block; }
 
-  /* Przycisk otwierający panel */
-  .mobile-profile-btn { display: flex; }
+  /* Główna treść na pełną szerokość */
+  main { grid-column: 1; grid-row: 2; }
+
+  /* Header-top: ☰ po lewej, odliczanie w środku, 👤 po prawej */
+  .header-top { justify-content: space-between; }
+  .social-links { display: none; }
+  .mobile-left-btn    { display: flex !important; order: 1; }
+  .season-box         { order: 2; }
+  .mobile-profile-btn { display: flex !important; order: 3; }
 }
 
 @media (max-width: 600px) {
   /* Dekoracje ukryte — pokrywają przyciski odpowiedzi */
   #decoOverlay { display: none; }
-
-  /* Lewy sidebar węższym na małych ekranach */
-  .layout { grid-template-columns: 180px 1fr; }
 
   /* Zmniejsz elementy odpowiedzi */
   .answer-input { font-size: 22px; padding: 10px 14px; }
@@ -1771,7 +1799,7 @@ details[open] .tp-level-summary::after { content: '▴'; }
 .tp-mile.unlocked:hover { transform: scale(1.2); }
 
 /* ── Mobile profile button ───────────────────────────────── */
-.mobile-profile-btn {
+.mobile-profile-btn, .mobile-left-btn {
   display: none;
   align-items: center;
   justify-content: center;
@@ -2118,6 +2146,7 @@ details[open] .tp-level-summary::after { content: '▴'; }
 <div class="theme-corner-deco deco-clk" style="right:2%;bottom:12%;font-size:40px;animation:float 12s ease-in-out infinite;animation-delay:-6s" onclick="decoClick(this,880,'triangle')">💝</div>
 
 </div><!-- /decoOverlay -->
+<div id="left-backdrop"  onclick="toggleLeftPanel()"></div>
 <div id="right-backdrop" onclick="toggleRightPanel()"></div>
 
 <!-- LOGIN MODAL -->
@@ -2458,6 +2487,7 @@ details[open] .tp-level-summary::after { content: '▴'; }
   <!-- HEADER -->
   <header>
     <div class="header-top">
+      <button class="mobile-left-btn"    onclick="toggleLeftPanel()"  title="Menu tematów">☰</button>
       <button class="mobile-profile-btn" onclick="toggleRightPanel()" title="Profil i rankingi">👤</button>
       <div class="social-links">
         <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1" target="_blank" class="social-btn yt">
