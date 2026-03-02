@@ -2377,21 +2377,44 @@ const TOPIC_GENERATORS = {
       { base: 35, a: 245, b: 7,   ans: 1 },  // 245÷7=35
     ];
 
-    // Zadania ze zmianą podstawy
+    // Zadania ze zmianą podstawy  (ans może być ułamkiem dziesiętnym)
     const cobList = [
-      { base: 4,  arg: 16,  ans: 2, c: 2 },
-      { base: 4,  arg: 64,  ans: 3, c: 2 },
-      { base: 4,  arg: 256, ans: 4, c: 2 },
-      { base: 8,  arg: 64,  ans: 2, c: 2 },
-      { base: 8,  arg: 512, ans: 3, c: 2 },
-      { base: 9,  arg: 81,  ans: 2, c: 3 },
-      { base: 9,  arg: 729, ans: 3, c: 3 },
-      { base: 27, arg: 729, ans: 2, c: 3 },
-      { base: 25, arg: 625, ans: 2, c: 5 },
+      // Wyniki całkowite
+      { base: 4,   arg: 16,   ans: 2,    c: 2 },
+      { base: 4,   arg: 64,   ans: 3,    c: 2 },
+      { base: 4,   arg: 256,  ans: 4,    c: 2 },
+      { base: 8,   arg: 64,   ans: 2,    c: 2 },
+      { base: 8,   arg: 512,  ans: 3,    c: 2 },
+      { base: 9,   arg: 81,   ans: 2,    c: 3 },
+      { base: 9,   arg: 729,  ans: 3,    c: 3 },
+      { base: 27,  arg: 729,  ans: 2,    c: 3 },
+      { base: 25,  arg: 625,  ans: 2,    c: 5 },
+      { base: 16,  arg: 256,  ans: 2,    c: 2 },
+      { base: 16,  arg: 4096, ans: 3,    c: 2 },
+      { base: 125, arg: 3125, ans: 2,    c: 5 },
+      // Wyniki = 1/2
+      { base: 4,   arg: 2,    ans: 0.5,  c: 2 },
+      { base: 9,   arg: 3,    ans: 0.5,  c: 3 },
+      { base: 25,  arg: 5,    ans: 0.5,  c: 5 },
+      { base: 16,  arg: 4,    ans: 0.5,  c: 2 },
+      { base: 100, arg: 10,   ans: 0.5,  c: 10 },
+      // Wyniki = 3/2
+      { base: 4,   arg: 8,    ans: 1.5,  c: 2 },
+      { base: 9,   arg: 27,   ans: 1.5,  c: 3 },
+      { base: 25,  arg: 125,  ans: 1.5,  c: 5 },
+      { base: 16,  arg: 64,   ans: 1.5,  c: 2 },
+      // Wyniki = 5/2
+      { base: 4,   arg: 32,   ans: 2.5,  c: 2 },
+      { base: 9,   arg: 243,  ans: 2.5,  c: 3 },
+      // Wyniki = 1/4, 3/4, 5/4, 7/4
+      { base: 16,  arg: 2,    ans: 0.25, c: 2 },
+      { base: 16,  arg: 8,    ans: 0.75, c: 2 },
+      { base: 16,  arg: 32,   ans: 1.25, c: 2 },
+      { base: 16,  arg: 128,  ans: 1.75, c: 2 },
     ];
 
-    // Łatwy: 0-3 (wzory widoczne w treści), Średni/Wyzwanie: 0-9 (w tym tricky)
-    const mode = isEasy ? rand(0, 3) : rand(0, 9);
+    // Łatwy: 0-3 (wzory widoczne w treści), Średni/Wyzwanie: 0-10 (w tym tricky i zmiana podstawy)
+    const mode = isEasy ? rand(0, 3) : rand(0, 10);
 
     if (mode === 0) {
       // log_b(x·y) = log_b(x) + log_b(?)  →  znajdź brakujący argument
@@ -2459,16 +2482,17 @@ const TOPIC_GENERATORS = {
         hint:  `log(a^k) = k · log(a) = ${k} · ${logStr(b)}(${x})`,
         hint2: `${k} · ${n} = ?`,
       };
-    } else if (mode === 7) {
-      // Zmiana podstawy
+    } else if (mode === 7 || mode === 10) {
+      // Zmiana podstawy — wzór: log_a(b) = log_c(b) / log_c(a)
       const p       = cobList[rand(0, cobList.length - 1)];
       const logCb   = Math.round(Math.log(p.base) / Math.log(p.c));
       const logCarg = Math.round(Math.log(p.arg)  / Math.log(p.c));
+      const decStr  = Number.isInteger(p.ans) ? '' : ` = ${String(p.ans).replace('.', ',')}`;
       return {
         q:     `${logStr(p.base)}(${p.arg}) = ?`,
         a:     p.ans,
-        hint:  `Zamień podstawę na ${p.c}: ${p.arg} = ${p.c}^${logCarg}, ${p.base} = ${p.c}^${logCb}`,
-        hint2: `${logStr(p.base)}(${p.arg}) = ${logCarg} ÷ ${logCb} = ?`,
+        hint:  `Wzór: log_a(b) = log_c(b) ÷ log_c(a),  tu c = ${p.c}`,
+        hint2: `${logStr(p.c)}(${p.arg}) = ${logCarg},  ${logStr(p.c)}(${p.base}) = ${logCb}  →  ${logCarg} ÷ ${logCb}${decStr}`,
       };
     } else if (mode === 8) {
       // Trudny iloczyn — składniki NIE są potęgami podstawy
