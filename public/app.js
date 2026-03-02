@@ -2073,6 +2073,57 @@ const TOPIC_GENERATORS = {
     }
   },
 
+  // ── SYSTEMY LICZBOWE ─────────────────────────────────────────
+  'Systemy liczbowe': (d) => {
+    const isEasy = d === 'easy';
+
+    const VALS = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
+    const SYMS = ['M','CM','D','CD','C','XC','L','XL','X','IX','V','IV','I'];
+
+    function toRoman(n) {
+      let r = '';
+      for (let i = 0; i < VALS.length; i++)
+        while (n >= VALS[i]) { r += SYMS[i]; n -= VALS[i]; }
+      return r;
+    }
+
+    // Rozkład na składniki: 199 → "C = 100, XC = 90, IX = 9"
+    function breakdown(n) {
+      const parts = []; let rem = n;
+      for (let i = 0; i < VALS.length; i++) {
+        let count = 0;
+        while (rem >= VALS[i]) { count++; rem -= VALS[i]; }
+        if (count > 0) {
+          const sym = SYMS[i].length === 1 ? SYMS[i].repeat(count) : SYMS[i];
+          parts.push(`${sym} = ${VALS[i] * count}`);
+        }
+      }
+      return parts.join(', ');
+    }
+
+    const num   = isEasy ? rand(1, 39) : rand(1, 3999);
+    const roman = toRoman(num);
+    const hint  = breakdown(num);
+
+    if (rand(0, 1) === 0) {
+      // Arabski → Rzymski (odpowiedź tekstowa)
+      return {
+        q:    `Zapisz liczbę ${num} cyframi rzymskimi`,
+        a:    roman,   // string
+        hint,
+        hint2: `Przypomnij: I=1, V=5, X=10, L=50, C=100, D=500, M=1000\nSubtraktywne: IV=4, IX=9, XL=40, XC=90, CD=400, CM=900`,
+      };
+    } else {
+      // Rzymski → Arabski (odpowiedź liczbowa)
+      return {
+        q:    `Ile wynosi ${roman}?`,
+        a:    num,
+        hint,
+        hint2: `Przypomnij: I=1, V=5, X=10, L=50, C=100, D=500, M=1000\nSubtraktywne: IV=4, IX=9, XL=40, XC=90, CD=400, CM=900`,
+      };
+    }
+  },
+
   // ── WŁASNOŚCI LOGARYTMÓW ─────────────────────────────────────
   'Własności logarytmów': (d) => {
     const SUB    = s => String(s).replace(/./g, c => '₀₁₂₃₄₅₆₇₈₉'['0123456789'.indexOf(c)] ?? c);
@@ -4880,6 +4931,113 @@ async function checkAnswer() {
   if (state.currentQuestion?.type === 'div_rem')     { await checkDivRem(); return; }
 
   const input = document.getElementById('answerInput');
+
+  // Odpowiedź tekstowa (np. cyfry rzymskie)
+  if (typeof state.currentAnswer === 'string') {
+    const userVal = input.value.trim().toUpperCase();
+    if (!userVal) {
+      input.classList.add('wrong');
+      setTimeout(() => input.classList.remove('wrong'), 500);
+      return;
+    }
+    const correct = userVal === state.currentAnswer.toUpperCase();
+    if (correct) {
+      state.answerLocked = true;
+      input.classList.add('correct');
+      playSound('correct');
+      if (state.challengeActive) {
+        state.challengeCorrect++;
+        state.answerStreak++;
+        document.getElementById('challengeScore').textContent = state.challengeCorrect;
+        checkStreakBonus();
+        showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
+        setTimeout(() => { input.classList.remove('correct'); loadQuestion(); }, 350);
+      } else {
+        let pts = 0;
+        const wasFirst = state.isFirstAttempt && !state.solutionShown;
+        if (wasFirst) {
+          state.answerStreak++;
+          if (state.currentUser) {
+            pts = await recordCorrect(state.currentTopic);
+            showPointsPop(pts);
+            updateStatsRow();
+            checkStreakBonus();
+          }
+        }
+        reportComeback();
+        const suf = wasFirst ? streakSuffix(state.answerStreak) : '';
+        const msg = pts > 0
+          ? `✓ Brawo! +${pts} pkt${suf}`
+          : state.solutionShown ? '✓ Dobrze! Idziemy dalej.'
+          : state.currentUser  ? `✓ Brawo! (nie za pierwszym razem)${suf}` : `✓ Brawo!${suf}`;
+        showToast(msg, 'correct');
+        const delay = state.solutionShown ? 300 : 400;
+        setTimeout(() => { input.classList.remove('correct'); loadQuestion(); }, delay);
+      }
+      return;
+    }
+    // Błędna odpowiedź
+    if (state.solutionShown) {
+      input.classList.add('wrong');
+      setTimeout(() => input.classList.remove('wrong'), 500);
+      showToast(`Wpisz: ${state.currentAnswer}`, 'wrong');
+      return;
+    }
+    state.answerStreak = 0;
+    state.mistakes++;
+    state.isFirstAttempt = false;
+    reportMistake();
+    input.classList.add('wrong');
+    playSound('wrong');
+    setTimeout(() => input.classList.remove('wrong'), 500);
+    if (state.mistakes <= 3) {
+      document.getElementById(`dot${state.mistakes-1}`).classList.add('used');
+    }
+    if (state.mistakes >= 3) {
+      document.getElementById('solutionText').textContent = state.currentAnswer;
+      document.getElementById('solutionReveal').classList.add('show');
+      showToast(`✗ Poprawna: ${state.currentAnswer}`, 'wrong');
+      state.solutionShown = true;
+      const hint3 = state.currentQuestion?.hint3;
+      if (hint3) {
+        let hintEl = document.getElementById('questionHintLine');
+        if (!hintEl) {
+          hintEl = document.createElement('div');
+          hintEl.id = 'questionHintLine';
+          hintEl.className = 'question-hint-line';
+          const qt = document.getElementById('questionText');
+          qt?.parentNode.insertBefore(hintEl, qt.nextSibling);
+        }
+        const prev = hintEl.textContent;
+        hintEl.textContent = prev ? `${prev}\n${hint3}` : `💡 ${hint3}`;
+        hintEl.style.display = '';
+      }
+      setTimeout(() => { input.value = ''; input.focus(); }, 800);
+    } else {
+      const hint = state.currentQuestion?.hint;
+      const hint2 = state.currentQuestion?.hint2;
+      const showHint = state.mistakes === 1 ? hint : (state.mistakes === 2 ? (hint2 ?? hint) : null);
+      if (showHint) {
+        let hintEl = document.getElementById('questionHintLine');
+        if (!hintEl) {
+          hintEl = document.createElement('div');
+          hintEl.id = 'questionHintLine';
+          hintEl.className = 'question-hint-line';
+          const qt = document.getElementById('questionText');
+          qt?.parentNode.insertBefore(hintEl, qt.nextSibling);
+        }
+        const text = (state.mistakes === 2 && hint2 && hint)
+          ? `💡 ${hint}\n${hint2}`
+          : `💡 ${showHint}`;
+        hintEl.textContent = text;
+        hintEl.style.display = '';
+      } else {
+        showToast(`✗ Spróbuj jeszcze raz! (${3 - state.mistakes} szans)`, 'wrong');
+      }
+    }
+    return;
+  }
+
   const val = parseFloat(input.value);
 
   if (input.value === '' || isNaN(val)) {

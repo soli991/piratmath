@@ -18,7 +18,7 @@ const TOPICS = {
   k78: [
     'Wartość bezwzględna', 'Rozkład liczby na czynniki pierwsze',
     'Wyznaczanie NWD', 'Wyznaczanie NWW', 'Szacowanie pierwiastków',
-    'Średnia arytmetyczna',
+    'Średnia arytmetyczna', 'Systemy liczbowe',
   ],
   sr: [
     'Pojęcie logarytmu', 'Własności logarytmów',
