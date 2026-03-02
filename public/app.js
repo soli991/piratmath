@@ -2413,8 +2413,8 @@ const TOPIC_GENERATORS = {
       { base: 16,  arg: 128,  ans: 1.75, c: 2 },
     ];
 
-    // Łatwy: 0-3 (wzory widoczne w treści), Średni/Wyzwanie: 0-10 (w tym tricky i zmiana podstawy)
-    const mode = isEasy ? rand(0, 3) : rand(0, 10);
+    // Łatwy: 0-3 (wzory widoczne w treści), Średni/Wyzwanie: 0-11 (w tym tricky i zmiana podstawy)
+    const mode = isEasy ? rand(0, 3) : rand(0, 11);
 
     if (mode === 0) {
       // log_b(x·y) = log_b(x) + log_b(?)  →  znajdź brakujący argument
@@ -2503,6 +2503,39 @@ const TOPIC_GENERATORS = {
         hint:  `log(a) + log(b) = log(a·b) = ${logStr(p.base)}(${p.a * p.b})`,
         hint2: `${p.base}^? = ${p.a * p.b}`,
       };
+    } else if (mode === 11) {
+      // Zmiana podstawy — uzupełnij brakujący argument we wzorze
+      // Wzorzec: log_a(b) = log_c(?) / log_c(a)  lub  log_a(b) = log_c(b) / log_c(?)
+      const configs = [
+        { a: 2,  cs: [4, 8, 16] },
+        { a: 3,  cs: [9, 27]    },
+        { a: 5,  cs: [25]       },
+        { a: 10, cs: [100]      },
+      ];
+      const cfg = configs[rand(0, configs.length - 1)];
+      const a   = cfg.a;
+      const c   = cfg.cs[rand(0, cfg.cs.length - 1)];
+      // b – dowolna liczba różna od a i c (niekoniecznie potęga a – chodzi o wzór, nie obliczanie)
+      const bPool = [2,3,4,5,6,7,8,9,10,11,12,13,15,17,20,25].filter(n => n !== a && n !== c);
+      const b = bPool[rand(0, bPool.length - 1)];
+
+      if (rand(0, 1) === 0) {
+        // Brakuje licznika: log_a(b) = log_c(?) / log_c(a)
+        return {
+          q:    `${logStr(a)}(${b}) = ${logStr(c)}(?) / ${logStr(c)}(${a})`,
+          a:    b,
+          hint: `Wzór: log_a(b) = log_c(b) / log_c(a)\nLicznik to logarytm z ARGUMENTU oryginalnego logarytmu`,
+          hint2: `${logStr(a)}(${b}) = ${logStr(c)}(${b}) / ${logStr(c)}(${a})`,
+        };
+      } else {
+        // Brakuje mianownika: log_a(b) = log_c(b) / log_c(?)
+        return {
+          q:    `${logStr(a)}(${b}) = ${logStr(c)}(${b}) / ${logStr(c)}(?)`,
+          a:    a,
+          hint: `Wzór: log_a(b) = log_c(b) / log_c(a)\nMianownik to logarytm z PODSTAWY oryginalnego logarytmu`,
+          hint2: `${logStr(a)}(${b}) = ${logStr(c)}(${b}) / ${logStr(c)}(${a})`,
+        };
+      }
     } else {
       // Trudny iloraz — składniki NIE są potęgami podstawy
       const p = trickyQuotient[rand(0, trickyQuotient.length - 1)];
