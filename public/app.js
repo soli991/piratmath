@@ -2413,44 +2413,78 @@ const TOPIC_GENERATORS = {
       { base: 16,  arg: 128,  ans: 1.75, c: 2 },
     ];
 
-    // Łatwy: 0-3 (wzory widoczne w treści), Średni/Wyzwanie: 0-11 (w tym tricky i zmiana podstawy)
+    // Pary gdzie argument NIE jest potęgą podstawy — wzór jest KONIECZNY
+    // Iloczyny: a × b = prod (przynajmniej jedno z a,b nie jest potęgą podstawy)
+    const forcedProdPairs = [
+      { base: 10, a: 2,   b: 5   },  // 2×5=10
+      { base: 10, a: 4,   b: 25  },  // 4×25=100
+      { base: 10, a: 20,  b: 5   },  // 20×5=100
+      { base: 10, a: 50,  b: 2   },  // 50×2=100
+      { base: 2,  a: 3,   b: 8   },  // 3×8=24
+      { base: 2,  a: 6,   b: 4   },  // 6×4=24
+      { base: 2,  a: 3,   b: 16  },  // 3×16=48
+      { base: 2,  a: 6,   b: 8   },  // 6×8=48
+      { base: 3,  a: 2,   b: 9   },  // 2×9=18
+      { base: 3,  a: 2,   b: 27  },  // 2×27=54
+      { base: 3,  a: 6,   b: 9   },  // 6×9=54
+    ];
+    // Ilorazy: a / b = quot (quot jest potęgą podstawy, ale a lub b nie jest)
+    const forcedQuotPairs = [
+      { base: 10, a: 20,  b: 2,  quot: 10  },
+      { base: 10, a: 50,  b: 5,  quot: 10  },
+      { base: 10, a: 200, b: 2,  quot: 100 },
+      { base: 10, a: 500, b: 5,  quot: 100 },
+      { base: 2,  a: 24,  b: 3,  quot: 8   },
+      { base: 2,  a: 12,  b: 3,  quot: 4   },
+      { base: 2,  a: 48,  b: 3,  quot: 16  },
+      { base: 2,  a: 48,  b: 6,  quot: 8   },
+      { base: 3,  a: 18,  b: 2,  quot: 9   },
+      { base: 3,  a: 54,  b: 2,  quot: 27  },
+      { base: 3,  a: 54,  b: 6,  quot: 9   },
+    ];
+
+    // Łatwy: 0-3 (wymagają wzorów — argumenty NIE są potęgami podstawy)
+    // Średni/Wyzwanie: 0-11 (w tym tricky i zmiana podstawy)
     const mode = isEasy ? rand(0, 3) : rand(0, 11);
 
     if (mode === 0) {
-      // log_b(x·y) = log_b(x) + log_b(?)  →  znajdź brakujący argument
-      const n1 = rand(1, 4), n2 = rand(1, 4);
-      const x  = b ** n1, y = b ** n2;
+      // log_b(?) = log_b(a) + log_b(b)  →  ? = a×b  (nie da się bez wzoru)
+      const p    = forcedProdPairs[rand(0, forcedProdPairs.length - 1)];
+      const prod = p.a * p.b;
       return {
-        q:     `${logStr(b)}(${x * y}) = ${logStr(b)}(${x}) + ${logStr(b)}(?)`,
-        a:     y,
-        hint:  `log(a·b) = log(a) + log(b), więc ? = ${x * y} ÷ ${x}`,
+        q:     `${logStr(p.base)}(?) = ${logStr(p.base)}(${p.a}) + ${logStr(p.base)}(${p.b})`,
+        a:     prod,
+        hint:  `log(a) + log(b) = log(a · b)`,
+        hint2: `${p.a} · ${p.b} = ${prod}`,
       };
     } else if (mode === 1) {
-      // log_b(x/y) = log_b(x) − log_b(?)  →  znajdź brakujący argument
-      const n1 = rand(2, 5), n2 = rand(1, n1 - 1);
-      const x  = b ** n1, y = b ** n2;
+      // log_b(?) = log_b(a) − log_b(b)  →  ? = a/b  (nie da się bez wzoru)
+      const p = forcedQuotPairs[rand(0, forcedQuotPairs.length - 1)];
       return {
-        q:     `${logStr(b)}(${x / y}) = ${logStr(b)}(${x}) − ${logStr(b)}(?)`,
-        a:     y,
-        hint:  `log(a÷b) = log(a) − log(b), więc ? = ${x} ÷ ${x / y}`,
+        q:     `${logStr(p.base)}(?) = ${logStr(p.base)}(${p.a}) − ${logStr(p.base)}(${p.b})`,
+        a:     p.quot,
+        hint:  `log(a) − log(b) = log(a ÷ b)`,
+        hint2: `${p.a} ÷ ${p.b} = ${p.quot}`,
       };
     } else if (mode === 2) {
-      // log_b(?) = log_b(x) + log_b(y)  →  znajdź argument iloczynu
-      const n1 = rand(1, 3), n2 = rand(1, 3);
-      const x  = b ** n1, y = b ** n2;
+      // log_b(a) + log_b(b) = ?  →  oblicz wynik (integer)
+      const p    = trickyProduct[rand(0, trickyProduct.length - 1)];
+      const prod = p.a * p.b;
       return {
-        q:     `${logStr(b)}(?) = ${logStr(b)}(${x}) + ${logStr(b)}(${y})`,
-        a:     x * y,
-        hint:  `log(a) + log(b) = log(a·b) = log(${x} · ${y})`,
+        q:     `${logStr(p.base)}(${p.a}) + ${logStr(p.base)}(${p.b}) = ?`,
+        a:     p.ans,
+        hint:  `log(a) + log(b) = log(a · b) = ${logStr(p.base)}(${prod})`,
+        hint2: `${p.base}^? = ${prod}`,
       };
     } else if (mode === 3) {
-      // log_b(?) = log_b(x) − log_b(y)  →  znajdź argument ilorazu
-      const n1 = rand(2, 5), n2 = rand(1, n1 - 1);
-      const x  = b ** n1, y = b ** n2;
+      // log_b(a) − log_b(b) = ?  →  oblicz wynik (integer)  ← przykład: log₂(24)−log₂(3)=3
+      const p    = trickyQuotient[rand(0, trickyQuotient.length - 1)];
+      const quot = p.a / p.b;
       return {
-        q:     `${logStr(b)}(?) = ${logStr(b)}(${x}) − ${logStr(b)}(${y})`,
-        a:     x / y,
-        hint:  `log(a) − log(b) = log(a÷b) = log(${x} ÷ ${y})`,
+        q:     `${logStr(p.base)}(${p.a}) − ${logStr(p.base)}(${p.b}) = ?`,
+        a:     p.ans,
+        hint:  `log(a) − log(b) = log(a ÷ b) = ${logStr(p.base)}(${quot})`,
+        hint2: `${p.base}^? = ${quot}`,
       };
     } else if (mode === 4) {
       // log_b(x) + log_b(y), x i y są potęgami podstawy
