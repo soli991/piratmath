@@ -2217,7 +2217,7 @@ const TOPIC_GENERATORS = {
 
     // ── MEDIUM – 9 typów ─────────────────────────────────────
     const type = rand(0, 8);
-    let a, b, c, d, ans, q, hint, hint2;
+    let a, b, c, w, ans, q, hint, hint2;
 
     if (type === 0) {
       // Potęga dowolnej ujemnej podstawy (-2 do -5), wykładnik 2–4
@@ -2286,12 +2286,12 @@ const TOPIC_GENERATORS = {
     } else if (type === 6) {
       // a × b − c × d — dwa iloczyny
       a = ri(-5, 5); b = ri(-5, 5);
-      c = ri(-5, 5); d = ri(-5, 5);
-      const p1 = a * b, p2 = c * d;
+      c = ri(-5, 5); w = ri(-5, 5);
+      const p1 = a * b, p2 = c * w;
       ans = p1 - p2;
-      q     = `${fmt(a)} × ${fmt(b)} − ${fmt(c)} × ${fmt(d)}`;
+      q     = `${fmt(a)} × ${fmt(b)} − ${fmt(c)} × ${fmt(w)}`;
       hint  = 'Policz osobno każdy iloczyn, potem odejmij';
-      hint2 = `${fmt(a)}×${fmt(b)} = ${fmt(p1)},  ${fmt(c)}×${fmt(d)} = ${fmt(p2)},  wynik: ${p1} − ${fmt(p2)} = ${ans}`;
+      hint2 = `${fmt(a)}×${fmt(b)} = ${fmt(p1)},  ${fmt(c)}×${fmt(w)} = ${fmt(p2)},  wynik: ${p1} − ${fmt(p2)} = ${ans}`;
 
     } else if (type === 7) {
       // (a + b)² — potęgowanie sumy
