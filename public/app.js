@@ -321,6 +321,7 @@ function switchToReset() {
   document.getElementById('loginSwitch').style.display   = 'none';
   document.getElementById('resetSwitch').style.display   = 'none';
   document.getElementById('loginTitle').textContent = 'Reset hasła';
+  document.getElementById('loginSub').textContent   = '';
   document.getElementById('loginDeco').textContent  = '🔑';
   document.getElementById('loginError').textContent = '';
 }
