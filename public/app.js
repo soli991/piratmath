@@ -4602,6 +4602,9 @@ function loadQuestion() {
     questionText.textContent   = q.q;
     answerInput.value          = '';
     answerInput.className      = 'answer-input';
+    const isStringAnswer = typeof state.currentAnswer === 'string';
+    answerInput.type        = isStringAnswer ? 'text' : 'number';
+    answerInput.placeholder = isStringAnswer ? 'np. XIV' : '?';
     answerInput.focus();
   }
 
