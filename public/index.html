@@ -269,7 +269,7 @@ header {
 .topic-btn:hover { color: var(--accent); background: var(--card); }
 .topic-btn.active { color: var(--accent); font-weight: 800; }
 .topic-btn .topic-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-.topic-btn.wip { opacity: 0.4; }
+.topic-btn.wip { opacity: 0.4; pointer-events: none; cursor: default; }
 .topic-btn.wip .topic-dot { background: var(--text2); }
 .topic-section-label {
   padding: 8px 16px 3px 16px;
