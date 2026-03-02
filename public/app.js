@@ -2087,7 +2087,7 @@ const TOPIC_GENERATORS = {
       return r;
     }
 
-    // Rozkład na składniki: 199 → "C = 100, XC = 90, IX = 9"
+    // Rozkład na składniki z symbolami: 199 → "C = 100, XC = 90, IX = 9"
     function breakdown(n) {
       const parts = []; let rem = n;
       for (let i = 0; i < VALS.length; i++) {
@@ -2101,25 +2101,41 @@ const TOPIC_GENERATORS = {
       return parts.join(', ');
     }
 
+    // Rozkład liczbowy: 199 → "199 = 100 + 90 + 9"
+    function arabicBreakdown(n) {
+      const parts = []; let rem = n;
+      for (let i = 0; i < VALS.length; i++) {
+        let count = 0;
+        while (rem >= VALS[i]) { count++; rem -= VALS[i]; }
+        if (count > 0) parts.push(VALS[i] * count);
+      }
+      return `${n} = ${parts.join(' + ')}`;
+    }
+
+    const SYMBOLS_HINT = `I=1, V=5, X=10, L=50, C=100, D=500, M=1000\nSubtraktywne: IV=4, IX=9, XL=40, XC=90, CD=400, CM=900`;
+
     const num   = isEasy ? rand(1, 39) : rand(1, 3999);
     const roman = toRoman(num);
-    const hint  = breakdown(num);
 
     if (rand(0, 1) === 0) {
       // Arabski → Rzymski (odpowiedź tekstowa)
+      // hint1: rozkład liczbowy (bez podpowiedzi symboli)
+      // hint2: rozkład z symbolami (prawie daje odpowiedź)
       return {
         q:    `Zapisz liczbę ${num} cyframi rzymskimi`,
-        a:    roman,   // string
-        hint,
-        hint2: `Przypomnij: I=1, V=5, X=10, L=50, C=100, D=500, M=1000\nSubtraktywne: IV=4, IX=9, XL=40, XC=90, CD=400, CM=900`,
+        a:    roman,
+        hint:  arabicBreakdown(num),
+        hint2: breakdown(num),
       };
     } else {
       // Rzymski → Arabski (odpowiedź liczbowa)
+      // hint1: rozkład z symbolami
+      // hint2: tabelka symboli (przypomnienie wartości)
       return {
         q:    `Ile wynosi ${roman}?`,
         a:    num,
-        hint,
-        hint2: `Przypomnij: I=1, V=5, X=10, L=50, C=100, D=500, M=1000\nSubtraktywne: IV=4, IX=9, XL=40, XC=90, CD=400, CM=900`,
+        hint:  breakdown(num),
+        hint2: SYMBOLS_HINT,
       };
     }
   },
