@@ -4,72 +4,24 @@ const { checkAndUnlock } = require('../achievements');
 
 const router = express.Router();
 
-// ── Tematy per poziom ─────────────────────────────────────────
+// ── Tematy per poziom (tylko zaimplementowane generatory) ─────
 const TOPICS = {
   k13: [
     'Dodawanie i odejmowanie', 'Mnożenie i dzielenie', 'Tabliczka mnożenia',
-    'Porządkowanie liczb', 'Zegar i czas', 'Figury geometryczne',
   ],
   k46: [
-    // Liczby i obliczenia
     'Świat liczb', 'Liczenie w głowie', 'Własności działań',
     'Dodawanie pisemne', 'Odejmowanie pisemne', 'Mnożenie pisemne', 'Dzielenie pisemne',
-    'O ile? Ile razy?', 'Kolejność działań', 'Potęgowanie', 'Podzielność liczb',
-    'Zaokrąglanie', 'Systemy liczbowe', 'Porównywanie liczb całkowitych',
-    'Działania na liczbach całkowitych',
-    // Ułamki i procenty
-    'Zapisywanie ułamka zwykłego', 'Skracanie i rozszerzanie ułamków',
-    'Zapisywanie liczby mieszanej', 'Zamiana liczb mieszanych na ułamki niewłaściwe',
-    'Dodawanie i odejmowanie ułamków', 'Mnożenie ułamków', 'Dzielenie ułamków',
-    'Zapisywanie i odczytywanie ułamków dziesiętnych', 'Dodawanie ułamków dziesiętnych',
-    'Odejmowanie ułamków dziesiętnych', 'Mnożenie ułamków dziesiętnych',
-    'Dzielenie ułamków dziesiętnych', 'Zamiana ułamków dziesiętnych na zwykłe i odwrotnie',
-    'Zamiana ułamków na procenty', 'Obliczanie ułamka danej liczby',
-    'Obliczanie liczby, gdy dany jest jej procent', 'Liczby wymierne',
-    // Algebra
-    'Tworzenie i odczytywanie wyrażeń algebraicznych',
-    'Obliczanie wartości wyrażeń algebraicznych',
-    'Porządkowanie wyrażeń algebraicznych', 'Równania',
-    // Geometria płaska
-    'Kąty i proste', 'Figury płaskie', 'Trójkąty', 'Czworokąty', 'Pola i obwody', 'Skala',
-    // Bryły
-    'Graniastosłupy i ich podstawowe własności', 'Ostrosłupy i ich podstawowe własności',
-    'Walec, stożek, kula',
-    // Zastosowania
-    'Czas i zegar', 'Jednostki miar', 'Szybkość, droga, czas', 'Średnia arytmetyczna',
+    'Dzielenie z resztą', 'Mnożenie liczb z zerami na końcu', 'O ile? Ile razy?', 'Kolejność działań', 'Potęgowanie',
+    'Podzielność liczb', 'Zaokrąglanie', 'Porównywanie liczb całkowitych',
   ],
   k78: [
-    // Liczby i działania
-    'Liczby wymierne i rzeczywiste', 'Wartość bezwzględna', 'Liczby pierwsze i złożone',
-    'Rozkład liczby na czynniki pierwsze', 'Wyznaczanie NWD', 'Wyznaczanie NWW',
-    'Rozwinięcia dziesiętne',
-    // Procenty
-    'Obliczanie procentu danej liczby', 'Obliczanie liczby na podstawie jej procentu',
-    'Jakim procentem jednej liczby jest druga?', 'Obliczenia procentowe w praktyce',
-    // Potęgi
-    'Potęga liczby wymiernej', 'Mnożenie i dzielenie potęg (ta sama podstawa)',
-    'Mnożenie i dzielenie potęg (ten sam wykładnik)', 'Potęga potęgi', 'Notacja wykładnicza',
-    // Pierwiastki
-    'Pierwiastek kwadratowy i sześcienny', 'Szacowanie pierwiastków',
-    'Działania na pierwiastkach',
-    // Wyrażenia algebraiczne
-    'Dodawanie i odejmowanie sum algebraicznych', 'Mnożenie sumy przez jednomian',
-    'Mnożenie sum algebraicznych', 'Porządkowanie wyrażeń algebraicznych',
-    // Równania
-    'Sprawdzanie, czy dana liczba spełnia równanie',
-    'Równania I stopnia z jedną niewiadomą', 'Przekształcanie wzorów',
-    // Proporcjonalność
-    'Proporcja i jej własności', 'Wielkości wprost proporcjonalne', 'Podział proporcjonalny',
-    // Geometria płaska
-    'Twierdzenie Pitagorasa', 'Twierdzenie odwrotne do tw. Pitagorasa',
-    'Trójkąt 30-60-90', 'Trójkąt 45-45-90', 'Wielokąty i ich pola',
-    'Okrąg i koło — długość i pole', 'Układ współrzędnych',
-    // Bryły
-    'Graniastosłupy — pole powierzchni i objętość', 'Ostrosłupy — pole powierzchni i objętość',
-    // Statystyka i prawdopodobieństwo
-    'Średnia arytmetyczna', 'Prawdopodobieństwo zdarzenia', 'Reguła mnożenia i dodawania',
+    'Wartość bezwzględna', 'Rozkład liczby na czynniki pierwsze',
+    'Wyznaczanie NWD', 'Wyznaczanie NWW', 'Szacowanie pierwiastków',
+    'Średnia arytmetyczna',
   ],
   sr: [
+    'Pojęcie logarytmu', 'Własności logarytmów',
     // Liczby i wyrażenia
     'Liczby wymierne i niewymierne', 'Wyrażenia algebraiczne', 'Wzory skróconego mnożenia',
     'Pierwiastki — upraszczanie i działania', 'Potęga o wykładniku wymiernym',

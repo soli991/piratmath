@@ -103,6 +103,11 @@ function playDecoNote(freq, wave = 'sine') {
   } catch(e) { /* audio not available */ }
 }
 
+function toggleRightPanel() {
+  document.querySelector('.sidebar-right')?.classList.toggle('open');
+  document.getElementById('right-backdrop')?.classList.toggle('show');
+}
+
 function decoClick(el, freq, wave) {
   playDecoNote(freq, wave || 'sine');
   // Animacja bounce – usuń i dodaj z powrotem (wymusz reflow)
@@ -884,6 +889,110 @@ const TOPIC_GENERATORS = {
     };
   },
 
+  // ── DZIELENIE Z RESZTĄ ───────────────────────────────────────
+  'Dzielenie z resztą': (d) => {
+    const isEasy = d === 'easy';
+    const bMax  = isEasy ? 9  : d === 'medium' ? 20  : 50;
+    const qMax  = isEasy ? 9  : d === 'medium' ? 20  : 40;
+    const b     = rand(2, bMax);
+    const quot  = rand(1, qMax);
+    // Reszta prawie zawsze > 0 (czyste dzielenie mniej pouczające)
+    const rem   = Math.random() < 0.85 ? rand(1, b - 1) : 0;
+    const a     = b * quot + rem;
+
+    // Na łatwym — zawsze pełny format (obie luki); na wyższych — czasem proste pytanie
+    if (!isEasy && Math.random() < 0.4) {
+      const v = rand(0, 2);
+      if (v === 0) {
+        return {
+          q:    `Jaka jest reszta z dzielenia ${a} przez ${b}?`,
+          a:    rem,
+          hint: `${a} = ${quot} × ${b} + ?`,
+        };
+      } else if (v === 1) {
+        return {
+          q:    `Ile razy ${b} mieści się w ${a}?`,
+          a:    quot,
+          hint: `${quot} × ${b} = ${b * quot}, a ${(quot + 1) * b} > ${a}`,
+        };
+      } else {
+        return {
+          q:    `Jaka liczba podzielona przez ${b} daje iloraz ${quot} i resztę ${rem}?`,
+          a,
+          hint: `? = ${quot} × ${b} + ${rem}`,
+        };
+      }
+    }
+
+    return {
+      type: 'div_rem',
+      a, b, quot, rem,
+      hint: `${a} = ? × ${b} + ?\nSprawdź: ${quot} × ${b} = ${b * quot}`,
+    };
+  },
+
+  // ── MNOŻENIE LICZB Z ZERAMI NA KOŃCU ─────────────────────────
+  'Mnożenie liczb z zerami na końcu': (d) => {
+    const isEasy = d === 'easy';
+
+    if (isEasy) {
+      const op  = rand(0, 1); // 0 = mnożenie, 1 = dzielenie
+      const pow = [10, 100, 1000][rand(0, 2)];
+      const z   = Math.log10(pow);
+      const zStr = z === 1 ? 'jedno zero' : z === 2 ? 'dwa zera' : 'trzy zera';
+
+      if (op === 0) {
+        const a = rand(1, Math.floor(9999 / pow));
+        return {
+          q:    `${a} × ${pow} = ?`,
+          a:    a * pow,
+          hint: `Dopisz ${zStr} na końcu liczby ${a}`,
+        };
+      } else {
+        const result = rand(1, 999);
+        const a = result * pow;
+        return {
+          q:     `${a} ÷ ${pow} = ?`,
+          a:     result,
+          hint: `Przekreśl ${zStr} na końcu: ${a} → ${result}`,
+        };
+      }
+    } else {
+      const tensM    = [20, 30, 40, 50, 60, 70, 80, 90];
+      const hundredsM = [200, 300, 400, 500, 600, 700, 800, 900];
+      const allM     = [...tensM, ...hundredsM];
+      const mult     = allM[rand(0, allM.length - 1)];
+      const isTens   = mult < 100;
+      const digit    = mult / (isTens ? 10 : 100);
+      const maxA     = isTens ? 50 : 20;
+      const a        = rand(2, maxA);
+      const result   = a * mult;
+      const powStr   = isTens ? 'jedno zero' : 'dwa zera';
+
+      const mode = rand(0, 2);
+      if (mode === 0) {
+        return {
+          q:    `${a} × ${mult} = ?`,
+          a:    result,
+          hint: `${a} × ${digit} = ${a * digit}, potem dopisz ${powStr}: ${result}`,
+        };
+      } else if (mode === 1) {
+        return {
+          q:    `? × ${mult} = ${result}`,
+          a,
+          hint: `Podziel ${result} przez ${mult}: ${result} ÷ ${mult} = ?`,
+        };
+      } else {
+        return {
+          q:    `${result} ÷ ${mult} = ?`,
+          a,
+          hint:  `Przekreśl ${powStr} w obu liczbach: ${result} → ${result / (isTens ? 10 : 100)}, ${mult} → ${digit}`,
+          hint2: `Potem: ${result / (isTens ? 10 : 100)} ÷ ${digit} = ?`,
+        };
+      }
+    }
+  },
+
   // ── MNOŻENIE PISEMNE ─────────────────────────────────────────
   'Mnożenie pisemne': (d) => {
     if (d === 'easy') {
@@ -974,7 +1083,7 @@ const TOPIC_GENERATORS = {
       ? ['sq_fwd', 'cu_fwd']
       : ['sq_fwd', 'sq_fwd', 'cu_fwd', 'cu_fwd',
          'pow10_fwd', 'pow10_fwd', 'pow2_fwd', 'pow2_fwd',
-         'sq_rev', 'sq_rev', 'cu_rev', 'cu_rev',
+         'sq_rev', 'sq_rev', 'sq_rev', 'cu_rev', 'cu_rev', 'cu_rev',
          'pow2_rev_exp', 'pow2_rev_exp', 'pow10_rev_exp', 'pow10_rev_exp',
          'zero_exp', 'zero_base'];
     // Blokada powtórek — losuj ponownie jeśli ten sam typ co poprzedni
@@ -997,10 +1106,12 @@ const TOPIC_GENERATORS = {
     } else if (type === 'sq_rev') {
       // □² = wynik  →  podaj podstawę
       const base = sqBases[rand(0, sqBases.length - 1)];
-      return { type: 'power', sub: 'rev_base', base, exp: 2, result: base ** 2, answer: base };
+      return { type: 'power', sub: 'rev_base', base, exp: 2, result: base ** 2, answer: base,
+        hint: `Szukasz liczby, której kwadrat to ${base**2}.\nKtóra liczba × ona sama = ${base**2}?` };
     } else if (type === 'cu_rev') {
       const base = rand(2, 10);
-      return { type: 'power', sub: 'rev_base', base, exp: 3, result: base ** 3, answer: base };
+      return { type: 'power', sub: 'rev_base', base, exp: 3, result: base ** 3, answer: base,
+        hint: `Szukasz liczby, której sześcian to ${base**3}.\nKtóra liczba × ona sama × ona sama = ${base**3}?` };
     } else if (type === 'pow2_rev_exp') {
       // 2^□ = wynik  →  podaj wykładnik
       const exp = rand(1, 10);
@@ -1165,20 +1276,17 @@ const TOPIC_GENERATORS = {
 
   // ── O ILE? ILE RAZY? ─────────────────────────────────────────
   'O ile? Ile razy?': (d) => {
-    // Losowo: porównanie addytywne (o ile) lub multiplikatywne (ile razy)
-    const additive = rand(0, 1);
+    // mode 0-1: porównanie (luka), 2: znajdź o X większą/mniejszą, 3: znajdź K razy większą/mniejszą
+    const mode = rand(0, 3);
 
-    if (additive) {
+    if (mode === 0) {
       // "Liczba A jest o D większa/mniejsza od liczby B"
-      // A = B + D (większa) lub A = B - D (mniejsza, tj. B > A)
       const bMax = d === 'easy' ? 100 : d === 'medium' ? 1000 : 9999;
       const dMax = d === 'easy' ? 50  : d === 'medium' ? 500  : 9999;
       const B = rand(10, bMax);
       const D = rand(1, dMax);
-      const A = B + D; // A jest większe od B
-      const bigger = rand(0, 1); // czy prezentujemy "większa" czy "mniejsza"
-      // "większa": Liczba A jest o D większa od liczby B
-      // "mniejsza": Liczba B jest o D mniejsza od liczby A
+      const A = B + D;
+      const bigger = rand(0, 1);
       const [v0, v1, v2, rel] = bigger
         ? [A, D, B, 'większa']
         : [B, D, A, 'mniejsza'];
@@ -1186,17 +1294,14 @@ const TOPIC_GENERATORS = {
       const given = [v0, v1, v2];
       const blankIdx = rand(0, 2);
       return { type: 'comparison', parts, given, blankIdx, answer: given[blankIdx] };
-    } else {
+    } else if (mode === 1) {
       // "Liczba A jest K razy większa/mniejsza od liczby B"
-      // A = B * K
       const bMax = d === 'easy' ? 12 : d === 'medium' ? 50  : 200;
       const kMax = d === 'easy' ? 9  : d === 'medium' ? 20  : 50;
       const B = rand(2, bMax);
       const K = rand(2, kMax);
       const A = B * K;
       const bigger = rand(0, 1);
-      // "większa": Liczba A jest K razy większa od liczby B
-      // "mniejsza": Liczba B jest K razy mniejsza od liczby A
       const [v0, v1, v2, rel] = bigger
         ? [A, K, B, 'większa']
         : [B, K, A, 'mniejsza'];
@@ -1204,6 +1309,37 @@ const TOPIC_GENERATORS = {
       const given = [v0, v1, v2];
       const blankIdx = rand(0, 2);
       return { type: 'comparison', parts, given, blankIdx, answer: given[blankIdx] };
+    } else if (mode === 2) {
+      // "Znajdź liczbę o D większą/mniejszą od B"
+      const bMax = d === 'easy' ? 80  : d === 'medium' ? 500  : 5000;
+      const dMax = d === 'easy' ? 40  : d === 'medium' ? 200  : 2000;
+      const bigger = rand(0, 1);
+      if (bigger) {
+        const B = rand(5, bMax);
+        const D = rand(1, dMax);
+        return { q: `Znajdź liczbę o ${D} większą od ${B}.`,
+                 a: B + D, hint: `${B} + ${D} = ?` };
+      } else {
+        const D = rand(1, dMax);
+        const B = rand(D + 1, dMax + 10); // B > D, żeby wynik był dodatni
+        return { q: `Znajdź liczbę o ${D} mniejszą od ${B}.`,
+                 a: B - D, hint: `${B} − ${D} = ?` };
+      }
+    } else {
+      // "Znajdź liczbę K razy większą/mniejszą od B"
+      const bMax = d === 'easy' ? 12 : d === 'medium' ? 50  : 200;
+      const kMax = d === 'easy' ? 9  : d === 'medium' ? 12  : 30;
+      const bigger = rand(0, 1);
+      const B = rand(2, bMax);
+      const K = rand(2, kMax);
+      if (bigger) {
+        return { q: `Znajdź liczbę ${K} razy większą od ${B}.`,
+                 a: B * K, hint: `${B} × ${K} = ?` };
+      } else {
+        const A = B * K; // A = baza, K razy mniejsza → B
+        return { q: `Znajdź liczbę ${K} razy mniejszą od ${A}.`,
+                 a: B, hint: `${A} ÷ ${K} = ?` };
+      }
     }
   },
 
@@ -1492,6 +1628,37 @@ const TOPIC_GENERATORS = {
 
   'Liczenie w głowie': (d) => {
     const easy = d === 'easy';
+
+    // Równania z niewiadomą □ — tylko na medium/challenge, 25% szans
+    if (!easy && Math.random() < 0.25) {
+      const etype = rand(0, 3);
+      if (etype === 0) {
+        const a = rand(10, 150), b = rand(5, 80);
+        const c = a + b;
+        return Math.random() < 0.5
+          ? { q: `□ + ${b} = ${c}`, a, hint: `Odejmij: ${c} − ${b} = ?` }
+          : { q: `${a} + □ = ${c}`, a: b, hint: `Odejmij: ${c} − ${a} = ?` };
+      } else if (etype === 1) {
+        const b = rand(5, 60), c = rand(5, 60);
+        const a = b + c;
+        return Math.random() < 0.5
+          ? { q: `□ − ${b} = ${c}`, a, hint: `Dodaj: ${c} + ${b} = ?` }
+          : { q: `${a} − □ = ${c}`, a: b, hint: `Odejmij: ${a} − ${c} = ?` };
+      } else if (etype === 2) {
+        const a = rand(2, 12), b = rand(2, 12);
+        const c = a * b;
+        return Math.random() < 0.5
+          ? { q: `□ × ${b} = ${c}`, a, hint: `Podziel: ${c} ÷ ${b} = ?` }
+          : { q: `${a} × □ = ${c}`, a: b, hint: `Podziel: ${c} ÷ ${a} = ?` };
+      } else {
+        const b = rand(2, 10), c = rand(2, 12);
+        const a = b * c;
+        return Math.random() < 0.5
+          ? { q: `□ ÷ ${b} = ${c}`, a, hint: `Pomnóż: ${c} × ${b} = ?` }
+          : { q: `${a} ÷ □ = ${c}`, a: b, hint: `Podziel: ${a} ÷ ${c} = ?` };
+      }
+    }
+
     // Losuje bliską liczbę okrągłą z 40% szansą
     const pickB = (max) => {
       if (Math.random() < 0.50) {
@@ -1773,6 +1940,309 @@ const TOPIC_GENERATORS = {
     }
     // fallback
     return { q: `24 + 8 = ?`, a: 32 };
+  },
+
+  'Porównywanie liczb całkowitych': (d) => {
+    const easy = d === 'easy';
+    if (easy) {
+      const type = rand(0, 2);
+      let a, b;
+      if (type === 0) { a = rand(1, 100); b = rand(1, 100); }
+      else if (type === 1) { a = rand(-50, -1); b = rand(1, 50); if (Math.random() < 0.5) [a, b] = [b, a]; }
+      else { a = rand(-50, -1); b = rand(-50, -1); }
+      if (a === b) b = b >= 0 ? b + 1 : b - 1;
+      const answer = a < b ? '<' : a > b ? '>' : '=';
+      let hint = null;
+      if ((a < 0) !== (b < 0)) hint = 'Liczba ujemna jest zawsze mniejsza od dodatniej';
+      else if (a < 0 && b < 0) hint = 'Im większa wartość bezwzględna, tym mniejsza liczba ujemna (np. −8 < −3)';
+      return { type: 'int_compare', a, b, answer, hint };
+    } else {
+      const count = rand(4, 5);
+      const nums = [];
+      const used = new Set();
+      while (nums.length < count) {
+        const n = rand(-15, 15);
+        if (!used.has(n)) { used.add(n); nums.push(n); }
+      }
+      const direction = Math.random() < 0.5 ? 'asc' : 'desc';
+      const sorted = [...nums].sort((x, y) => direction === 'asc' ? x - y : y - x);
+      return {
+        type: 'int_order', nums, direction, sorted,
+        answer: sorted.join(', '),
+        hint: 'Liczby ujemne są mniejsze od zera — im dalej od zera w lewo, tym mniejsza'
+      };
+    }
+  },
+
+  // ── POJĘCIE LOGARYTMU ────────────────────────────────────────
+  'Pojęcie logarytmu': (d) => {
+    const SUB = s => String(s).replace(/./g, c => '₀₁₂₃₄₅₆₇₈₉'['0123456789'.indexOf(c)] ?? c);
+    const isEasy = d === 'easy';
+
+    const bases  = isEasy ? [2, 3, 10] : [2, 3, 4, 5, 10];
+    const maxExp = isEasy ? 4 : 6;
+    const b      = bases[rand(0, bases.length - 1)];
+    const logStr = b => `log${SUB(b)}`;
+
+    if (isEasy || Math.random() < 0.5) {
+      // Standardowe: log_b(b^n) = n
+      const n   = rand(0, maxExp);
+      const arg = n === 0 ? 1 : b ** n;
+      return {
+        q:     `${logStr(b)}(${arg}) = ?`,
+        a:     n,
+        hint:  n === 0 ? `Logarytm jedynki wynosi zawsze 0` : `${b}^? = ${arg}`,
+        hint2: n === 0 ? `${b}^0 = 1` : `${b}^${n} = ${arg}`,
+      };
+    }
+
+    // Średni — warianty odwrócone
+    const variant = rand(0, 1);
+    if (variant === 0) {
+      // log_b(?) = n  →  znajdź argument
+      const n   = rand(1, maxExp);
+      const arg = b ** n;
+      return {
+        q:    `${logStr(b)}(?) = ${n}`,
+        a:    arg,
+        hint: `${b}^${n} = ?`,
+      };
+    } else {
+      // log_?(arg) = n  →  znajdź podstawę
+      const n    = rand(2, 4);
+      const pool = [2, 3, 4, 5, 6, 7, 8, 9, 10].filter(x => x ** n <= 100000);
+      const base = pool[rand(0, pool.length - 1)];
+      const arg  = base ** n;
+      return {
+        q:    `log${SUB('?')}(${arg}) = ${n}`,
+        a:    base,
+        hint: `?^${n} = ${arg}`,
+      };
+    }
+  },
+
+  // ── WŁASNOŚCI LOGARYTMÓW ─────────────────────────────────────
+  'Własności logarytmów': (d) => {
+    const SUB    = s => String(s).replace(/./g, c => '₀₁₂₃₄₅₆₇₈₉'['0123456789'.indexOf(c)] ?? c);
+    const logStr = b => `log${SUB(b)}`;
+    const isEasy = d === 'easy';
+
+    const bases = isEasy ? [2, 3, 10] : [2, 3, 5, 10];
+    const b     = bases[rand(0, bases.length - 1)];
+
+    // Pary gdzie żaden składnik NIE jest potęgą podstawy → wzór obowiązkowy
+    const trickyProduct = [
+      { base: 10, a: 2,   b: 5,   ans: 1 },
+      { base: 10, a: 4,   b: 25,  ans: 2 },
+      { base: 10, a: 8,   b: 125, ans: 3 },
+      { base: 10, a: 20,  b: 5,   ans: 2 },
+      { base: 10, a: 50,  b: 2,   ans: 2 },
+      { base: 10, a: 40,  b: 25,  ans: 3 },
+      { base: 6,  a: 2,   b: 3,   ans: 1 },
+      { base: 6,  a: 4,   b: 9,   ans: 2 },
+      { base: 6,  a: 12,  b: 3,   ans: 2 },
+      { base: 12, a: 3,   b: 4,   ans: 1 },
+      { base: 15, a: 3,   b: 5,   ans: 1 },
+    ];
+    const trickyQuotient = [
+      { base: 10, a: 20,  b: 2,   ans: 1 },
+      { base: 10, a: 50,  b: 5,   ans: 1 },
+      { base: 10, a: 200, b: 2,   ans: 2 },
+      { base: 10, a: 500, b: 5,   ans: 2 },
+      { base: 10, a: 250, b: 25,  ans: 1 },
+      { base: 6,  a: 18,  b: 3,   ans: 1 },
+      { base: 6,  a: 12,  b: 2,   ans: 1 },
+      { base: 6,  a: 72,  b: 2,   ans: 2 },
+      { base: 12, a: 36,  b: 3,   ans: 1 },
+      { base: 12, a: 24,  b: 2,   ans: 1 },
+    ];
+
+    // Zadania ze zmianą podstawy
+    const cobList = [
+      { base: 4,  arg: 16,  ans: 2, c: 2 },
+      { base: 4,  arg: 64,  ans: 3, c: 2 },
+      { base: 4,  arg: 256, ans: 4, c: 2 },
+      { base: 8,  arg: 64,  ans: 2, c: 2 },
+      { base: 8,  arg: 512, ans: 3, c: 2 },
+      { base: 9,  arg: 81,  ans: 2, c: 3 },
+      { base: 9,  arg: 729, ans: 3, c: 3 },
+      { base: 27, arg: 729, ans: 2, c: 3 },
+      { base: 25, arg: 625, ans: 2, c: 5 },
+    ];
+
+    // Łatwy: 0-3 (wzory widoczne w treści), Średni/Wyzwanie: 0-7
+    const mode = isEasy ? rand(0, 3) : rand(0, 7);
+
+    if (mode === 0) {
+      // log_b(x·y) = log_b(x) + log_b(?)  →  znajdź brakujący argument
+      const n1 = rand(1, 4), n2 = rand(1, 4);
+      const x  = b ** n1, y = b ** n2;
+      return {
+        q:     `${logStr(b)}(${x * y}) = ${logStr(b)}(${x}) + ${logStr(b)}(?) = ?`,
+        a:     y,
+        hint:  `log(a·b) = log(a) + log(b), więc ? = ${x * y} ÷ ${x}`,
+      };
+    } else if (mode === 1) {
+      // log_b(x/y) = log_b(x) − log_b(?)  →  znajdź brakujący argument
+      const n1 = rand(2, 5), n2 = rand(1, n1 - 1);
+      const x  = b ** n1, y = b ** n2;
+      return {
+        q:     `${logStr(b)}(${x / y}) = ${logStr(b)}(${x}) − ${logStr(b)}(?) = ?`,
+        a:     y,
+        hint:  `log(a÷b) = log(a) − log(b), więc ? = ${x} ÷ ${x / y}`,
+      };
+    } else if (mode === 2) {
+      // log_b(?) = log_b(x) + log_b(y)  →  znajdź argument iloczynu
+      const n1 = rand(1, 3), n2 = rand(1, 3);
+      const x  = b ** n1, y = b ** n2;
+      return {
+        q:     `${logStr(b)}(?) = ${logStr(b)}(${x}) + ${logStr(b)}(${y})`,
+        a:     x * y,
+        hint:  `log(a) + log(b) = log(a·b) = log(${x} · ${y})`,
+      };
+    } else if (mode === 3) {
+      // log_b(?) = log_b(x) − log_b(y)  →  znajdź argument ilorazu
+      const n1 = rand(2, 5), n2 = rand(1, n1 - 1);
+      const x  = b ** n1, y = b ** n2;
+      return {
+        q:     `${logStr(b)}(?) = ${logStr(b)}(${x}) − ${logStr(b)}(${y})`,
+        a:     x / y,
+        hint:  `log(a) − log(b) = log(a÷b) = log(${x} ÷ ${y})`,
+      };
+    } else if (mode === 4) {
+      // log_b(x) + log_b(y), x i y są potęgami podstawy
+      const n1 = rand(1, 4), n2 = rand(1, 4);
+      const x  = b ** n1, y = b ** n2;
+      return {
+        q:     `${logStr(b)}(${x}) + ${logStr(b)}(${y}) = ?`,
+        a:     n1 + n2,
+        hint:  `log(a) + log(b) = log(a·b) = ${logStr(b)}(${x * y})`,
+        hint2: `${b}^? = ${x * y}`,
+      };
+    } else if (mode === 5) {
+      // log_b(x) - log_b(y), x i y są potęgami podstawy
+      const n1 = rand(2, 5), n2 = rand(1, n1 - 1);
+      const x  = b ** n1, y = b ** n2;
+      return {
+        q:     `${logStr(b)}(${x}) − ${logStr(b)}(${y}) = ?`,
+        a:     n1 - n2,
+        hint:  `log(a) − log(b) = log(a÷b) = ${logStr(b)}(${x / y})`,
+        hint2: `${b}^? = ${x / y}`,
+      };
+    } else if (mode === 6) {
+      // log_b(x^k) = k · log_b(x)
+      const n = rand(2, 4), k = rand(2, 4);
+      const x = b ** n;
+      return {
+        q:     `${logStr(b)}(${x}^${k}) = ?`,
+        a:     n * k,
+        hint:  `log(a^k) = k · log(a) = ${k} · ${logStr(b)}(${x})`,
+        hint2: `${k} · ${n} = ?`,
+      };
+    } else if (mode === 7) {
+      // Zmiana podstawy
+      const p       = cobList[rand(0, cobList.length - 1)];
+      const logCb   = Math.round(Math.log(p.base) / Math.log(p.c));
+      const logCarg = Math.round(Math.log(p.arg)  / Math.log(p.c));
+      return {
+        q:     `${logStr(p.base)}(${p.arg}) = ?`,
+        a:     p.ans,
+        hint:  `Zamień podstawę na ${p.c}: ${p.arg} = ${p.c}^${logCarg}, ${p.base} = ${p.c}^${logCb}`,
+        hint2: `${logStr(p.base)}(${p.arg}) = ${logCarg} ÷ ${logCb} = ?`,
+      };
+    } else if (mode === 8) {
+      // Trudny iloczyn — składniki NIE są potęgami podstawy
+      const p = trickyProduct[rand(0, trickyProduct.length - 1)];
+      return {
+        q:     `${logStr(p.base)}(${p.a}) + ${logStr(p.base)}(${p.b}) = ?`,
+        a:     p.ans,
+        hint:  `log(a) + log(b) = log(a·b) = ${logStr(p.base)}(${p.a * p.b})`,
+        hint2: `${p.base}^? = ${p.a * p.b}`,
+      };
+    } else {
+      // Trudny iloraz — składniki NIE są potęgami podstawy
+      const p = trickyQuotient[rand(0, trickyQuotient.length - 1)];
+      return {
+        q:     `${logStr(p.base)}(${p.a}) − ${logStr(p.base)}(${p.b}) = ?`,
+        a:     p.ans,
+        hint:  `log(a) − log(b) = log(a÷b) = ${logStr(p.base)}(${p.a / p.b})`,
+        hint2: `${p.base}^? = ${p.a / p.b}`,
+      };
+    }
+  },
+
+  // ── ŚREDNIA ARYTMETYCZNA ──────────────────────────────────────
+  'Średnia arytmetyczna': (d) => {
+    const isEasy = d === 'easy';
+
+    if (isEasy) {
+      // Oblicz średnią z 2–5 liczb (wynik całkowity)
+      const count = rand(2, 5);
+      const maxVal = 20;
+      // Generuj count-1 liczb, dobierz ostatnią tak by średnia była całkowita
+      let nums, mean;
+      for (let attempt = 0; attempt < 100; attempt++) {
+        const partial = Array.from({ length: count - 1 }, () => rand(1, maxVal));
+        const targetMean = rand(3, 18);
+        const last = targetMean * count - partial.reduce((s, n) => s + n, 0);
+        if (last >= 1 && last <= maxVal) {
+          nums = [...partial, last];
+          // Losowo przetasuj kolejność
+          for (let i = nums.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [nums[i], nums[j]] = [nums[j], nums[i]];
+          }
+          mean = targetMean;
+          break;
+        }
+      }
+      if (!nums) { nums = [4, 8]; mean = 6; } // fallback
+      const sum = nums.reduce((s, n) => s + n, 0);
+      return {
+        q:     `Ile wynosi średnia arytmetyczna liczb: ${nums.join(', ')}?`,
+        a:     mean,
+        hint:  `Dodaj te liczby: ${nums.join(' + ')} = ${sum}`,
+        hint2: `Podziel sumę przez liczbę elementów: ${sum} ÷ ${count} = ?`,
+      };
+    } else {
+      const mode = rand(0, 1);
+
+      if (mode === 0) {
+        // Znając średnią i liczbę elementów — znajdź sumę
+        const count = rand(3, 8);
+        const mean  = rand(5, 50);
+        const sum   = mean * count;
+        return {
+          q:    `Średnia arytmetyczna ${count} liczb wynosi ${mean}. Ile wynosi ich suma?`,
+          a:    sum,
+          hint: `suma = średnia × liczba elementów = ${mean} × ${count} = ?`,
+        };
+      } else {
+        // Znając kilka liczb i średnią — znajdź brakującą
+        const count = rand(3, 5);
+        const mean  = rand(5, 25);
+        const total = mean * count;
+        let known, missing;
+        for (let attempt = 0; attempt < 100; attempt++) {
+          known = Array.from({ length: count - 1 }, () => rand(1, 30));
+          missing = total - known.reduce((s, n) => s + n, 0);
+          if (missing >= 1 && missing <= 40) break;
+        }
+        if (!missing || missing < 1) { known = [8, 12, 6]; mean = 9; missing = 10; }
+        const knownSum = known.reduce((s, n) => s + n, 0);
+        // Wstaw '?' w losowe miejsce
+        const blankPos = rand(0, count - 1);
+        const display  = [...known];
+        display.splice(blankPos, 0, '?');
+        return {
+          q:     `Średnia arytmetyczna liczb ${display.join(', ')} wynosi ${mean}. Jaka jest brakująca liczba?`,
+          a:     missing,
+          hint:  `Suma wszystkich ${count} liczb = ${mean} × ${count} = ${total}`,
+          hint2: `Suma znanych liczb to ${knownSum}`,
+          hint3: `${total} − ${knownSum} = ${missing}`,
+        };
+      }
+    }
   },
 };
 
@@ -2352,6 +2822,18 @@ async function checkPower() {
 
   const isCorrect = userNum === q.answer;
 
+  // helper: show hint inside .pow-wrap (only once, on 2nd mistake)
+  const showPowHint = () => {
+    if (!q.hint) return;
+    const wrap = document.querySelector('.pow-wrap');
+    if (wrap && !wrap.querySelector('.pow-hint')) {
+      const hintEl = document.createElement('div');
+      hintEl.className = 'pow-hint';
+      hintEl.textContent = q.hint;
+      wrap.appendChild(hintEl);
+    }
+  };
+
   if (isCorrect) {
     state.answerLocked = true;
     playSound('correct');
@@ -2398,6 +2880,7 @@ async function checkPower() {
       const left = 3 - state.mistakes;
       showToast(`✗ Błąd! (${left} ${left === 1 ? 'szansa' : 'szanse'})`, 'wrong');
       setTimeout(() => { input.classList.remove('wrong'); input.select(); }, 900);
+      if (state.mistakes === 2) showPowHint();
     }
   }
 }
@@ -2854,6 +3337,111 @@ function buildPrimeLadder(n, factors) {
   return `<table class="prime-ladder">${rows}</table>`;
 }
 
+// ── DZIELENIE Z RESZTĄ – UI ───────────────────────────────────
+function buildDivRemHtml(q) {
+  const tabNext = `onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('drRem')?.focus();}"`;
+  const tabCheck = `onkeydown="if(event.key==='Enter'){event.preventDefault();checkDivRem();}"`;
+  return `<div class="dr-wrap">
+    <div class="dr-expr">
+      <span class="dr-num">${q.a}</span>
+      <span class="dr-op">÷</span>
+      <span class="dr-num">${q.b}</span>
+      <span class="dr-eq">=</span>
+      <input class="dr-input" id="drQuot" type="text" inputmode="numeric"
+        placeholder="?" autocomplete="off" ${tabNext}>
+      <span class="dr-rest">reszty</span>
+      <input class="dr-input" id="drRem" type="text" inputmode="numeric"
+        placeholder="?" autocomplete="off" ${tabCheck}>
+    </div>
+  </div>`;
+}
+
+async function checkDivRem() {
+  const q = state.currentQuestion;
+  const quotEl = document.getElementById('drQuot');
+  const remEl  = document.getElementById('drRem');
+  if (!quotEl || !remEl) return;
+
+  const quotVal = parseInt(quotEl.value.trim(), 10);
+  const remVal  = parseInt(remEl.value.trim(), 10);
+
+  if (isNaN(quotVal) || isNaN(remVal)) {
+    showToast('Wypełnij oba pola!', 'wrong'); quotEl.focus(); return;
+  }
+
+  const quotOk = quotVal === q.quot;
+  const remOk  = remVal  === q.rem;
+  const isCorrect = quotOk && remOk;
+
+  if (isCorrect) {
+    state.answerLocked = true;
+    playSound('correct');
+    quotEl.classList.add('correct');
+    remEl.classList.add('correct');
+    if (state.challengeActive) {
+      state.challengeCorrect++;
+      state.answerStreak++;
+      document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      checkStreakBonus();
+      showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
+      setTimeout(() => loadQuestion(), 700);
+    } else {
+      let pts = 0;
+      const wasFirst = state.isFirstAttempt && !state.solutionShown;
+      if (wasFirst) {
+        state.answerStreak++;
+        if (state.currentUser) {
+          pts = await recordCorrect(state.currentTopic);
+          showPointsPop(pts);
+          updateStatsRow();
+          checkStreakBonus();
+        }
+      }
+      reportComeback();
+      const suf = wasFirst ? streakSuffix(state.answerStreak) : '';
+      showToast(pts > 0 ? `✓ Brawo! +${pts} pkt${suf}` : `✓ Brawo!${suf}`, 'correct');
+      setTimeout(() => loadQuestion(), 700);
+    }
+  } else {
+    state.answerStreak = 0;
+    state.mistakes++;
+    state.isFirstAttempt = false;
+    reportMistake();
+    playSound('wrong');
+    if (state.mistakes <= 3) document.getElementById(`dot${state.mistakes - 1}`).classList.add('used');
+
+    if (state.mistakes >= 3 && !state.solutionShown) {
+      state.solutionShown = true;
+      state.answerLocked = true;
+      quotEl.value = String(q.quot);
+      remEl.value  = String(q.rem);
+      quotEl.classList.add('correct');
+      remEl.classList.add('correct');
+      showToast(`✗ Wynik: ${q.quot} reszty ${q.rem}`, 'wrong');
+      // brak auto-next — uczeń sam klika "Inny przykład"
+    } else if (!state.solutionShown) {
+      // Podświetl tylko błędne pole(a)
+      if (!quotOk) { quotEl.classList.add('wrong'); setTimeout(() => { quotEl.classList.remove('wrong'); quotEl.select(); }, 900); }
+      if (!remOk)  { remEl.classList.add('wrong');  setTimeout(() => { remEl.classList.remove('wrong');  remEl.select(); }, 900); }
+      const left = 3 - state.mistakes;
+      const msg = !quotOk && !remOk ? `✗ Oba pola błędne! (${left} ${left===1?'szansa':'szanse'})`
+                : !quotOk           ? `✗ Błąd w wyniku! (${left} ${left===1?'szansa':'szanse'})`
+                :                     `✗ Błąd w reszcie! (${left} ${left===1?'szansa':'szanse'})`;
+      showToast(msg, 'wrong');
+      // Pokaż podpowiedź po 2. błędzie
+      if (state.mistakes === 2 && q.hint) {
+        const wrap = document.querySelector('.dr-wrap');
+        if (wrap && !wrap.querySelector('.dr-hint')) {
+          const hintEl = document.createElement('div');
+          hintEl.className = 'dr-hint';
+          hintEl.textContent = q.hint;
+          wrap.appendChild(hintEl);
+        }
+      }
+    }
+  }
+}
+
 function buildPrimeFactorsHtml(q) {
   const solved = state.solutionShown;
   const inputPart = solved
@@ -3185,7 +3773,7 @@ async function checkPrimeFactors() {
     state.answerLocked = true;
     document.getElementById('writtenAddArea').innerHTML = buildPrimeFactorsHtml(q);
     showToast(`✗ Rozwiązanie: ${q.factors.join(' × ')}`, 'wrong');
-    setTimeout(() => loadQuestion(), 3500);
+    // brak auto-next — uczeń sam klika "Inny przykład"
   } else {
     showToast(`✗ Spróbuj jeszcze raz! (${3 - state.mistakes} szanse)`, 'wrong');
   }
@@ -3567,6 +4155,204 @@ async function checkAbsValue() {
   }
 }
 
+function buildIntCompareHtml(q) {
+  const fmt = n => n < 0 ? `−${Math.abs(n)}` : String(n);
+  return `
+    <div class="ic-wrap">
+      <div class="ic-row">
+        <span class="ic-num">${fmt(q.a)}</span>
+        <div class="ic-btns-v">
+          <button class="ic-btn" data-sym="<" onclick="submitIntCompare('<')">&lt;</button>
+          <button class="ic-btn" data-sym=">" onclick="submitIntCompare('>')">&gt;</button>
+          <button class="ic-btn" data-sym="=" onclick="submitIntCompare('=')">=</button>
+        </div>
+        <span class="ic-num">${fmt(q.b)}</span>
+      </div>
+      <div id="icHint" class="ic-hint" style="display:none"></div>
+    </div>`;
+}
+
+function buildIntOrderHtml(q) {
+  const fmt = n => n < 0 ? `−${Math.abs(n)}` : String(n);
+  const tiles = q.nums.map(n => `<div class="io-tile" draggable="true" data-val="${n}">${fmt(n)}</div>`).join('');
+  const dir = q.direction === 'asc' ? 'rosnącej ↑' : 'malejącej ↓';
+  return `
+    <div class="io-wrap">
+      <div class="io-prompt">Uszereguj w kolejności <strong>${dir}</strong>:</div>
+      <div id="ioSortArea" class="io-sort-area">${tiles}</div>
+      <div class="io-drag-note">Przeciągnij kafelki w odpowiedniej kolejności</div>
+      <div id="ioHint" class="ic-hint" style="display:none"></div>
+    </div>`;
+}
+
+function initIntOrderDrag() {
+  const area = document.getElementById('ioSortArea');
+  if (!area) return;
+  let dragging = null;
+
+  area.addEventListener('dragstart', e => {
+    dragging = e.target.closest('.io-tile');
+    if (dragging) setTimeout(() => dragging.classList.add('io-dragging'), 0);
+  });
+  area.addEventListener('dragend', () => {
+    if (dragging) dragging.classList.remove('io-dragging');
+    dragging = null;
+    area.querySelectorAll('.io-tile').forEach(t => t.classList.remove('io-drag-over'));
+  });
+  area.addEventListener('dragover', e => {
+    e.preventDefault();
+    const target = e.target.closest('.io-tile');
+    if (target && target !== dragging) {
+      area.querySelectorAll('.io-tile').forEach(t => t.classList.remove('io-drag-over'));
+      target.classList.add('io-drag-over');
+    }
+  });
+  area.addEventListener('drop', e => {
+    e.preventDefault();
+    const target = e.target.closest('.io-tile');
+    if (target && target !== dragging && dragging) {
+      const rect = target.getBoundingClientRect();
+      area.insertBefore(dragging, e.clientX < rect.left + rect.width / 2 ? target : target.nextSibling);
+    }
+    area.querySelectorAll('.io-tile').forEach(t => t.classList.remove('io-drag-over'));
+  });
+
+  // Touch support
+  let touchEl = null, touchClone = null, touchOffX = 0, touchOffY = 0;
+  area.addEventListener('touchstart', e => {
+    const tile = e.target.closest('.io-tile');
+    if (!tile || state.answerLocked) return;
+    touchEl = tile;
+    touchEl.classList.add('io-dragging');
+    const touch = e.touches[0];
+    const r = tile.getBoundingClientRect();
+    touchOffX = touch.clientX - r.left;
+    touchOffY = touch.clientY - r.top;
+    touchClone = tile.cloneNode(true);
+    touchClone.style.cssText = `position:fixed;pointer-events:none;z-index:9999;opacity:.85;width:${r.width}px;`;
+    touchClone.style.left = (touch.clientX - touchOffX) + 'px';
+    touchClone.style.top  = (touch.clientY - touchOffY) + 'px';
+    document.body.appendChild(touchClone);
+    e.preventDefault();
+  }, { passive: false });
+  area.addEventListener('touchmove', e => {
+    if (!touchEl || !touchClone) return;
+    const touch = e.touches[0];
+    touchClone.style.left = (touch.clientX - touchOffX) + 'px';
+    touchClone.style.top  = (touch.clientY - touchOffY) + 'px';
+    const target = document.elementsFromPoint(touch.clientX, touch.clientY)
+      .find(el => el.classList.contains('io-tile') && el !== touchEl);
+    area.querySelectorAll('.io-tile').forEach(t => t.classList.remove('io-drag-over'));
+    if (target) target.classList.add('io-drag-over');
+    e.preventDefault();
+  }, { passive: false });
+  area.addEventListener('touchend', e => {
+    if (!touchEl) return;
+    const touch = e.changedTouches[0];
+    const target = document.elementsFromPoint(touch.clientX, touch.clientY)
+      .find(el => el.classList.contains('io-tile') && el !== touchEl);
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      area.insertBefore(touchEl, touch.clientX < rect.left + rect.width / 2 ? target : target.nextSibling);
+    }
+    touchEl.classList.remove('io-dragging');
+    area.querySelectorAll('.io-tile').forEach(t => t.classList.remove('io-drag-over'));
+    if (touchClone) { document.body.removeChild(touchClone); touchClone = null; }
+    touchEl = null;
+    e.preventDefault();
+  }, { passive: false });
+}
+
+async function submitIntCompare(sym) {
+  const q = state.currentQuestion;
+  if (!q || q.type !== 'int_compare' || state.answerLocked) return;
+  const fmt = n => n < 0 ? `−${Math.abs(n)}` : String(n);
+  if (sym === q.answer) {
+    state.answerLocked = true;
+    playSound('correct');
+    document.querySelectorAll('.ic-btn').forEach(b => { if (b.dataset.sym === sym) b.classList.add('ic-btn-correct'); });
+    let pts = 0;
+    const wasFirst = state.isFirstAttempt && !state.solutionShown;
+    if (wasFirst) {
+      state.answerStreak++;
+      if (state.currentUser) { pts = await recordCorrect(state.currentTopic); showPointsPop(pts); updateStatsRow(); checkStreakBonus(); }
+    }
+    reportComeback();
+    const suf = wasFirst ? streakSuffix(state.answerStreak) : '';
+    showToast(pts > 0 ? `✓ Brawo! +${pts} pkt${suf}` : `✓ Brawo!${suf}`, 'correct');
+    setTimeout(() => loadQuestion(), 400);
+  } else {
+    state.mistakes++;
+    state.isFirstAttempt = false;
+    state.answerStreak = 0;
+    reportMistake();
+    playSound('wrong');
+    if (state.mistakes <= 3) document.getElementById(`dot${state.mistakes - 1}`).classList.add('used');
+    document.querySelectorAll('.ic-btn').forEach(b => {
+      if (b.dataset.sym === sym) { b.classList.add('ic-btn-wrong'); setTimeout(() => b.classList.remove('ic-btn-wrong'), 500); }
+    });
+    const hintEl = document.getElementById('icHint');
+    if (state.mistakes >= 3) {
+      state.solutionShown = true;
+      if (hintEl) { hintEl.textContent = `Odpowiedź: ${fmt(q.a)} ${q.answer} ${fmt(q.b)}`; hintEl.style.display = ''; }
+      setTimeout(() => loadQuestion(), 2000);
+    } else if (state.mistakes === 2 && q.hint && hintEl) {
+      hintEl.textContent = `💡 ${q.hint}`;
+      hintEl.style.display = '';
+    } else {
+      showToast('✗ Spróbuj jeszcze raz!', 'wrong');
+    }
+  }
+}
+
+async function checkIntOrder() {
+  const q = state.currentQuestion;
+  const area = document.getElementById('ioSortArea');
+  if (!area || state.answerLocked) return;
+  const fmt = n => n < 0 ? `−${Math.abs(n)}` : String(n);
+  const nums = [...area.querySelectorAll('.io-tile')].map(t => parseInt(t.dataset.val, 10));
+  const correct = nums.every((n, i) => n === q.sorted[i]);
+  if (correct) {
+    state.answerLocked = true;
+    area.querySelectorAll('.io-tile').forEach(t => t.classList.add('io-tile-correct'));
+    playSound('correct');
+    let pts = 0;
+    const wasFirst = state.isFirstAttempt && !state.solutionShown;
+    if (wasFirst) {
+      state.answerStreak++;
+      if (state.currentUser) { pts = await recordCorrect(state.currentTopic); showPointsPop(pts); updateStatsRow(); checkStreakBonus(); }
+    }
+    reportComeback();
+    const suf = wasFirst ? streakSuffix(state.answerStreak) : '';
+    showToast(pts > 0 ? `✓ Brawo! +${pts} pkt${suf}` : `✓ Brawo!${suf}`, 'correct');
+    setTimeout(() => loadQuestion(), 600);
+  } else {
+    state.mistakes++;
+    state.isFirstAttempt = false;
+    state.answerStreak = 0;
+    reportMistake();
+    area.querySelectorAll('.io-tile').forEach(t => {
+      t.classList.add('io-tile-wrong');
+      setTimeout(() => t.classList.remove('io-tile-wrong'), 600);
+    });
+    playSound('wrong');
+    if (state.mistakes <= 3) document.getElementById(`dot${state.mistakes - 1}`).classList.add('used');
+    const hintEl = document.getElementById('ioHint');
+    if (state.mistakes >= 3) {
+      state.answerLocked = true;
+      state.solutionShown = true;
+      const solutionStr = q.sorted.map(fmt).join(', ');
+      if (hintEl) { hintEl.textContent = `Poprawna kolejność: ${solutionStr}`; hintEl.style.display = ''; }
+      setTimeout(() => loadQuestion(), 2500);
+    } else if (state.mistakes === 2) {
+      const sep = q.direction === 'asc' ? ' < ' : ' > ';
+      if (hintEl) { hintEl.textContent = `💡 ${q.hint}\nWskazówka: ${q.sorted.map(fmt).join(sep)}`; hintEl.style.display = ''; }
+    } else {
+      if (hintEl) { hintEl.textContent = `💡 ${q.hint}`; hintEl.style.display = ''; }
+    }
+  }
+}
+
 function generateQuestion(topic, difficulty) {
   const gen = TOPIC_GENERATORS[topic];
   if (gen) return gen(difficulty);
@@ -3600,7 +4386,7 @@ function loadQuestion() {
   const hintLine = document.getElementById('questionHintLine');
   if (hintLine) hintLine.style.display = 'none';
 
-  const isWA = q.type === 'written-addition' || q.type === 'written-subtraction' || q.type === 'written-multiplication' || q.type === 'written-division' || q.type === 'rounding' || q.type === 'comparison' || q.type === 'divisibility' || q.type === 'power' || q.type === 'order_ops' || q.type === 'num_write' || q.type === 'function_q' || q.type === 'sqrt_bounds' || q.type === 'prime_factors' || q.type === 'nwd' || q.type === 'nww' || q.type === 'abs_value';
+  const isWA = q.type === 'written-addition' || q.type === 'written-subtraction' || q.type === 'written-multiplication' || q.type === 'written-division' || q.type === 'rounding' || q.type === 'comparison' || q.type === 'divisibility' || q.type === 'power' || q.type === 'order_ops' || q.type === 'num_write' || q.type === 'function_q' || q.type === 'sqrt_bounds' || q.type === 'prime_factors' || q.type === 'nwd' || q.type === 'nww' || q.type === 'abs_value' || q.type === 'int_compare' || q.type === 'int_order' || q.type === 'div_rem';
   const questionText = document.getElementById('questionText');
   const answerInput  = document.getElementById('answerInput');
   const waArea       = document.getElementById('writtenAddArea');
@@ -3612,7 +4398,7 @@ function loadQuestion() {
     questionText.style.display = 'none';
     answerInput.style.display  = 'none';
     waArea.style.display       = '';
-    if (q.type !== 'function_q') document.getElementById('checkBtn').style.display = '';
+    if (q.type !== 'function_q' && q.type !== 'int_compare') document.getElementById('checkBtn').style.display = '';
     if (q.type === 'written-multiplication') {
       waArea.innerHTML = buildWMHtml(q);
       const isMulti = q.partials.length > 1;
@@ -3667,6 +4453,15 @@ function loadQuestion() {
     } else if (q.type === 'abs_value') {
       waArea.innerHTML = buildAbsValueHtml(q);
       document.getElementById('absInput')?.focus();
+    } else if (q.type === 'int_compare') {
+      waArea.innerHTML = buildIntCompareHtml(q);
+      document.getElementById('checkBtn').style.display = 'none';
+    } else if (q.type === 'int_order') {
+      waArea.innerHTML = buildIntOrderHtml(q);
+      initIntOrderDrag();
+    } else if (q.type === 'div_rem') {
+      waArea.innerHTML = buildDivRemHtml(q);
+      document.getElementById('drQuot')?.focus();
     } else {
       waArea.innerHTML = buildWAHtml(q);
       document.getElementById('wain-0')?.focus(); // start od jedności (prawy)
@@ -4004,6 +4799,9 @@ async function checkAnswer() {
   if (state.currentQuestion?.type === 'nwd') { await checkNwd(); return; }
   if (state.currentQuestion?.type === 'nww') { await checkNww(); return; }
   if (state.currentQuestion?.type === 'abs_value') { await checkAbsValue(); return; }
+  if (state.currentQuestion?.type === 'int_compare') return;  // obsługiwane przez przyciski
+  if (state.currentQuestion?.type === 'int_order')   { await checkIntOrder(); return; }
+  if (state.currentQuestion?.type === 'div_rem')     { await checkDivRem(); return; }
 
   const input = document.getElementById('answerInput');
   const val = parseFloat(input.value);
@@ -4077,6 +4875,21 @@ async function checkAnswer() {
       document.getElementById('solutionReveal').classList.add('show');
       showToast(`✗ Poprawna: ${state.currentAnswer}`, 'wrong');
       state.solutionShown = true;
+      // Opcjonalny hint3 – pokazuje pełne obliczenie przy ujawnieniu odpowiedzi
+      const hint3 = state.currentQuestion?.hint3;
+      if (hint3) {
+        let hintEl = document.getElementById('questionHintLine');
+        if (!hintEl) {
+          hintEl = document.createElement('div');
+          hintEl.id = 'questionHintLine';
+          hintEl.className = 'question-hint-line';
+          const qt = document.getElementById('questionText');
+          qt?.parentNode.insertBefore(hintEl, qt.nextSibling);
+        }
+        const prev = hintEl.textContent;
+        hintEl.textContent = prev ? `${prev}\n${hint3}` : `💡 ${hint3}`;
+        hintEl.style.display = '';
+      }
       // Wyczyść pole i daj fokus żeby uczeń mógł wpisać
       setTimeout(() => { input.value = ''; input.focus(); }, 800);
     } else {

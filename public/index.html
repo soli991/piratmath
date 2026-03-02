@@ -495,6 +495,22 @@ main {
 .pow-input:not(.pow-input-base):not(.pow-input-exp) { width:140px; }
 .pow-input-base { width:110px; }
 .pow-input-exp  { width:64px; height:44px; font-size:24px; }
+.pow-wrap { flex-direction: column; }
+.pow-hint { margin-top:14px; color:#f0d080; font-size:15px; white-space:pre-line; text-align:center; line-height:1.5; }
+
+/* DZIELENIE Z RESZTĄ */
+.dr-wrap { display:flex; flex-direction:column; align-items:center; padding:28px 16px 36px; }
+.dr-expr { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.dr-num  { font-size:52px; font-weight:900; font-family:var(--font-head); color:var(--text); line-height:1; }
+.dr-op, .dr-eq { font-size:40px; font-weight:700; color:var(--text2); }
+.dr-rest { font-size:26px; color:var(--text2); margin:0 2px; }
+.dr-input { width:90px; height:58px; font-size:32px; font-weight:800; text-align:center;
+  background:var(--bg2); border:2px solid var(--border); border-radius:12px;
+  color:var(--text1); outline:none; font-family:var(--font-head); }
+.dr-input:focus   { border-color:var(--accent); }
+.dr-input.correct { border-color:#22c55e; background:color-mix(in srgb,#22c55e 18%,transparent); color:#22c55e; }
+.dr-input.wrong   { border-color:#ef4444; background:color-mix(in srgb,#ef4444 18%,transparent); color:#ef4444; }
+.dr-hint { margin-top:14px; color:#f0d080; font-size:15px; white-space:pre-line; text-align:center; line-height:1.5; }
 
 /* PODZIELNOŚĆ LICZB */
 .div-wrap { display:flex; flex-direction:column; align-items:center; padding:16px 16px 24px; gap:16px; }
@@ -1329,8 +1345,51 @@ body.theme-pink .answer-input.correct {
     grid-template-columns: 220px 1fr;
     grid-template-rows: auto auto 1fr;
   }
-  .sidebar-right { display: none; }
   header { grid-column: 2; }
+
+  /* Prawy panel jako szuflada */
+  .sidebar-right {
+    display: flex !important;
+    position: fixed;
+    right: -300px;
+    top: 0;
+    height: 100vh;
+    width: 280px;
+    z-index: 200;
+    transition: right 0.3s ease;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.4);
+  }
+  .sidebar-right.open { right: 0; }
+  #right-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 199;
+    cursor: pointer;
+  }
+  #right-backdrop.show { display: block; }
+
+  /* Przycisk otwierający panel */
+  .mobile-profile-btn { display: flex; }
+}
+
+@media (max-width: 600px) {
+  /* Dekoracje ukryte — pokrywają przyciski odpowiedzi */
+  #decoOverlay { display: none; }
+
+  /* Lewy sidebar węższym na małych ekranach */
+  .layout { grid-template-columns: 180px 1fr; }
+
+  /* Zmniejsz elementy odpowiedzi */
+  .answer-input { font-size: 22px; padding: 10px 14px; }
+  #checkBtn { padding: 10px 22px; font-size: 14px; }
+  .ic-num { font-size: 28px; min-width: 50px; }
+  .ic-btn { width: 44px; height: 38px; font-size: 18px; }
+  .io-tile { font-size: 18px; padding: 8px 12px; }
+  .pf-input, .nwd-gcd-input, .abs-input { font-size: 16px; }
+  .social-links { display: none; }
+  .season-box { min-width: 120px; font-size: 12px; }
 }
 
 /* sport balls decorations */
@@ -1711,6 +1770,21 @@ details[open] .tp-level-summary::after { content: '▴'; }
 .tp-mile.reachable { opacity: 0.4; }
 .tp-mile.unlocked:hover { transform: scale(1.2); }
 
+/* ── Mobile profile button ───────────────────────────────── */
+.mobile-profile-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 /* ── PvP ─────────────────────────────────────────────────── */
 .pvp-sidebar-btn {
   display: flex; align-items: center; justify-content: space-between;
@@ -1949,6 +2023,27 @@ details[open] .tp-level-summary::after { content: '▴'; }
 .abs-solution { text-align: center; font-size: 1.3em; margin-top: 10px; }
 .abs-answer-val { color: #4ade80; font-weight: 700; }
 
+/* Integer compare / order */
+.ic-wrap { text-align: center; padding: 12px 0; }
+.ic-row { display: flex; align-items: center; justify-content: center; gap: 20px; }
+.ic-num { font-size: 36px; font-weight: 700; color: #e2e8f0; min-width: 64px; text-align: center; }
+.ic-btns-v { display: flex; flex-direction: column; gap: 8px; }
+.ic-btn { background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.2); border-radius: 12px; color: #e2e8f0; font-size: 22px; font-weight: 700; width: 52px; height: 44px; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.ic-btn:hover { background: rgba(129,140,248,0.25); border-color: #818cf8; }
+.ic-btn-wrong { background: rgba(239,68,68,0.3) !important; border-color: #ef4444 !important; }
+.ic-btn-correct { background: rgba(74,222,128,0.3) !important; border-color: #4ade80 !important; }
+.ic-hint { margin-top: 14px; font-size: 14px; color: #f59e0b; background: rgba(251,191,36,0.12); border-left: 3px solid #f59e0b; border-radius: 8px; padding: 8px 14px; text-align: center; white-space: pre-line; }
+.io-wrap { text-align: center; padding: 8px 0; }
+.io-prompt { font-size: 15px; color: #94a3b8; margin-bottom: 12px; }
+.io-sort-area { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 10px; min-height: 60px; }
+.io-tile { background: rgba(129,140,248,0.18); border: 2px solid #818cf8; border-radius: 12px; padding: 10px 18px; font-size: 22px; font-weight: 700; color: #e2e8f0; cursor: grab; user-select: none; transition: transform 0.1s, background 0.15s, border-color 0.15s; }
+.io-tile:hover { background: rgba(129,140,248,0.3); }
+.io-tile.io-dragging { opacity: 0.4; cursor: grabbing; }
+.io-tile.io-drag-over { border-color: #f59e0b; background: rgba(251,191,36,0.2); transform: scale(1.08); }
+.io-tile.io-tile-correct { border-color: #4ade80; background: rgba(74,222,128,0.25); }
+.io-tile.io-tile-wrong { border-color: #ef4444; background: rgba(239,68,68,0.25); }
+.io-drag-note { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+
 /* Result screen */
 .pvp-result { text-align: center; padding: 8px 0; }
 .pvp-result-icon { font-size: 64px; line-height: 1; }
@@ -2023,6 +2118,7 @@ details[open] .tp-level-summary::after { content: '▴'; }
 <div class="theme-corner-deco deco-clk" style="right:2%;bottom:12%;font-size:40px;animation:float 12s ease-in-out infinite;animation-delay:-6s" onclick="decoClick(this,880,'triangle')">💝</div>
 
 </div><!-- /decoOverlay -->
+<div id="right-backdrop" onclick="toggleRightPanel()"></div>
 
 <!-- LOGIN MODAL -->
 <div class="modal-overlay" id="loginModal">
@@ -2163,6 +2259,8 @@ details[open] .tp-level-summary::after { content: '▴'; }
         <button class="topic-btn" onclick="selectTopic('Odejmowanie pisemne', this)"><span class="topic-dot"></span>Odejmowanie pisemne</button>
         <button class="topic-btn" onclick="selectTopic('Mnożenie pisemne', this)"><span class="topic-dot"></span>Mnożenie pisemne</button>
         <button class="topic-btn" onclick="selectTopic('Dzielenie pisemne', this)"><span class="topic-dot"></span>Dzielenie pisemne</button>
+        <button class="topic-btn" onclick="selectTopic('Dzielenie z resztą', this)"><span class="topic-dot"></span>Dzielenie z resztą</button>
+        <button class="topic-btn" onclick="selectTopic('Mnożenie liczb z zerami na końcu', this)"><span class="topic-dot"></span>Mnożenie liczb z zerami na końcu</button>
         <button class="topic-btn" onclick="selectTopic('O ile? Ile razy?', this)"><span class="topic-dot"></span>O ile? Ile razy?</button>
         <button class="topic-btn" onclick="selectTopic('Kolejność działań', this)"><span class="topic-dot"></span>Kolejność działań</button>
         <button class="topic-btn" onclick="selectTopic('Potęgowanie', this)"><span class="topic-dot"></span>Potęgowanie</button>
@@ -2360,6 +2458,7 @@ details[open] .tp-level-summary::after { content: '▴'; }
   <!-- HEADER -->
   <header>
     <div class="header-top">
+      <button class="mobile-profile-btn" onclick="toggleRightPanel()" title="Profil i rankingi">👤</button>
       <div class="social-links">
         <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1" target="_blank" class="social-btn yt">
           <span class="icon">▶️</span>YouTube

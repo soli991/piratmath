@@ -52,7 +52,7 @@ router.post('/register', async (req, res) => {
   if (password.length < 4)
     return res.status(400).json({ error: 'Hasło musi mieć min. 4 znaki!' });
 
-  const existing = db.prepare('SELECT id FROM users WHERE name = ?').get(name);
+  const existing = db.prepare('SELECT id FROM users WHERE LOWER(name) = LOWER(?)').get(name);
   if (existing)
     return res.status(409).json({ error: 'Ta nazwa jest już zajęta!' });
 
@@ -80,7 +80,7 @@ router.post('/login', async (req, res) => {
   if (!name || !password)
     return res.status(400).json({ error: 'Wypełnij oba pola!' });
 
-  const user = db.prepare('SELECT * FROM users WHERE name = ?').get(name);
+  const user = db.prepare('SELECT * FROM users WHERE LOWER(name) = LOWER(?)').get(name);
   if (!user)
     return res.status(401).json({ error: 'Nie znaleziono użytkownika!' });
 
