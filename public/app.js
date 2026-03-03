@@ -521,20 +521,88 @@ function _loadGeogebra(callback) {
   document.head.appendChild(s);
 }
 
+function _buildSinusDesc(a, b, c, d) {
+  function fmt(n) { return Math.round(n * 1000) / 1000; }
+  const af = fmt(a), bf = fmt(b), cf = fmt(c), df = fmt(d);
+  const lines = [];
+
+  // Amplituda
+  if (Math.abs(af - 1) < 0.01) {
+    lines.push({ label: `a = ${af}`, text: 'Amplituda standardowa — brak rozciągnięcia pionowego' });
+  } else if (af > 0) {
+    lines.push({ label: `a = ${af}`, text: `Wykres <strong>${af > 1 ? 'rozciągnięty' : 'ściśnięty'} ${af}×</strong> w pionie` });
+  } else {
+    const abs = Math.abs(af);
+    lines.push({ label: `a = ${af}`, text: `Wykres <strong>odbity</strong> względem OX${abs !== 1 ? `, amplituda ${abs}` : ''}` });
+  }
+
+  // Okres
+  if (Math.abs(bf - 1) < 0.01) {
+    lines.push({ label: `b = ${bf}`, text: 'Okres standardowy: 2π ≈ 6,28' });
+  } else {
+    const period = (2 * Math.PI / Math.abs(bf)).toFixed(2).replace('.', ',');
+    lines.push({ label: `b = ${bf}`, text: `Wykres <strong>${bf > 1 ? 'ściśnięty' : 'rozciągnięty'} ${Math.abs(bf)}×</strong> poziomo — okres = 2π/${Math.abs(bf)} ≈ ${period}` });
+  }
+
+  // Przesunięcie fazowe: y = sin(bx + c) = sin(b(x + c/b)), shift = –c/b
+  if (Math.abs(cf) < 0.01) {
+    lines.push({ label: `c = ${cf}`, text: 'Brak przesunięcia fazowego' });
+  } else {
+    const shift = fmt(-cf / bf);
+    const shiftAbs = Math.abs(shift);
+    const dir = shift >= 0 ? 'prawo' : 'lewo';
+    lines.push({ label: `c = ${cf}`, text: `Wykres przesunięty o <strong>${shiftAbs}</strong> w ${dir} (−c/b)` });
+  }
+
+  // Przesunięcie pionowe
+  if (Math.abs(df) < 0.01) {
+    lines.push({ label: `d = ${df}`, text: 'Brak przesunięcia pionowego' });
+  } else {
+    const dir = df > 0 ? 'górę' : 'dół';
+    lines.push({ label: `d = ${df}`, text: `Wykres przesunięty o <strong>${Math.abs(df)}</strong> w ${dir}` });
+  }
+
+  return lines.map(l =>
+    `<div class="ggb-desc-line"><em>${l.label}</em>${l.text}</div>`
+  ).join('');
+}
+
+window._ggbSinusOnLoad = function(api) {
+  let _timer;
+  function update() {
+    clearTimeout(_timer);
+    _timer = setTimeout(() => {
+      const el = document.getElementById('ggb-sinus-desc');
+      if (!el) return;
+      try {
+        el.innerHTML = _buildSinusDesc(
+          api.getValue('a'), api.getValue('b'),
+          api.getValue('c'), api.getValue('d')
+        );
+      } catch(e) {
+        el.innerHTML = '<div class="ggb-desc-loading">Nie udało się odczytać parametrów</div>';
+      }
+    }, 60);
+  }
+  api.registerUpdateListener(update);
+  update();
+};
+
 function _initGgbSinus() {
   const wrap = document.getElementById('ggb-sinus');
   if (!wrap || wrap.dataset.ggbInit) return;
   wrap.dataset.ggbInit = '1';
   const applet = new GGBApplet({
-    appName:          'graphing',
-    width:            800,
-    height:           500,
-    showToolBar:      true,
-    showAlgebraInput: true,
-    showMenuBar:      false,
-    filename:         '/geogebra/przeksztalceniaSinus.ggb',
-    enableRightClick: false,
+    appName:             'graphing',
+    width:               800,
+    height:              500,
+    showToolBar:         true,
+    showAlgebraInput:    true,
+    showMenuBar:         false,
+    filename:            '/geogebra/przeksztalceniaSinus.ggb',
+    enableRightClick:    false,
     scaleContainerClass: 'ggb-wrap',
+    appletOnLoad:        '_ggbSinusOnLoad',
   }, true);
   applet.inject('ggb-sinus');
 }

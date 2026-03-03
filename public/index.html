@@ -377,9 +377,46 @@ body.theme-classic .planet-deco { display: none; }
 }
 .ggb-wrap > div { width: 100% !important; }
 .ggb-wrap iframe { width: 100% !important; height: 500px !important; border: none; }
-.ggb-credit { margin-top: 8px; font-size: 11px; color: var(--text3); }
+.ggb-credit { font-size: 11px; color: var(--text3); margin-top: auto; padding-top: 8px; }
 .ggb-credit a { color: var(--text3); text-decoration: underline; }
 .ggb-credit a:hover { color: var(--accent3); }
+.ggb-card-inner { display: flex; align-items: stretch; }
+.ggb-card-inner .ggb-wrap { flex: 1; min-width: 0; border-radius: 0; }
+.ggb-side-panel {
+  width: 220px;
+  flex-shrink: 0;
+  padding: 16px;
+  background: var(--bg3);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+.ggb-side-title {
+  font-weight: 800;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.ggb-dynamic-desc { display: flex; flex-direction: column; gap: 6px; }
+.ggb-desc-line {
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 8px 10px;
+  background: var(--card);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent3);
+}
+.ggb-desc-line em { font-style: normal; font-size: 11px; font-weight: 800; opacity: .6; display: block; margin-bottom: 2px; }
+.ggb-desc-line strong { color: var(--accent3); }
+.ggb-desc-loading { color: var(--text3); font-size: 13px; }
+@media (max-width: 900px) {
+  .ggb-card-inner { flex-direction: column; }
+  .ggb-side-panel { width: 100%; border-left: none; border-top: 1px solid var(--border); }
+}
 
 /* ===== MAIN ===== */
 main {
@@ -2663,11 +2700,19 @@ details[open] .tp-level-summary::after { content: '▴'; }
         <!-- ── Przekształcenia sinusoidy ── -->
         <div class="aid-section-label">📐 Przekształcenia sinusoidy</div>
         <div class="aid-card aid-card-wide">
-          <div class="ggb-wrap" id="ggb-sinus"></div>
+          <div class="ggb-card-inner">
+            <div class="ggb-wrap" id="ggb-sinus"></div>
+            <div class="ggb-side-panel">
+              <div class="ggb-side-title">Co widać na wykresie?</div>
+              <div id="ggb-sinus-desc" class="ggb-dynamic-desc">
+                <div class="ggb-desc-loading">Ładowanie appletu…</div>
+              </div>
+              <div class="ggb-credit">Powered by <a href="https://www.geogebra.org" target="_blank" rel="noopener">GeoGebra</a></div>
+            </div>
+          </div>
           <div class="aid-card-body">
             <div class="aid-card-title">Interaktywny wykres sinusoidy</div>
-            <div class="aid-card-desc">Zmieniaj parametry i obserwuj jak zmienia się wykres y = a·sin(bx + c) + d</div>
-            <div class="ggb-credit">Powered by <a href="https://www.geogebra.org" target="_blank" rel="noopener">GeoGebra</a></div>
+            <div class="aid-card-desc">Zmieniaj suwaki i obserwuj jak zmienia się wykres y = a·sin(bx + c) + d</div>
           </div>
         </div>
 
