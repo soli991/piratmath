@@ -298,6 +298,89 @@ body.theme-classic .planet-deco { display: none; }
 
 @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
 
+/* ===== POMOCE NAUKOWE — SIDEBAR BTN ===== */
+.aids-nav-sep {
+  margin: 8px 12px 4px;
+  border-top: 1px solid var(--border);
+}
+.aids-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  color: var(--text2);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+.aids-nav-btn:hover { background: var(--card); color: var(--accent3); border-left-color: var(--accent3); }
+.aids-nav-btn.active { background: var(--card); color: var(--accent3); border-left-color: var(--accent3); }
+
+/* ===== POMOCE NAUKOWE — PANEL ===== */
+.aids-screen { display: none; padding: 24px; }
+.aids-screen.visible { display: block; }
+.aids-header { margin-bottom: 24px; }
+.aids-title { font-family: var(--font-head); font-size: 26px; font-weight: 800; margin-bottom: 4px; }
+.aids-subtitle { color: var(--text2); font-size: 14px; }
+.aids-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+.aid-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.aid-card:hover { border-color: var(--accent3); box-shadow: 0 4px 20px rgba(0,212,170,0.12); }
+.aid-card-body { padding: 14px 16px; }
+.aid-card-title { font-weight: 800; font-size: 15px; margin-bottom: 4px; }
+.aid-card-desc { color: var(--text2); font-size: 13px; }
+.aid-card img { width: 100%; height: auto; display: block; }
+.aid-card iframe { width: 100%; height: 400px; border: none; display: block; }
+.aids-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text3);
+  padding: 60px 20px;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.aid-section-label {
+  grid-column: 1 / -1;
+  font-family: var(--font-head);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text2);
+  padding: 8px 0 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.aid-card-wide {
+  grid-column: 1 / -1;
+}
+.ggb-wrap {
+  width: 100%;
+  min-height: 500px;
+  background: var(--bg3);
+  border-radius: var(--radius) var(--radius) 0 0;
+  overflow: hidden;
+}
+.ggb-wrap > div { width: 100% !important; }
+.ggb-wrap iframe { width: 100% !important; height: 500px !important; border: none; }
+.ggb-credit { margin-top: 8px; font-size: 11px; color: var(--text3); }
+.ggb-credit a { color: var(--text3); text-decoration: underline; }
+.ggb-credit a:hover { color: var(--accent3); }
+
 /* ===== MAIN ===== */
 main {
   grid-column: 2;
@@ -659,6 +742,22 @@ main {
   text-align: center;
   margin: 20px 0;
   color: var(--text);
+}
+.log-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 4px;
+}
+.log-frac-num {
+  border-bottom: 2px solid currentColor;
+  padding: 0 6px 3px;
+  white-space: nowrap;
+}
+.log-frac-den {
+  padding: 3px 6px 0;
+  white-space: nowrap;
 }
 
 .answer-area {
@@ -2492,6 +2591,11 @@ details[open] .tp-level-summary::after { content: '▴'; }
       </div>
     </div>
 
+    <hr class="aids-nav-sep">
+    <button class="aids-nav-btn" id="aidsNavBtn" onclick="selectAids(this)">
+      📚 Pomoce naukowe
+    </button>
+
     <div class="planet-deco">
       <div class="planet">🪐</div>
       <div class="planet">⭐</div>
@@ -2546,6 +2650,28 @@ details[open] .tp-level-summary::after { content: '▴'; }
         <span>Weź kartkę i coś do pisania — na pewno się przyda!</span>
       </div>
       <div class="stats-row" id="globalStatsRow"></div>
+    </div>
+
+    <!-- POMOCE NAUKOWE -->
+    <div class="aids-screen" id="aidsScreen">
+      <div class="aids-header">
+        <div class="aids-title">📚 Pomoce naukowe</div>
+        <div class="aids-subtitle">Rysunki, schematy i interaktywne narzędzia GeoGebra</div>
+      </div>
+      <div class="aids-grid" id="aidsGrid">
+
+        <!-- ── Przekształcenia sinusoidy ── -->
+        <div class="aid-section-label">📐 Przekształcenia sinusoidy</div>
+        <div class="aid-card aid-card-wide">
+          <div class="ggb-wrap" id="ggb-sinus"></div>
+          <div class="aid-card-body">
+            <div class="aid-card-title">Interaktywny wykres sinusoidy</div>
+            <div class="aid-card-desc">Zmieniaj parametry i obserwuj jak zmienia się wykres y = a·sin(bx + c) + d</div>
+            <div class="ggb-credit">Powered by <a href="https://www.geogebra.org" target="_blank" rel="noopener">GeoGebra</a></div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
     <!-- EXERCISE AREA -->

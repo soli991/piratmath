@@ -510,8 +510,49 @@ function toggleLevel(idx, btn) {
   }
 }
 
+let _ggbLoaded = false;
+function _loadGeogebra(callback) {
+  if (typeof GGBApplet !== 'undefined') { callback(); return; }
+  if (_ggbLoaded) { /* script loading, queue */ document.addEventListener('ggbReady', callback, { once: true }); return; }
+  _ggbLoaded = true;
+  const s = document.createElement('script');
+  s.src = 'https://cdn.geogebra.org/apps/deployggb.js';
+  s.onload = () => { document.dispatchEvent(new Event('ggbReady')); callback(); };
+  document.head.appendChild(s);
+}
+
+function _initGgbSinus() {
+  const wrap = document.getElementById('ggb-sinus');
+  if (!wrap || wrap.dataset.ggbInit) return;
+  wrap.dataset.ggbInit = '1';
+  const applet = new GGBApplet({
+    appName:          'graphing',
+    width:            800,
+    height:           500,
+    showToolBar:      true,
+    showAlgebraInput: true,
+    showMenuBar:      false,
+    filename:         '/geogebra/przeksztalceniaSinus.ggb',
+    enableRightClick: false,
+    scaleContainerClass: 'ggb-wrap',
+  }, true);
+  applet.inject('ggb-sinus');
+}
+
+function selectAids(btn) {
+  document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('aidsNavBtn').classList.add('active');
+  document.getElementById('welcomeScreen').style.display  = 'none';
+  document.getElementById('exerciseArea').classList.remove('visible');
+  document.getElementById('aidsScreen').classList.add('visible');
+  _loadGeogebra(_initGgbSinus);
+}
+
 function selectTopic(topic, el) {
   document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('aidsNavBtn').classList.remove('active');
+  document.getElementById('aidsScreen').classList.remove('visible');
   el.classList.add('active');
 
   state.currentTopic = topic;
@@ -2487,46 +2528,62 @@ const TOPIC_GENERATORS = {
         hint2: `${p.base}^? = ${quot}`,
       };
     } else if (mode === 4) {
-      // log_b(x) + log_b(y), x i y są potęgami podstawy
-      const n1 = rand(1, 4), n2 = rand(1, 4);
-      const x  = b ** n1, y = b ** n2;
+      // log_b(a) + log_b(?) = n  →  ? = b^n / a  (nie da się bez wzoru, nieznana liczba)
+      const p    = trickyProduct[rand(0, trickyProduct.length - 1)];
+      const prod = p.a * p.b; // = p.base ^ p.ans
+      const hideB  = rand(0, 1) === 0;
+      const known  = hideB ? p.a : p.b;
+      const hidden = hideB ? p.b : p.a;
       return {
-        q:     `${logStr(b)}(${x}) + ${logStr(b)}(${y}) = ?`,
-        a:     n1 + n2,
-        hint:  `log(a) + log(b) = log(a·b) = ${logStr(b)}(${x * y})`,
-        hint2: `${b}^? = ${x * y}`,
+        q:     `${logStr(p.base)}(${known}) + ${logStr(p.base)}(?) = ${p.ans}`,
+        a:     hidden,
+        hint:  `log(a) + log(?) = n  →  log(a · ?) = n  →  a · ? = ${p.base}^${p.ans} = ${prod}`,
+        hint2: `? = ${prod} ÷ ${known} = ${hidden}`,
       };
     } else if (mode === 5) {
-      // log_b(x) - log_b(y), x i y są potęgami podstawy
-      const n1 = rand(2, 5), n2 = rand(1, n1 - 1);
-      const x  = b ** n1, y = b ** n2;
+      // log_b(a) − log_b(?) = n  →  ? = a / b^n  (nie da się bez wzoru)
+      const p    = trickyQuotient[rand(0, trickyQuotient.length - 1)];
+      const quot = p.a / p.b; // = p.base ^ p.ans
       return {
-        q:     `${logStr(b)}(${x}) − ${logStr(b)}(${y}) = ?`,
-        a:     n1 - n2,
-        hint:  `log(a) − log(b) = log(a÷b) = ${logStr(b)}(${x / y})`,
-        hint2: `${b}^? = ${x / y}`,
+        q:     `${logStr(p.base)}(${p.a}) − ${logStr(p.base)}(?) = ${p.ans}`,
+        a:     p.b,
+        hint:  `log(a) − log(?) = n  →  log(a ÷ ?) = n  →  a ÷ ? = ${p.base}^${p.ans} = ${quot}`,
+        hint2: `? = ${p.a} ÷ ${quot} = ${p.b}`,
       };
     } else if (mode === 6) {
-      // log_b(x^k) = k · log_b(x)
-      const n = rand(2, 4), k = rand(2, 4);
-      const x = b ** n;
+      // log_b(a^k) = ?  gdzie b = a²  →  wynik ułamkowy (nie da się bez wzoru)
+      const powerPairs = [
+        { b: 4,   a: 2,  k: 3, ans: 1.5, ak: 8    },
+        { b: 4,   a: 2,  k: 5, ans: 2.5, ak: 32   },
+        { b: 4,   a: 2,  k: 7, ans: 3.5, ak: 128  },
+        { b: 9,   a: 3,  k: 3, ans: 1.5, ak: 27   },
+        { b: 9,   a: 3,  k: 5, ans: 2.5, ak: 243  },
+        { b: 9,   a: 3,  k: 7, ans: 3.5, ak: 2187 },
+        { b: 25,  a: 5,  k: 3, ans: 1.5, ak: 125  },
+        { b: 25,  a: 5,  k: 5, ans: 2.5, ak: 3125 },
+        { b: 100, a: 10, k: 3, ans: 1.5, ak: 1000 },
+      ];
+      const p      = powerPairs[rand(0, powerPairs.length - 1)];
+      const decStr = String(p.ans).replace('.', ',');
       return {
-        q:     `${logStr(b)}(${x}^${k}) = ?`,
-        a:     n * k,
-        hint:  `log(a^k) = k · log(a) = ${k} · ${logStr(b)}(${x})`,
-        hint2: `${k} · ${n} = ?`,
+        q:     `${logStr(p.b)}(${p.a}^${p.k}) = ?`,
+        a:     p.ans,
+        hint:  `log(a^k) = k · log(a)\n${p.k} · ${logStr(p.b)}(${p.a}) = ?`,
+        hint2: `${logStr(p.b)}(${p.a}) = ½  (bo ${p.b} = ${p.a}²)\n${p.k} · ½ = ${decStr}`,
       };
     } else if (mode === 7 || mode === 10) {
       // Zmiana podstawy — wzór: log_a(b) = log_c(b) / log_c(a)
-      const p       = cobList[rand(0, cobList.length - 1)];
+      // Tylko wpisy z ułamkowym wynikiem — wymagają wzoru, nie da się zgadnąć
+      const cobFrac = cobList.filter(p => !Number.isInteger(p.ans));
+      const p       = cobFrac[rand(0, cobFrac.length - 1)];
       const logCb   = Math.round(Math.log(p.base) / Math.log(p.c));
       const logCarg = Math.round(Math.log(p.arg)  / Math.log(p.c));
-      const decStr  = Number.isInteger(p.ans) ? '' : ` = ${String(p.ans).replace('.', ',')}`;
+      const decStr  = String(p.ans).replace('.', ',');
       return {
         q:     `${logStr(p.base)}(${p.arg}) = ?`,
         a:     p.ans,
         hint:  `Wzór zamiany podstawy (c = ${p.c}):\n${logStr(p.base)}(${p.arg}) = ${logStr(p.c)}(${p.arg}) / ${logStr(p.c)}(${p.base})`,
-        hint2: `= ${logCarg} / ${logCb}${decStr}`,
+        hint2: `= ${logCarg} / ${logCb} = ${decStr}`,
       };
     } else if (mode === 8) {
       // Trudny iloczyn — składniki NIE są potęgami podstawy
@@ -2555,18 +2612,22 @@ const TOPIC_GENERATORS = {
 
       if (rand(0, 1) === 0) {
         // Brakuje licznika: log_a(b) = log_c(?) / log_c(a)
+        const fracHtml = `<span class="log-frac"><span class="log-frac-num">${logStr(c)}(?)</span><span class="log-frac-den">${logStr(c)}(${a})</span></span>`;
         return {
-          q:    `${logStr(a)}(${b}) = ${logStr(c)}(?) / ${logStr(c)}(${a})`,
-          a:    b,
-          hint: `Wzór: log_a(b) = log_c(b) / log_c(a)\nLicznik to logarytm z ARGUMENTU oryginalnego logarytmu`,
+          q:     `${logStr(a)}(${b}) = ${logStr(c)}(?) / ${logStr(c)}(${a})`,
+          q_html: `${logStr(a)}(${b}) = ${fracHtml}`,
+          a:     b,
+          hint:  `Wzór: log_a(b) = log_c(b) / log_c(a)\nLicznik to logarytm z ARGUMENTU oryginalnego logarytmu`,
           hint2: `${logStr(a)}(${b}) = ${logStr(c)}(${b}) / ${logStr(c)}(${a})`,
         };
       } else {
         // Brakuje mianownika: log_a(b) = log_c(b) / log_c(?)
+        const fracHtml = `<span class="log-frac"><span class="log-frac-num">${logStr(c)}(${b})</span><span class="log-frac-den">${logStr(c)}(?)</span></span>`;
         return {
-          q:    `${logStr(a)}(${b}) = ${logStr(c)}(${b}) / ${logStr(c)}(?)`,
-          a:    a,
-          hint: `Wzór: log_a(b) = log_c(b) / log_c(a)\nMianownik to logarytm z PODSTAWY oryginalnego logarytmu`,
+          q:     `${logStr(a)}(${b}) = ${logStr(c)}(${b}) / ${logStr(c)}(?)`,
+          q_html: `${logStr(a)}(${b}) = ${fracHtml}`,
+          a:     a,
+          hint:  `Wzór: log_a(b) = log_c(b) / log_c(a)\nMianownik to logarytm z PODSTAWY oryginalnego logarytmu`,
           hint2: `${logStr(a)}(${b}) = ${logStr(c)}(${b}) / ${logStr(c)}(${a})`,
         };
       }
@@ -4883,7 +4944,8 @@ function loadQuestion() {
     waArea.style.display       = 'none';
     document.getElementById('checkBtn').style.display = '';
     waArea.innerHTML           = '';
-    questionText.textContent   = q.q;
+    if (q.q_html) { questionText.innerHTML = q.q_html; }
+    else           { questionText.textContent = q.q; }
     answerInput.value          = '';
     answerInput.className      = 'answer-input';
     const isStringAnswer = typeof state.currentAnswer === 'string';
