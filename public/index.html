@@ -2184,6 +2184,13 @@ details[open] .tp-level-summary::after { content: '▴'; }
 .tp-std-remove, .tp-std-reset { width: 28px; height: 24px; border: none; background: transparent; color: var(--text3); cursor: pointer; border-radius: 5px; font-size: 13px; display: flex; align-items: center; justify-content: center; }
 .tp-std-remove:hover { background: rgba(255,80,80,0.18); color: var(--red,#f66); }
 .tp-std-reset:hover  { background: rgba(79,142,247,0.15); color: var(--accent); }
+#tpTopicTooltip { position: fixed; background: var(--panel-bg,#151526); border: 1px solid rgba(255,255,255,0.13); border-radius: 10px; padding: 10px 14px; font-size: 12px; z-index: 9999; pointer-events: none; display: none; min-width: 170px; max-width: 270px; box-shadow: 0 6px 24px rgba(0,0,0,0.5); }
+#tpTopicTooltip .ttp-title { font-weight: 700; color: var(--accent); margin-bottom: 6px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+#tpTopicTooltip .ttp-row { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; color: var(--text2); border-bottom: 1px solid rgba(255,255,255,0.05); }
+#tpTopicTooltip .ttp-row:last-child { border-bottom: none; }
+#tpTopicTooltip .ttp-pts { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--accent); white-space: nowrap; }
+#tpTopicTooltip .ttp-empty { color: var(--text3); font-style: italic; }
+.tp-std-week { cursor: help; border-bottom: 1px dashed rgba(255,255,255,0.2); }
 .tp-row { display: flex; align-items: center; gap: 10px; padding: 3px 8px; border-radius: 7px; background: rgba(255,255,255,0.03); }
 .tp-name { flex: 1; font-size: 12px; color: var(--text-secondary, #aaa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 165px; }
 .tp-miles { display: flex; gap: 5px; }
@@ -3404,5 +3411,6 @@ details[open] .tp-level-summary::after { content: '▴'; }
   </div>
 </div>
 
+<div id="tpTopicTooltip"></div>
 </body>
 </html>

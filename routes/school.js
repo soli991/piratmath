@@ -401,8 +401,16 @@ router.get('/teacher/students', requireTeacher, (req, res) => {
     ORDER BY class_season_points DESC
   `).all(weekStart, classId);
 
-  res.json(students);
+  const classTopicsStmt  = db.prepare(`SELECT topic, points FROM class_topic_progress WHERE user_id = ? AND points > 0 ORDER BY points DESC`);
+  const globalTopicsStmt = db.prepare(`SELECT topic, points FROM topic_progress WHERE user_id = ? AND points > 0 ORDER BY points DESC`);
+  const result = students.map(s => {
+    const ct = classTopicsStmt.all(s.id);
+    return { ...s, topics: ct.length > 0 ? ct : globalTopicsStmt.all(s.id) };
+  });
+
+  res.json(result);
 });
+
 
 // DELETE /api/teacher/students/:id — usuwa ucznia z klasy (nie usuwa konta)
 router.delete('/teacher/students/:id', requireTeacher, (req, res) => {

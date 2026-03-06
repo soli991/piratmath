@@ -636,7 +636,10 @@ function tpShowTab(tab) {
   else                         tpLoadInvites();
 }
 
+let _tpTooltipCache = {};
+
 async function tpLoadStudents() {
+  _tpTooltipCache = {};
   const body = document.getElementById('tpBody');
   body.innerHTML = '<div style="color:var(--text3)">Ładowanie…</div>';
   if (!state.teacherClassId) { body.innerHTML = '<div style="color:var(--text3)">Wybierz klasę.</div>'; return; }
@@ -648,6 +651,9 @@ async function tpLoadStudents() {
     body.innerHTML = '<div style="color:var(--text3);font-size:13px">Brak uczniów w tej klasie.</div>';
     return;
   }
+
+  // Zapisz dane tematów do cache tooltipa
+  for (const s of students) _tpTooltipCache[s.id] = s.topics || [];
 
   body.innerHTML = `
     <div style="font-size:13px;color:var(--text2);margin-bottom:4px">
@@ -666,7 +672,7 @@ async function tpLoadStudents() {
         <div class="tp-student-row">
           <span class="tp-std-rank">${i + 1}.</span>
           <span class="tp-std-name">${escHtml(s.name)}</span>
-          <span class="tp-std-pts tp-std-week" style="${s.week_points > 0 ? 'color:var(--accent)' : ''}">${s.week_points ?? 0}</span>
+          <span class="tp-std-pts tp-std-week" style="${s.week_points > 0 ? 'color:var(--accent)' : ''}" onmouseenter="tpShowTopicTooltip(event,${s.id})" onmouseleave="tpHideTopicTooltip()">${s.week_points ?? 0}</span>
           <span class="tp-std-pts">${s.class_season_points ?? 0}</span>
           <span class="tp-std-pts">${s.class_total_points ?? 0}</span>
           <span class="tp-std-pts" style="min-width:110px" id="resetcell-${s.id}">
@@ -675,6 +681,27 @@ async function tpLoadStudents() {
           <button class="tp-std-remove" title="Usuń z klasy" onclick="tpRemoveStudent(${s.id}, '${escHtml(s.name)}')">✕</button>
         </div>`).join('')}
     </div>`;
+}
+
+function tpShowTopicTooltip(event, studentId) {
+  const tt = document.getElementById('tpTopicTooltip');
+  if (!tt) return;
+  const topics = _tpTooltipCache[studentId] || [];
+  tt.innerHTML = topics.length === 0
+    ? '<div class="ttp-title">Postęp w tematach</div><div class="ttp-empty">Brak postępu</div>'
+    : `<div class="ttp-title">Postęp w tematach</div>${topics.map(t => `<div class="ttp-row"><span>${escHtml(t.topic)}</span><span class="ttp-pts">${t.points} pkt</span></div>`).join('')}`;
+  tt.style.left = (event.clientX + 14) + 'px';
+  tt.style.top  = (event.clientY + 14) + 'px';
+  tt.style.display = 'block';
+  // Nie wychodź poza ekran
+  const rect = tt.getBoundingClientRect();
+  if (rect.right  > window.innerWidth  - 8) tt.style.left = (event.clientX - rect.width  - 8) + 'px';
+  if (rect.bottom > window.innerHeight - 8) tt.style.top  = (event.clientY - rect.height - 8) + 'px';
+}
+
+function tpHideTopicTooltip() {
+  const tt = document.getElementById('tpTopicTooltip');
+  if (tt) tt.style.display = 'none';
 }
 
 async function tpResetStudentPassword(studentId, btn) {
