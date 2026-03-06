@@ -588,18 +588,23 @@ let _tpTab = 'topics';
 
 function openTeacherPanel() {
   document.getElementById('tpOverlay').style.display = 'flex';
-  // Wypełnij dropdown klas jeśli nauczyciel ma >0 klas
   const classes = state.currentUser?.teacher_classes || [];
   const bar = document.getElementById('tpClassBar');
   const sel = document.getElementById('tpClassSelect');
+  bar.style.display = '';
   if (classes.length > 0) {
     if (!state.teacherClassId) state.teacherClassId = classes[0].id;
-    bar.style.display = '';
+    sel.style.display = '';
+    document.querySelector('[onclick="tpDeleteClass()"]').style.display = '';
     sel.innerHTML = classes.map(c =>
       `<option value="${c.id}" ${state.teacherClassId === c.id ? 'selected' : ''}>Klasa ${c.grade}${c.name} · ${c.schoolName}</option>`
     ).join('');
   } else {
-    bar.style.display = 'none';
+    // Brak klas — ukryj dropdown i usuń, pokaż tylko "+ Dodaj" i od razu otwórz formularz
+    sel.style.display = 'none';
+    document.querySelector('[onclick="tpDeleteClass()"]').style.display = 'none';
+    state.teacherClassId = null;
+    setTimeout(() => tpToggleAddClass(), 50);
   }
   tpShowTab(_tpTab);
 }
@@ -673,7 +678,11 @@ function escHtml(str) {
 async function tpLoadTopics() {
   const body = document.getElementById('tpBody');
   body.innerHTML = '<div style="color:var(--text3)">Ładowanie…</div>';
-  const topics = await api('GET', `/api/teacher/topics?classId=${state.teacherClassId || ''}`);
+  if (!state.teacherClassId) {
+    body.innerHTML = '<div style="color:var(--text3);font-size:13px">Nie masz jeszcze żadnej klasy. Utwórz klasę przyciskiem powyżej.</div>';
+    return;
+  }
+  const topics = await api('GET', `/api/teacher/topics?classId=${state.teacherClassId}`);
   if (!Array.isArray(topics)) { body.innerHTML = '<div style="color:var(--red)">Błąd ładowania</div>'; return; }
 
   // Grupuj po poziomie, zachowując oryginalną kolejność
