@@ -49,6 +49,15 @@ router.post('/admin/users/:id/reset-token', requireAdmin, (req, res) => {
   res.json({ token });
 });
 
+// ── POST /api/admin/schools ──────────────────────────────────
+router.post('/admin/schools', requireAdmin, (req, res) => {
+  const name = (req.body.name || '').trim();
+  const city = (req.body.city || '').trim();
+  if (!name) return res.status(400).json({ error: 'Nazwa szkoły jest wymagana' });
+  const result = db.prepare('INSERT INTO schools (name, city) VALUES (?, ?)').run(name, city);
+  res.json({ id: result.lastInsertRowid, name, city });
+});
+
 // ── GET /api/admin/stats ─────────────────────────────────────
 router.get('/admin/stats', requireAdmin, (req, res) => {
   const totalUsers    = db.prepare('SELECT COUNT(*) as n FROM users').get().n;

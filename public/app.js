@@ -948,10 +948,58 @@ function apCloseBg(e) {
 }
 
 function apShowTab(tab) {
-  document.getElementById('apTabUsers').classList.toggle('active', tab === 'users');
-  document.getElementById('apTabStats').classList.toggle('active', tab === 'stats');
-  if (tab === 'users') apLoadUsers();
-  else apLoadStats();
+  document.getElementById('apTabUsers').classList.toggle('active',   tab === 'users');
+  document.getElementById('apTabSchools').classList.toggle('active', tab === 'schools');
+  document.getElementById('apTabStats').classList.toggle('active',   tab === 'stats');
+  if (tab === 'users')        apLoadUsers();
+  else if (tab === 'schools') apLoadSchools();
+  else                        apLoadStats();
+}
+
+async function apLoadSchools() {
+  const body = document.getElementById('apBody');
+  body.innerHTML = '<div style="color:var(--text3)">Ładowanie…</div>';
+  const schools = await api('GET', '/api/schools');
+  if (!Array.isArray(schools)) {
+    body.innerHTML = `<div style="color:var(--red)">${escHtml(schools.error || 'Błąd')}</div>`;
+    return;
+  }
+  body.innerHTML = `
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Dodaj szkołę</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="apSchoolName" class="ap-search" type="text" placeholder="Nazwa szkoły" style="flex:2;min-width:140px">
+        <input id="apSchoolCity" class="ap-search" type="text" placeholder="Miasto" style="flex:1;min-width:100px">
+        <button class="btn btn-sm" onclick="apAddSchool()" style="flex-shrink:0">+ Dodaj</button>
+      </div>
+      <div id="apSchoolErr" style="font-size:12px;color:var(--red);margin-top:4px"></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">
+      Istniejące szkoły (${schools.length})
+    </div>
+    ${schools.length === 0
+      ? '<div style="color:var(--text3);font-style:italic">Brak szkół</div>'
+      : schools.map(s => `
+        <div class="ap-user-row">
+          <div class="ap-user-name">${escHtml(s.name)}</div>
+          <div class="ap-user-pts" style="min-width:80px">${escHtml(s.city || '—')}</div>
+        </div>
+      `).join('')}
+  `;
+}
+
+async function apAddSchool() {
+  const name = document.getElementById('apSchoolName').value.trim();
+  const city = document.getElementById('apSchoolCity').value.trim();
+  const err  = document.getElementById('apSchoolErr');
+  err.textContent = '';
+  if (!name) { err.textContent = 'Podaj nazwę szkoły'; return; }
+  const res = await api('POST', '/api/admin/schools', { name, city });
+  if (res.error) { err.textContent = res.error; return; }
+  document.getElementById('apSchoolName').value = '';
+  document.getElementById('apSchoolCity').value = '';
+  showToast(`Dodano: ${name}`, 'success');
+  apLoadSchools();
 }
 
 async function apLoadUsers(q = '') {
