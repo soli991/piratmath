@@ -6369,7 +6369,15 @@ function updateUserPanel() {
   dukatyEl.textContent = `🪙 ${d} ${suffix}`;
   dukatyEl.style.display = '';
 
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) logoutBtn.style.display = '';
+
   updateAchBtn();
+}
+
+async function logout() {
+  await api('POST', '/api/logout');
+  location.reload();
 }
 
 function updateStatsRow() {
