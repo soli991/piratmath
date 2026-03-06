@@ -655,6 +655,7 @@ async function tpLoadStudents() {
         <span class="tp-sth-pts">Ten tydzień</span>
         <span class="tp-sth-pts">Sezonowe</span>
         <span class="tp-sth-pts">Łącznie</span>
+        <span class="tp-sth-pts" style="min-width:110px">Reset hasła</span>
         <span class="tp-sth-action"></span>
       </div>
       ${students.map((s, i) => `
@@ -664,28 +665,24 @@ async function tpLoadStudents() {
           <span class="tp-std-pts tp-std-week" style="${s.week_points > 0 ? 'color:var(--accent)' : ''}">${s.week_points ?? 0}</span>
           <span class="tp-std-pts">${s.class_season_points ?? 0}</span>
           <span class="tp-std-pts">${s.class_total_points ?? 0}</span>
-          <button class="tp-std-reset" title="Resetuj hasło" onclick="tpResetStudentPassword(${s.id}, '${escHtml(s.name)}')">🔑</button>
+          <span class="tp-std-pts" style="min-width:110px" id="resetcell-${s.id}">
+            <button class="tp-std-reset" style="font-size:11px;width:auto;padding:2px 8px" onclick="tpResetStudentPassword(${s.id}, this)">🔑 Generuj kod</button>
+          </span>
           <button class="tp-std-remove" title="Usuń z klasy" onclick="tpRemoveStudent(${s.id}, '${escHtml(s.name)}')">✕</button>
         </div>`).join('')}
     </div>`;
 }
 
-async function tpResetStudentPassword(studentId, studentName) {
-  if (!confirm(`Wygenerować jednorazowy kod resetujący hasło dla „${studentName}"?`)) return;
+async function tpResetStudentPassword(studentId, btn) {
+  btn.disabled = true;
+  btn.textContent = '…';
   const data = await api('POST', '/api/teacher/reset-token', { studentId, classId: state.teacherClassId });
-  const body = document.getElementById('tpBody');
+  const cell = document.getElementById(`resetcell-${studentId}`);
   if (data.error) {
-    body.insertAdjacentHTML('afterbegin', `<div style="color:var(--red);font-size:13px;margin-bottom:8px">Błąd: ${escHtml(data.error)}</div>`);
+    cell.innerHTML = `<span style="color:var(--red);font-size:11px">${escHtml(data.error)}</span>`;
     return;
   }
-  body.innerHTML = `
-    <div style="padding:20px;background:var(--bg2);border:2px solid var(--accent);border-radius:12px;text-align:center">
-      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Kod resetujący hasło dla <strong>${escHtml(studentName)}</strong> (ważny 24h):</div>
-      <div style="font-size:32px;font-weight:900;letter-spacing:8px;color:var(--accent);font-family:monospace;margin:8px 0">${data.token}</div>
-      <div style="font-size:11px;color:var(--text3)">Uczeń wpisuje go na ekranie logowania → „Zapomniałem hasła"</div>
-    </div>
-    <button class="btn btn-sm" style="margin-top:12px" onclick="tpLoadStudents()">← Wróć do listy</button>
-  `;
+  cell.innerHTML = `<span style="font-family:monospace;font-weight:900;font-size:15px;letter-spacing:3px;color:var(--accent)">${data.token}</span><span style="color:var(--text3);font-size:10px;margin-left:4px">24h</span>`;
 }
 
 async function tpRemoveStudent(studentId, studentName) {
