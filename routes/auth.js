@@ -3,6 +3,7 @@ const bcrypt  = require('bcrypt');
 const crypto  = require('crypto');
 const db      = require('../db');
 const { checkAndUnlock } = require('../achievements');
+const { containsBadWord } = require('../badwords');
 
 const router = express.Router();
 const SALT_ROUNDS = 12;
@@ -52,6 +53,8 @@ router.post('/register', async (req, res) => {
     return res.status(400).json({ error: 'Nazwa musi mieć min. 3 znaki!' });
   if (password.length < 4)
     return res.status(400).json({ error: 'Hasło musi mieć min. 4 znaki!' });
+  if (containsBadWord(name))
+    return res.status(400).json({ error: 'Ta nazwa zawiera niedozwolone słowa.' });
 
   const existing = db.prepare('SELECT id FROM users WHERE LOWER(name) = LOWER(?)').get(name);
   if (existing)
