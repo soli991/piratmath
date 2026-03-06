@@ -72,8 +72,8 @@ router.post('/admin/schools', requireAdmin, (req, res) => {
 // ── POST /api/admin/classes ──────────────────────────────────
 router.post('/admin/classes', requireAdmin, (req, res) => {
   const { schoolId, name, grade, teacherName } = req.body;
-  if (!schoolId || !name || !grade)
-    return res.status(400).json({ error: 'Podaj szkołę, nazwę i poziom klasy' });
+  if (!schoolId || !name)
+    return res.status(400).json({ error: 'Podaj szkołę i nazwę klasy' });
   const school = db.prepare('SELECT id FROM schools WHERE id = ?').get(parseInt(schoolId));
   if (!school) return res.status(404).json({ error: 'Nie znaleziono szkoły' });
 
@@ -87,7 +87,7 @@ router.post('/admin/classes', requireAdmin, (req, res) => {
 
   const result = db.prepare(
     'INSERT INTO classes (school_id, name, grade, teacher_id) VALUES (?, ?, ?, ?)'
-  ).run(parseInt(schoolId), name.trim(), parseInt(grade), teacherId);
+  ).run(parseInt(schoolId), name.trim(), parseInt(grade) || 0, teacherId);
   res.json({ id: result.lastInsertRowid });
 });
 

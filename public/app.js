@@ -984,8 +984,7 @@ async function apLoadSchools() {
         <select id="apClassSchool" class="ap-role-sel" style="flex:2;min-width:140px;padding:7px 8px;font-size:13px">
           ${schoolOptions || '<option disabled>Brak szkół</option>'}
         </select>
-        <input id="apClassName"  class="ap-search" type="text"   placeholder='Nazwa (np. 4b)' style="flex:1;min-width:80px">
-        <input id="apClassGrade" class="ap-search" type="number" placeholder="Poziom" min="1" max="8" style="width:72px">
+        <input id="apClassName"    class="ap-search" type="text" placeholder='Nazwa (np. 4b)' style="flex:1;min-width:80px">
         <input id="apClassTeacher" class="ap-search" type="text" placeholder="Login nauczyciela" style="flex:2;min-width:120px">
         <button class="btn btn-sm" onclick="apAddClass()" style="flex-shrink:0">Dodaj</button>
       </div>
@@ -1004,7 +1003,7 @@ async function apLoadSchools() {
             ? '<div style="color:var(--text3);font-size:12px;padding-left:10px;font-style:italic">Brak klas</div>'
             : s.classes.map(c => `
               <div class="ap-user-row" style="padding-left:10px">
-                <div class="ap-user-name" style="font-size:13px">Klasa ${escHtml(String(c.grade))}${escHtml(c.name)}</div>
+                <div class="ap-user-name" style="font-size:13px">${escHtml(c.name)}</div>
                 <div style="font-size:12px;color:var(--text3)">${c.teacherName ? escHtml(c.teacherName) : '<i>brak nauczyciela</i>'}</div>
               </div>
             `).join('')}
@@ -1028,14 +1027,13 @@ async function apAddSchool() {
 async function apAddClass() {
   const schoolId    = document.getElementById('apClassSchool').value;
   const name        = document.getElementById('apClassName').value.trim();
-  const grade       = document.getElementById('apClassGrade').value;
   const teacherName = document.getElementById('apClassTeacher').value.trim();
   const err         = document.getElementById('apClassErr');
   err.textContent = '';
-  if (!schoolId || !name || !grade) { err.textContent = 'Podaj szkołę, nazwę i poziom'; return; }
-  const res = await api('POST', '/api/admin/classes', { schoolId, name, grade, teacherName: teacherName || undefined });
+  if (!schoolId || !name) { err.textContent = 'Podaj szkołę i nazwę klasy'; return; }
+  const res = await api('POST', '/api/admin/classes', { schoolId, name, teacherName: teacherName || undefined });
   if (res.error) { err.textContent = res.error; return; }
-  showToast(`Dodano klasę ${grade}${name}${teacherName ? ` (${teacherName})` : ''}`, 'success');
+  showToast(`Dodano klasę ${name}${teacherName ? ` (${teacherName})` : ''}`, 'success');
   apLoadSchools();
 }
 
