@@ -1860,7 +1860,6 @@ function fmtNum(n) {
 // ── Zadania tekstowe: zapisywanie ułamka ─────────────────────
 function genFractionWordProblem(d) {
   const maxN = d === 'easy' ? 6 : 12;
-  const P = 'np. 3/4';
 
   const type = rand(0, 6);
 
@@ -1868,18 +1867,17 @@ function genFractionWordProblem(d) {
     // K z N przedmiotów
     const n = rand(3, maxN), k = rand(1, n - 1);
     const tmpl = [
-      [`Było ${n} balonów, a ${k} z nich pękło. Jaki ułamek balonów pękło?`, `${k}/${n}`],
-      [`W klasie jest ${n} uczniów, z czego ${k} nosi okulary. Jaki ułamek uczniów nosi okulary?`, `${k}/${n}`],
-      [`W koszyczku leży ${n} owoców, a ${k} to jabłka. Jaki ułamek owoców stanowią jabłka?`, `${k}/${n}`],
-      [`Ciasto podzielono na ${n} równych kawałków i zjedzono ${k}. Jaki ułamek ciasta zjedzono?`, `${k}/${n}`],
-      [`Na półce stoi ${n} książek. ${k} z nich to powieści. Jaki ułamek książek to powieści?`, `${k}/${n}`],
-      [`W słoiku jest ${n} cukierków, a ${k} to czekoladki. Jaki ułamek stanowią czekoladki?`, `${k}/${n}`],
-      [`Droga ma ${n} km. Przejechano ${k} km. Jaki ułamek drogi pokonano?`, `${k}/${n}`],
-      [`Na parkingu stoi ${n} samochodów, ${k} z nich to rowery elektryczne. Jaki ułamek stanowią rowery?`, `${k}/${n}`],
-      [`W ogrodzie jest ${n} drzew, a ${k} to jabłonie. Jaki ułamek drzew stanowią jabłonie?`, `${k}/${n}`],
+      `Było ${n} balonów, a ${k} z nich pękło. Jaki ułamek balonów pękło?`,
+      `W klasie jest ${n} uczniów, z czego ${k} nosi okulary. Jaki ułamek uczniów nosi okulary?`,
+      `W koszyczku leży ${n} owoców, a ${k} to jabłka. Jaki ułamek owoców stanowią jabłka?`,
+      `Ciasto podzielono na ${n} równych kawałków i zjedzono ${k}. Jaki ułamek ciasta zjedzono?`,
+      `Na półce stoi ${n} książek. ${k} z nich to powieści. Jaki ułamek książek to powieści?`,
+      `W słoiku jest ${n} cukierków, a ${k} to czekoladki. Jaki ułamek stanowią czekoladki?`,
+      `Droga ma ${n} km. Przejechano ${k} km. Jaki ułamek drogi pokonano?`,
+      `Na parkingu stoi ${n} samochodów, ${k} z nich to rowery elektryczne. Jaki ułamek stanowią rowery?`,
+      `W ogrodzie jest ${n} drzew, a ${k} to jabłonie. Jaki ułamek drzew stanowią jabłonie?`,
     ];
-    const [q, a] = tmpl[rand(0, tmpl.length - 1)];
-    return { q, a, placeholder: P };
+    return { type: 'fraction_read', k, n, text: tmpl[rand(0, tmpl.length - 1)] };
   }
 
   if (type === 1) {
@@ -1891,78 +1889,87 @@ function genFractionWordProblem(d) {
       `W paczce było ${n} herbatników. Zjedliśmy ${k}. Jaki ułamek herbatników pozostało?`,
       `Na talerzu leżało ${n} ciasteczek. Wzięto ${k}. Jaki ułamek ciasteczek został na talerzu?`,
     ];
-    return { q: tmpl[rand(0, tmpl.length - 1)], a: `${left}/${n}`, placeholder: P };
+    return { type: 'fraction_read', k: left, n, text: tmpl[rand(0, tmpl.length - 1)] };
   }
 
   // type 2–6 → algebraiczne opisy ułamka
-  return genFractionAlgebraic(d, maxN, P);
+  return genFractionAlgebraic(d, maxN);
 }
 
-function genFractionAlgebraic(d, maxN, P) {
+function genFractionAlgebraic(d, maxN) {
   const variant = rand(0, 11);
 
   if (variant === 0) {
     // mianownik = licznik + diff
     const k = rand(1, maxN - 2), diff = rand(1, Math.min(maxN - k, 8));
     const n = k + diff;
-    return { q: `Licznik ułamka wynosi ${k}, a mianownik jest o ${diff} większy od licznika. Jaki to ułamek?`,
-      a: `${k}/${n}`, placeholder: P, hint: `Mianownik = ${k} + ${diff} = ${n}` };
+    return { type: 'fraction_read', k, n,
+      text: `Licznik ułamka wynosi ${k}, a mianownik jest o ${diff} większy od licznika. Jaki to ułamek?`,
+      hint: `Mianownik = ${k} + ${diff} = ${n}` };
   }
 
   if (variant === 1) {
     // licznik = mianownik - diff
     const n = rand(3, maxN), diff = rand(1, n - 1), k = n - diff;
-    return { q: `Mianownik ułamka wynosi ${n}, a licznik jest o ${diff} mniejszy od mianownika. Jaki to ułamek?`,
-      a: `${k}/${n}`, placeholder: P, hint: `Licznik = ${n} − ${diff} = ${k}` };
+    return { type: 'fraction_read', k, n,
+      text: `Mianownik ułamka wynosi ${n}, a licznik jest o ${diff} mniejszy od mianownika. Jaki to ułamek?`,
+      hint: `Licznik = ${n} − ${diff} = ${k}` };
   }
 
   if (variant === 2) {
     // mianownik = times × licznik
     const k = rand(1, Math.floor(maxN / 2)), times = rand(2, 4), n = k * times;
-    return { q: `Licznik ułamka wynosi ${k}. Mianownik jest ${times} razy większy od licznika. Jaki to ułamek?`,
-      a: `${k}/${n}`, placeholder: P, hint: `Mianownik = ${k} × ${times} = ${n}` };
+    return { type: 'fraction_read', k, n,
+      text: `Licznik ułamka wynosi ${k}. Mianownik jest ${times} razy większy od licznika. Jaki to ułamek?`,
+      hint: `Mianownik = ${k} × ${times} = ${n}` };
   }
 
   if (variant === 3) {
     // licznik = mianownik / times
     const times = rand(2, 4), k = rand(1, Math.floor(maxN / times)), n = k * times;
-    return { q: `Mianownik ułamka wynosi ${n}. Licznik jest ${times} razy mniejszy od mianownika. Jaki to ułamek?`,
-      a: `${k}/${n}`, placeholder: P, hint: `Licznik = ${n} ÷ ${times} = ${k}` };
+    return { type: 'fraction_read', k, n,
+      text: `Mianownik ułamka wynosi ${n}. Licznik jest ${times} razy mniejszy od mianownika. Jaki to ułamek?`,
+      hint: `Licznik = ${n} ÷ ${times} = ${k}` };
   }
 
   if (variant === 4) {
     // suma licznika i mianownika = S, licznik = k
     const k = rand(1, maxN - 2), n = rand(k + 1, maxN), S = k + n;
-    return { q: `Suma licznika i mianownika pewnego ułamka wynosi ${S}. Licznik wynosi ${k}. Jaki to ułamek?`,
-      a: `${k}/${n}`, placeholder: P, hint: `Mianownik = ${S} − ${k} = ${n}` };
+    return { type: 'fraction_read', k, n,
+      text: `Suma licznika i mianownika pewnego ułamka wynosi ${S}. Licznik wynosi ${k}. Jaki to ułamek?`,
+      hint: `Mianownik = ${S} − ${k} = ${n}` };
   }
 
   if (variant === 5) {
     // suma licznika i mianownika = S, mianownik = n
     const n = rand(3, maxN), k = rand(1, n - 1), S = k + n;
-    return { q: `Suma licznika i mianownika pewnego ułamka wynosi ${S}. Mianownik wynosi ${n}. Jaki to ułamek?`,
-      a: `${k}/${n}`, placeholder: P, hint: `Licznik = ${S} − ${n} = ${k}` };
+    return { type: 'fraction_read', k, n,
+      text: `Suma licznika i mianownika pewnego ułamka wynosi ${S}. Mianownik wynosi ${n}. Jaki to ułamek?`,
+      hint: `Licznik = ${S} − ${n} = ${k}` };
   }
 
   if (variant === 6) {
     // mianownik - licznik = diff, mianownik podany
     const n = rand(3, maxN), diff = rand(1, n - 1), k = n - diff;
-    return { q: `Mianownik pewnego ułamka wynosi ${n}. Różnica mianownika i licznika wynosi ${diff}. Jaki to ułamek?`,
-      a: `${k}/${n}`, placeholder: P, hint: `Licznik = ${n} − ${diff} = ${k}` };
+    return { type: 'fraction_read', k, n,
+      text: `Mianownik pewnego ułamka wynosi ${n}. Różnica mianownika i licznika wynosi ${diff}. Jaki to ułamek?`,
+      hint: `Licznik = ${n} − ${diff} = ${k}` };
   }
 
   if (variant === 7) {
     // mianownik - licznik = diff, licznik podany
     const k = rand(1, maxN - 2), diff = rand(1, maxN - k), n = k + diff;
-    return { q: `Licznik pewnego ułamka wynosi ${k}. Różnica mianownika i licznika wynosi ${diff}. Jaki to ułamek?`,
-      a: `${k}/${n}`, placeholder: P, hint: `Mianownik = ${k} + ${diff} = ${n}` };
+    return { type: 'fraction_read', k, n,
+      text: `Licznik pewnego ułamka wynosi ${k}. Różnica mianownika i licznika wynosi ${diff}. Jaki to ułamek?`,
+      hint: `Mianownik = ${k} + ${diff} = ${n}` };
   }
 
   if (variant === 8) {
     // mianownik = 2×licznik + extra
     const k = rand(1, Math.floor((maxN - 1) / 2)), extra = rand(1, maxN - 2 * k), n = 2 * k + extra;
-    return { q: `Mianownik ułamka jest o ${extra} więcej niż dwa razy jego licznik, który wynosi ${k}. Jaki to ułamek?`,
-      a: `${k}/${n}`, placeholder: P, hint: `Mianownik = 2 × ${k} + ${extra} = ${n}` };
+    return { type: 'fraction_read', k, n,
+      text: `Mianownik ułamka jest o ${extra} więcej niż dwa razy jego licznik, który wynosi ${k}. Jaki to ułamek?`,
+      hint: `Mianownik = 2 × ${k} + ${extra} = ${n}` };
   }
 
   if (variant === 9) {
@@ -1972,33 +1979,35 @@ function genFractionAlgebraic(d, maxN, P) {
     if ((k + n) % 2 !== (n - k) % 2) {
       // fallback — wróć do wariantu 0
       const k2 = rand(1, maxN - 2), diff2 = rand(1, Math.min(maxN - k2, 6)), n2 = k2 + diff2;
-      return { q: `Licznik ułamka wynosi ${k2}, a mianownik jest o ${diff2} większy. Jaki to ułamek?`,
-        a: `${k2}/${n2}`, placeholder: P, hint: `Mianownik = ${k2} + ${diff2} = ${n2}` };
+      return { type: 'fraction_read', k: k2, n: n2,
+        text: `Licznik ułamka wynosi ${k2}, a mianownik jest o ${diff2} większy. Jaki to ułamek?`,
+        hint: `Mianownik = ${k2} + ${diff2} = ${n2}` };
     }
     const S = k + n, D = n - k;
-    return { q: `Suma licznika i mianownika ułamka wynosi ${S}, a ich różnica (mianownik minus licznik) wynosi ${D}. Jaki to ułamek?`,
-      a: `${k}/${n}`, placeholder: P, hint: `Licznik = (${S} − ${D}) ÷ 2 = ${k},  mianownik = (${S} + ${D}) ÷ 2 = ${n}` };
+    return { type: 'fraction_read', k, n,
+      text: `Suma licznika i mianownika ułamka wynosi ${S}, a ich różnica (mianownik minus licznik) wynosi ${D}. Jaki to ułamek?`,
+      hint: `Licznik = (${S} − ${D}) ÷ 2 = ${k},  mianownik = (${S} + ${D}) ÷ 2 = ${n}` };
   }
 
   if (variant === 10) {
     // realia — konkrety z życia
     const tmpl = d === 'easy' ? [
-      { q: 'Tydzień ma 7 dni. Jaki ułamek tygodnia stanowią 2 dni?', a: '2/7' },
-      { q: 'Tydzień ma 7 dni. Jaki ułamek tygodnia stanowią 3 dni?', a: '3/7' },
-      { q: 'Rok ma 4 pory roku. Jaki ułamek roku stanowi 1 pora roku?', a: '1/4' },
-      { q: 'Doba ma 24 godziny. Jaki ułamek doby stanowią 6 godzin?', a: '6/24', hint: 'Mianownik = 24 (godziny w dobie)' },
-      { q: 'Doba ma 24 godziny. Jaki ułamek doby stanowią 8 godzin?', a: '8/24', hint: 'Mianownik = 24 (godziny w dobie)' },
+      { text: 'Tydzień ma 7 dni. Jaki ułamek tygodnia stanowią 2 dni?', k: 2, n: 7 },
+      { text: 'Tydzień ma 7 dni. Jaki ułamek tygodnia stanowią 3 dni?', k: 3, n: 7 },
+      { text: 'Rok ma 4 pory roku. Jaki ułamek roku stanowi 1 pora roku?', k: 1, n: 4 },
+      { text: 'Doba ma 24 godziny. Jaki ułamek doby stanowią 6 godzin?', k: 6, n: 24, hint: 'Mianownik = 24 (godziny w dobie)' },
+      { text: 'Doba ma 24 godziny. Jaki ułamek doby stanowią 8 godzin?', k: 8, n: 24, hint: 'Mianownik = 24 (godziny w dobie)' },
     ] : [
-      { q: 'Rok ma 12 miesięcy. Jaki ułamek roku stanowią 3 miesiące letnie (czerwiec, lipiec, sierpień)?', a: '3/12' },
-      { q: 'Rok ma 12 miesięcy. Jaki ułamek roku stanowią miesiące zimowe (grudzień, styczeń, luty)?', a: '3/12' },
-      { q: 'Rok ma 12 miesięcy. Jaki ułamek roku stanowią 4 miesiące?', a: '4/12' },
-      { q: 'Godzina ma 60 minut. Jaki ułamek godziny stanowi kwadrans (15 minut)?', a: '15/60', hint: 'Kwadrans = 15 minut' },
-      { q: 'Godzina ma 60 minut. Jaki ułamek godziny stanowi pół godziny?', a: '30/60' },
-      { q: 'Tydzień ma 7 dni. Jaki ułamek tygodnia stanowią dni weekendowe (sobota i niedziela)?', a: '2/7' },
-      { q: 'Tydzień ma 7 dni. Jaki ułamek tygodnia stanowią dni robocze (poniedziałek–piątek)?', a: '5/7' },
-      { q: 'Minuta ma 60 sekund. Jaki ułamek minuty stanowi 20 sekund?', a: '20/60', hint: 'Mianownik = 60 (sekundy w minucie)' },
+      { text: 'Rok ma 12 miesięcy. Jaki ułamek roku stanowią 3 miesiące letnie (czerwiec, lipiec, sierpień)?', k: 3, n: 12 },
+      { text: 'Rok ma 12 miesięcy. Jaki ułamek roku stanowią miesiące zimowe (grudzień, styczeń, luty)?', k: 3, n: 12 },
+      { text: 'Rok ma 12 miesięcy. Jaki ułamek roku stanowią 4 miesiące?', k: 4, n: 12 },
+      { text: 'Godzina ma 60 minut. Jaki ułamek godziny stanowi kwadrans (15 minut)?', k: 15, n: 60, hint: 'Kwadrans = 15 minut' },
+      { text: 'Godzina ma 60 minut. Jaki ułamek godziny stanowi pół godziny?', k: 30, n: 60 },
+      { text: 'Tydzień ma 7 dni. Jaki ułamek tygodnia stanowią dni weekendowe (sobota i niedziela)?', k: 2, n: 7 },
+      { text: 'Tydzień ma 7 dni. Jaki ułamek tygodnia stanowią dni robocze (poniedziałek–piątek)?', k: 5, n: 7 },
+      { text: 'Minuta ma 60 sekund. Jaki ułamek minuty stanowi 20 sekund?', k: 20, n: 60, hint: 'Mianownik = 60 (sekundy w minucie)' },
     ];
-    return { ...tmpl[rand(0, tmpl.length - 1)], placeholder: P };
+    return { type: 'fraction_read', ...tmpl[rand(0, tmpl.length - 1)] };
   }
 
   // variant === 11: mianownik jest iloczynem dwóch podanych liczb
@@ -2007,12 +2016,13 @@ function genFractionAlgebraic(d, maxN, P) {
     if (n > maxN) {
       // fallback
       const k2 = rand(1, maxN - 1), n2 = maxN;
-      return { q: `Mianownik ułamka wynosi ${n2}, a licznik jest równy ${k2}. Jaki to ułamek?`,
-        a: `${k2}/${n2}`, placeholder: P };
+      return { type: 'fraction_read', k: k2, n: n2,
+        text: `Mianownik ułamka wynosi ${n2}, a licznik jest równy ${k2}. Jaki to ułamek?` };
     }
     const k = rand(1, n - 1);
-    return { q: `Mianownik ułamka jest iloczynem liczb ${a} i ${b}. Licznik wynosi ${k}. Jaki to ułamek?`,
-      a: `${k}/${n}`, placeholder: P, hint: `Mianownik = ${a} × ${b} = ${n}` };
+    return { type: 'fraction_read', k, n,
+      text: `Mianownik ułamka jest iloczynem liczb ${a} i ${b}. Licznik wynosi ${k}. Jaki to ułamek?`,
+      hint: `Mianownik = ${a} × ${b} = ${n}` };
   }
 }
 
@@ -5110,11 +5120,12 @@ function fractionRectSvg(k, n, w = 210, h = 70) {
 }
 
 function buildFractionReadHtml(q) {
-  const svg = q.shape === 'circle' ? fractionCircleSvg(q.k, q.n) : fractionRectSvg(q.k, q.n);
+  const svg = q.shape ? (q.shape === 'circle' ? fractionCircleSvg(q.k, q.n) : fractionRectSvg(q.k, q.n)) : '';
+  const questionText = q.text || 'Jaki ułamek przedstawia rysunek?';
   if (state.solutionShown) {
     return `<div class="fr-wrap">
-      <div class="fr-question">Jaki ułamek przedstawia rysunek?</div>
-      <div>${svg}</div>
+      <div class="fr-question">${questionText}</div>
+      ${svg ? `<div>${svg}</div>` : ''}
       <div class="fr-solution">
         <div>${q.k}</div>
         <div class="fr-sol-line"></div>
@@ -5122,12 +5133,17 @@ function buildFractionReadHtml(q) {
       </div>
     </div>`;
   }
-  const hint = state.mistakes >= 1
-    ? `<div class="fr-hint">💡 Mianownik = wszystkie części (${q.n}), licznik = pokolorowane części</div>`
-    : '';
+  let hint = '';
+  if (state.mistakes >= 1) {
+    if (q.shape) {
+      hint = `<div class="fr-hint">💡 Mianownik = wszystkie części (${q.n}), licznik = pokolorowane części</div>`;
+    } else if (q.hint) {
+      hint = `<div class="fr-hint">💡 ${q.hint}</div>`;
+    }
+  }
   return `<div class="fr-wrap">
-    <div class="fr-question">Jaki ułamek przedstawia rysunek?</div>
-    <div>${svg}</div>
+    <div class="fr-question">${questionText}</div>
+    ${svg ? `<div>${svg}</div>` : ''}
     <div class="fr-input-area">
       <input id="frNum" class="fr-input" type="number" min="0" max="99" placeholder="?"
         onkeydown="if(event.key==='Enter'){document.getElementById('frDen')?.focus()}"
