@@ -11,7 +11,11 @@ async function api(method, path, body) {
     location.reload();
     return {};
   }
-  return res.json();
+  try {
+    return await res.json();
+  } catch(e) {
+    return { error: `HTTP ${res.status}` };
+  }
 }
 
 // ============================================================
