@@ -32,16 +32,6 @@ app.use('/api', apiRoutes);
 app.use('/api/pvp', pvpRoutes);
 app.use('/api', schoolRoutes);
 
-// TYMCZASOWY endpoint admina — usunąć po użyciu!
-const db = require('./db');
-app.get('/admin/promote', (req, res) => {
-  const { name, secret } = req.query;
-  if (secret !== (process.env.ADMIN_SECRET || 'zmien-mnie')) return res.status(403).send('Brak dostępu');
-  if (!name) return res.status(400).send('Brak name');
-  const result = db.prepare("UPDATE users SET role='teacher' WHERE name=?").run(name);
-  res.send(result.changes ? `OK — ${name} jest teraz nauczycielem` : `Nie znaleziono użytkownika: ${name}`);
-});
-
 // Panel nauczyciela — osobna strona
 app.get('/teacher', (req, res) => {
   res.sendFile(require('path').join(__dirname, 'public', 'teacher.html'));
