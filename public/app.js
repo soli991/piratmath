@@ -385,6 +385,19 @@ function selectServer(s) {
   applyClassTopicFilter();
   updateServerIndicator();
   renderLeaderboards();
+
+  // Jeśli uczeń miał aktywny temat i przełączył się na serwer klasowy,
+  // a ten temat nie jest odblokowany — wróć do ekranu wyboru tematu
+  if (s === 'class' && state.currentTopic && state.classTopics !== null
+      && state.currentUser?.role !== 'teacher'
+      && CLASS_MANAGED_TOPICS.has(state.currentTopic)
+      && !state.classTopics.has(state.currentTopic)) {
+    state.currentTopic = null;
+    document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('exerciseArea').classList.remove('visible');
+    document.getElementById('welcomeScreen').style.display = '';
+    showToast('Ten temat nie jest odblokowany na serwerze klasowym', 'info');
+  }
 }
 
 function updateServerIndicator() {
