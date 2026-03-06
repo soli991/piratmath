@@ -410,7 +410,7 @@ router.delete('/teacher/students/:id', requireTeacher, (req, res) => {
   const classId   = parseInt(req.query.classId);
   if (!classId || !teacherOwnsClass(req.session.userId, classId)) return res.status(403).json({ error: 'Brak dostępu do klasy' });
 
-  const student = db.prepare('SELECT id, class_id FROM users WHERE id = ? AND role = "student"').get(studentId);
+  const student = db.prepare("SELECT id, class_id FROM users WHERE id = ? AND role = 'student'").get(studentId);
   if (!student || student.class_id !== classId) return res.status(404).json({ error: 'Uczeń nie jest w tej klasie' });
 
   db.prepare('UPDATE users SET class_id = NULL WHERE id = ?').run(studentId);
@@ -424,7 +424,7 @@ router.post('/teacher/reset-token', requireTeacher, (req, res) => {
     const classId   = parseInt(req.body.classId);
     if (!classId || !teacherOwnsClass(req.session.userId, classId)) return res.status(403).json({ error: 'Brak dostępu do klasy' });
 
-    const student = db.prepare('SELECT id, name, class_id FROM users WHERE id = ? AND role = "student"').get(studentId);
+    const student = db.prepare("SELECT id, name, class_id FROM users WHERE id = ? AND role = 'student'").get(studentId);
     if (!student || parseInt(student.class_id) !== classId) return res.status(404).json({ error: `Uczeń nie jest w tej klasie (class_id=${student?.class_id}, oczekiwano ${classId})` });
 
     db.prepare('DELETE FROM reset_tokens WHERE user_id = ?').run(studentId);
