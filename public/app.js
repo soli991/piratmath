@@ -567,7 +567,7 @@ function _buildSinusDesc(a, b, c, d) {
   ).join('');
 }
 
-window._ggbSinusOnLoad = function(api) {
+function _setupSinusListener(api) {
   let _timer;
   function update() {
     clearTimeout(_timer);
@@ -579,14 +579,12 @@ window._ggbSinusOnLoad = function(api) {
           api.getValue('a'), api.getValue('b'),
           api.getValue('c'), api.getValue('d')
         );
-      } catch(e) {
-        el.innerHTML = '<div class="ggb-desc-loading">Nie udało się odczytać parametrów</div>';
-      }
+      } catch(e) {}
     }, 60);
   }
   api.registerUpdateListener(update);
   update();
-};
+}
 
 function _initGgbSinus() {
   const wrap = document.getElementById('ggb-sinus');
@@ -602,9 +600,22 @@ function _initGgbSinus() {
     filename:            '/geogebra/przeksztalceniaSinus.ggb',
     enableRightClick:    false,
     scaleContainerClass: 'ggb-wrap',
-    appletOnLoad:        '_ggbSinusOnLoad',
   }, true);
   applet.inject('ggb-sinus');
+
+  // GeoGebra rejestruje się jako window.ggbApplet — pollujemy aż będzie gotowy
+  let attempts = 0;
+  const poll = setInterval(() => {
+    attempts++;
+    if (attempts > 40) { clearInterval(poll); return; }
+    try {
+      const api = window.ggbApplet;
+      if (api && typeof api.getValue === 'function') {
+        clearInterval(poll);
+        _setupSinusListener(api);
+      }
+    } catch(e) {}
+  }, 500);
 }
 
 function selectAids(btn) {
