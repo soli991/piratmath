@@ -6,6 +6,7 @@ const authRoutes   = require('./routes/auth');
 const apiRoutes    = require('./routes/api');
 const pvpRoutes    = require('./routes/pvp');
 const schoolRoutes = require('./routes/school');
+const adminRoutes  = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,6 +32,7 @@ app.use('/api', authRoutes);
 app.use('/api', apiRoutes);
 app.use('/api/pvp', pvpRoutes);
 app.use('/api', schoolRoutes);
+app.use('/api', adminRoutes);
 
 // Panel nauczyciela — osobna strona
 app.get('/teacher', (req, res) => {

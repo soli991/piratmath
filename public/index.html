@@ -2191,6 +2191,21 @@ details[open] .tp-level-summary::after { content: '▴'; }
 #tpTopicTooltip .ttp-pts { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--accent); white-space: nowrap; }
 #tpTopicTooltip .ttp-empty { color: var(--text3); font-style: italic; }
 .tp-std-week { cursor: help; border-bottom: 1px dashed rgba(255,255,255,0.2); }
+
+/* ===== ADMIN PANEL MODAL ===== */
+.ap-search { width: 100%; box-sizing: border-box; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 14px; font-family: var(--font-body); }
+.ap-search:focus { outline: none; border-color: var(--accent); }
+.ap-user-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.ap-user-row:last-child { border-bottom: none; }
+.ap-user-name { flex: 1; font-weight: 600; font-size: 14px; min-width: 80px; }
+.ap-user-pts { font-size: 12px; color: var(--text3); min-width: 56px; text-align: right; }
+.ap-role-sel { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px 8px; font-size: 12px; cursor: pointer; font-family: var(--font-body); }
+.ap-role-sel:disabled { opacity: 0.5; cursor: default; }
+.ap-stat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+.ap-stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 10px; text-align: center; }
+.ap-stat-card .ap-n { font-size: 30px; font-weight: 800; color: var(--accent); line-height: 1; }
+.ap-stat-card .ap-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+.ap-token { padding: 6px 10px; background: var(--bg); border: 1px solid var(--accent); border-radius: var(--radius-sm); font-family: monospace; font-size: 14px; color: var(--accent); letter-spacing: 0.12em; text-align: center; margin-top: 4px; width: 100%; box-sizing: border-box; }
 .tp-row { display: flex; align-items: center; gap: 10px; padding: 3px 8px; border-radius: 7px; background: rgba(255,255,255,0.03); }
 .tp-name { flex: 1; font-size: 12px; color: var(--text-secondary, #aaa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 165px; }
 .tp-miles { display: flex; gap: 5px; }
@@ -2912,6 +2927,9 @@ details[open] .tp-level-summary::after { content: '▴'; }
     <button class="aids-nav-btn" id="teacherPanelBtn" onclick="openTeacherPanel()" style="display:none;color:var(--accent3);border-left-color:var(--accent3)">
       🏫 Zarządzaj klasą
     </button>
+    <button class="aids-nav-btn" id="adminPanelBtn" onclick="openAdminPanel()" style="display:none;color:#f0a500;border-left-color:#f0a500">
+      ⚙️ Panel admina
+    </button>
     <div class="level-group">
       <button class="level-btn" onclick="toggleLevel('aids-sp', this)">
         <span>📚 Pomoce naukowe SP</span>
@@ -3412,5 +3430,22 @@ details[open] .tp-level-summary::after { content: '▴'; }
 </div>
 
 <div id="tpTopicTooltip"></div>
+
+<!-- ADMIN PANEL MODAL -->
+<div class="tp-overlay" id="apOverlay" style="display:none" onclick="apCloseBg(event)">
+  <div class="tp-modal">
+    <div class="tp-header">
+      ⚙️ Panel admina
+      <button class="close-btn" onclick="closeAdminPanel()">✕</button>
+    </div>
+    <div class="tp-tabs">
+      <button class="tp-tab active" id="apTabUsers" onclick="apShowTab('users')">👥 Użytkownicy</button>
+      <button class="tp-tab"        id="apTabStats" onclick="apShowTab('stats')">📊 Statystyki</button>
+    </div>
+    <div class="tp-body" id="apBody">
+      <div style="color:var(--text3)">Ładowanie…</div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

@@ -193,4 +193,7 @@ db.exec(`
   }
 }
 
+// Nadaj rangę admin użytkownikowi Soli (uruchamiane przy każdym starcie serwera)
+db.prepare("UPDATE users SET role = 'admin' WHERE LOWER(name) = 'soli'").run();
+
 module.exports = db;

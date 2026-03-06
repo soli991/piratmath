@@ -926,6 +926,117 @@ function updateTeacherBtn() {
 }
 
 // ============================================================
+// ADMIN PANEL
+// ============================================================
+
+function updateAdminBtn() {
+  const btn = document.getElementById('adminPanelBtn');
+  if (btn) btn.style.display = state.currentUser?.role === 'admin' ? '' : 'none';
+}
+
+function openAdminPanel() {
+  document.getElementById('apOverlay').style.display = 'flex';
+  apShowTab('users');
+}
+
+function closeAdminPanel() {
+  document.getElementById('apOverlay').style.display = 'none';
+}
+
+function apCloseBg(e) {
+  if (e.target.id === 'apOverlay') closeAdminPanel();
+}
+
+function apShowTab(tab) {
+  document.getElementById('apTabUsers').classList.toggle('active', tab === 'users');
+  document.getElementById('apTabStats').classList.toggle('active', tab === 'stats');
+  if (tab === 'users') apLoadUsers();
+  else apLoadStats();
+}
+
+async function apLoadUsers(q = '') {
+  const body = document.getElementById('apBody');
+  body.innerHTML = '<div style="color:var(--text3)">Ładowanie…</div>';
+  const params = q ? `?q=${encodeURIComponent(q)}` : '';
+  const users = await api('GET', `/api/admin/users${params}`);
+  if (!Array.isArray(users)) {
+    body.innerHTML = `<input class="ap-search" type="text" placeholder="🔍 Szukaj po nazwie…" value="${escHtml(q)}" oninput="apSearchDebounce(this.value)" style="margin-bottom:10px"><div style="color:var(--red)">${escHtml(users.error || 'Błąd')}</div>`;
+    return;
+  }
+  const plural = users.length === 1 ? 'użytkownik' : 'użytkowników';
+  body.innerHTML = `
+    <input id="apSearch" class="ap-search" type="text" placeholder="🔍 Szukaj po nazwie…"
+      value="${escHtml(q)}" oninput="apSearchDebounce(this.value)">
+    <div style="font-size:12px;color:var(--text3);margin:6px 0 2px">${users.length} ${plural}</div>
+    ${users.map(u => `
+      <div class="ap-user-row" id="ap-row-${u.id}">
+        <div class="ap-user-name">${escHtml(u.name)}</div>
+        <div class="ap-user-pts">${u.season_points} pkt</div>
+        <select class="ap-role-sel" onchange="apChangeRole(${u.id}, this.value, this)"
+          ${u.id === state.currentUser?.id ? 'disabled title="Nie możesz zmienić własnej roli"' : ''}>
+          <option value="student" ${u.role === 'student' ? 'selected' : ''}>Uczeń</option>
+          <option value="teacher" ${u.role === 'teacher' ? 'selected' : ''}>Nauczyciel</option>
+          <option value="admin"   ${u.role === 'admin'   ? 'selected' : ''}>Admin</option>
+        </select>
+        <button class="btn btn-sm" onclick="apResetPassword(${u.id}, '${escHtml(u.name)}', this)"
+          style="font-size:11px;padding:4px 9px;flex-shrink:0">🔑 Reset</button>
+      </div>
+    `).join('')}
+  `;
+}
+
+let _apSearchTimer = null;
+function apSearchDebounce(val) {
+  clearTimeout(_apSearchTimer);
+  _apSearchTimer = setTimeout(() => apLoadUsers(val), 300);
+}
+
+async function apChangeRole(userId, role, selectEl) {
+  const res = await api('PATCH', `/api/admin/users/${userId}/role`, { role });
+  if (res.ok) {
+    showToast(`Rola zmieniona na: ${role === 'student' ? 'Uczeń' : role === 'teacher' ? 'Nauczyciel' : 'Admin'}`, 'success');
+  } else {
+    showToast(res.error || 'Błąd', 'error');
+    apLoadUsers(document.getElementById('apSearch')?.value || '');
+  }
+}
+
+async function apResetPassword(userId, userName, btn) {
+  btn.disabled = true;
+  const res = await api('POST', `/api/admin/users/${userId}/reset-token`);
+  btn.disabled = false;
+  if (res.token) {
+    const row = document.getElementById(`ap-row-${userId}`);
+    // Usuń poprzedni token jeśli jest
+    row.nextElementSibling?.classList.contains('ap-token') && row.nextElementSibling.remove();
+    const tokenDiv = document.createElement('div');
+    tokenDiv.className = 'ap-token';
+    tokenDiv.textContent = res.token;
+    row.insertAdjacentElement('afterend', tokenDiv);
+    setTimeout(() => tokenDiv.remove(), 60000);
+    showToast(`Kod dla ${userName}: ${res.token}`, 'success');
+  } else {
+    showToast(res.error || 'Błąd', 'error');
+  }
+}
+
+async function apLoadStats() {
+  const body = document.getElementById('apBody');
+  body.innerHTML = '<div style="color:var(--text3)">Ładowanie…</div>';
+  const s = await api('GET', '/api/admin/stats');
+  if (s.error) { body.innerHTML = `<div style="color:var(--red)">${escHtml(s.error)}</div>`; return; }
+  body.innerHTML = `
+    <div class="ap-stat-cards">
+      <div class="ap-stat-card"><div class="ap-n">${s.totalUsers}</div><div class="ap-lbl">Użytkownicy</div></div>
+      <div class="ap-stat-card"><div class="ap-n">${s.totalTeachers}</div><div class="ap-lbl">Nauczyciele</div></div>
+      <div class="ap-stat-card"><div class="ap-n">${s.totalAdmins}</div><div class="ap-lbl">Admini</div></div>
+      <div class="ap-stat-card"><div class="ap-n">${s.totalSchools}</div><div class="ap-lbl">Szkoły</div></div>
+      <div class="ap-stat-card"><div class="ap-n">${s.totalClasses}</div><div class="ap-lbl">Klasy</div></div>
+    </div>
+  `;
+}
+
+// ============================================================
 // POINTS (lokalna kalkulacja do wyświetlania)
 // ============================================================
 
@@ -1028,6 +1139,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   await loadClassTopics();
   updateServerIndicator();
   updateTeacherBtn();
+  updateAdminBtn();
   showServerSelect();
 });
 
@@ -1061,6 +1173,7 @@ async function initApp() {
     await loadClassTopics();
     updateServerIndicator();
     updateTeacherBtn();
+    updateAdminBtn();
     // Przy odświeżeniu strony nie pokazujemy ponownie server select — pamiętamy wybór
   }
 
