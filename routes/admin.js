@@ -49,6 +49,17 @@ router.post('/admin/users/:id/reset-token', requireAdmin, (req, res) => {
   res.json({ token });
 });
 
+// ── GET /api/admin/schools — lista szkół z klasami ──────────
+router.get('/admin/schools', requireAdmin, (req, res) => {
+  const schools = db.prepare('SELECT id, name, city FROM schools ORDER BY name').all();
+  const classesStmt = db.prepare(`
+    SELECT c.id, c.name, c.grade, u.name AS teacherName
+    FROM classes c LEFT JOIN users u ON u.id = c.teacher_id
+    WHERE c.school_id = ? ORDER BY c.grade, c.name
+  `);
+  res.json(schools.map(s => ({ ...s, classes: classesStmt.all(s.id) })));
+});
+
 // ── POST /api/admin/schools ──────────────────────────────────
 router.post('/admin/schools', requireAdmin, (req, res) => {
   const name = (req.body.name || '').trim();
@@ -56,6 +67,28 @@ router.post('/admin/schools', requireAdmin, (req, res) => {
   if (!name) return res.status(400).json({ error: 'Nazwa szkoły jest wymagana' });
   const result = db.prepare('INSERT INTO schools (name, city) VALUES (?, ?)').run(name, city);
   res.json({ id: result.lastInsertRowid, name, city });
+});
+
+// ── POST /api/admin/classes ──────────────────────────────────
+router.post('/admin/classes', requireAdmin, (req, res) => {
+  const { schoolId, name, grade, teacherName } = req.body;
+  if (!schoolId || !name || !grade)
+    return res.status(400).json({ error: 'Podaj szkołę, nazwę i poziom klasy' });
+  const school = db.prepare('SELECT id FROM schools WHERE id = ?').get(parseInt(schoolId));
+  if (!school) return res.status(404).json({ error: 'Nie znaleziono szkoły' });
+
+  let teacherId = null;
+  if (teacherName) {
+    const teacher = db.prepare("SELECT id FROM users WHERE LOWER(name) = LOWER(?)").get(teacherName.trim());
+    if (!teacher) return res.status(404).json({ error: `Nie znaleziono użytkownika: ${teacherName}` });
+    teacherId = teacher.id;
+    db.prepare("UPDATE users SET role = 'teacher' WHERE id = ?").run(teacherId);
+  }
+
+  const result = db.prepare(
+    'INSERT INTO classes (school_id, name, grade, teacher_id) VALUES (?, ?, ?, ?)'
+  ).run(parseInt(schoolId), name.trim(), parseInt(grade), teacherId);
+  res.json({ id: result.lastInsertRowid });
 });
 
 // ── GET /api/admin/stats ─────────────────────────────────────

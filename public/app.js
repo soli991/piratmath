@@ -959,30 +959,55 @@ function apShowTab(tab) {
 async function apLoadSchools() {
   const body = document.getElementById('apBody');
   body.innerHTML = '<div style="color:var(--text3)">Ładowanie…</div>';
-  const schools = await api('GET', '/api/schools');
+  const schools = await api('GET', '/api/admin/schools');
   if (!Array.isArray(schools)) {
     body.innerHTML = `<div style="color:var(--red)">${escHtml(schools.error || 'Błąd')}</div>`;
     return;
   }
+
+  const schoolOptions = schools.map(s => `<option value="${s.id}">${escHtml(s.name)}</option>`).join('');
+
   body.innerHTML = `
-    <div style="margin-bottom:14px">
-      <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Dodaj szkołę</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <details style="margin-bottom:14px">
+      <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;user-select:none">+ Dodaj szkołę</summary>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
         <input id="apSchoolName" class="ap-search" type="text" placeholder="Nazwa szkoły" style="flex:2;min-width:140px">
         <input id="apSchoolCity" class="ap-search" type="text" placeholder="Miasto" style="flex:1;min-width:100px">
-        <button class="btn btn-sm" onclick="apAddSchool()" style="flex-shrink:0">+ Dodaj</button>
+        <button class="btn btn-sm" onclick="apAddSchool()" style="flex-shrink:0">Dodaj</button>
       </div>
       <div id="apSchoolErr" style="font-size:12px;color:var(--red);margin-top:4px"></div>
-    </div>
+    </details>
+
+    <details style="margin-bottom:14px">
+      <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;user-select:none">+ Dodaj klasę</summary>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <select id="apClassSchool" class="ap-role-sel" style="flex:2;min-width:140px;padding:7px 8px;font-size:13px">
+          ${schoolOptions || '<option disabled>Brak szkół</option>'}
+        </select>
+        <input id="apClassName"  class="ap-search" type="text"   placeholder='Nazwa (np. 4b)' style="flex:1;min-width:80px">
+        <input id="apClassGrade" class="ap-search" type="number" placeholder="Poziom" min="1" max="8" style="width:72px">
+        <input id="apClassTeacher" class="ap-search" type="text" placeholder="Login nauczyciela" style="flex:2;min-width:120px">
+        <button class="btn btn-sm" onclick="apAddClass()" style="flex-shrink:0">Dodaj</button>
+      </div>
+      <div id="apClassErr" style="font-size:12px;color:var(--red);margin-top:4px"></div>
+    </details>
+
     <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">
-      Istniejące szkoły (${schools.length})
+      Szkoły i klasy (${schools.length})
     </div>
     ${schools.length === 0
       ? '<div style="color:var(--text3);font-style:italic">Brak szkół</div>'
       : schools.map(s => `
-        <div class="ap-user-row">
-          <div class="ap-user-name">${escHtml(s.name)}</div>
-          <div class="ap-user-pts" style="min-width:80px">${escHtml(s.city || '—')}</div>
+        <div style="margin-bottom:12px">
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px">${escHtml(s.name)}${s.city ? ` <span style="color:var(--text3);font-weight:400;font-size:12px">· ${escHtml(s.city)}</span>` : ''}</div>
+          ${s.classes.length === 0
+            ? '<div style="color:var(--text3);font-size:12px;padding-left:10px;font-style:italic">Brak klas</div>'
+            : s.classes.map(c => `
+              <div class="ap-user-row" style="padding-left:10px">
+                <div class="ap-user-name" style="font-size:13px">Klasa ${escHtml(String(c.grade))}${escHtml(c.name)}</div>
+                <div style="font-size:12px;color:var(--text3)">${c.teacherName ? escHtml(c.teacherName) : '<i>brak nauczyciela</i>'}</div>
+              </div>
+            `).join('')}
         </div>
       `).join('')}
   `;
@@ -996,9 +1021,21 @@ async function apAddSchool() {
   if (!name) { err.textContent = 'Podaj nazwę szkoły'; return; }
   const res = await api('POST', '/api/admin/schools', { name, city });
   if (res.error) { err.textContent = res.error; return; }
-  document.getElementById('apSchoolName').value = '';
-  document.getElementById('apSchoolCity').value = '';
-  showToast(`Dodano: ${name}`, 'success');
+  showToast(`Dodano szkołę: ${name}`, 'success');
+  apLoadSchools();
+}
+
+async function apAddClass() {
+  const schoolId    = document.getElementById('apClassSchool').value;
+  const name        = document.getElementById('apClassName').value.trim();
+  const grade       = document.getElementById('apClassGrade').value;
+  const teacherName = document.getElementById('apClassTeacher').value.trim();
+  const err         = document.getElementById('apClassErr');
+  err.textContent = '';
+  if (!schoolId || !name || !grade) { err.textContent = 'Podaj szkołę, nazwę i poziom'; return; }
+  const res = await api('POST', '/api/admin/classes', { schoolId, name, grade, teacherName: teacherName || undefined });
+  if (res.error) { err.textContent = res.error; return; }
+  showToast(`Dodano klasę ${grade}${name}${teacherName ? ` (${teacherName})` : ''}`, 'success');
   apLoadSchools();
 }
 
