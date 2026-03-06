@@ -673,8 +673,16 @@ async function tpLoadStudents() {
 async function tpResetStudentPassword(studentId, studentName) {
   if (!confirm(`Wygenerować jednorazowy kod resetujący hasło dla „${studentName}"?`)) return;
   const data = await api('POST', '/api/teacher/reset-token', { studentId, classId: state.teacherClassId });
-  if (data.error) { alert(data.error); return; }
-  alert(`Kod resetujący hasło dla „${studentName}":\n\n${data.token}\n\nWażny 24h. Uczeń wpisuje go na ekranie logowania → „Zapomniałem hasła".`);
+  if (data.error) { showToast(data.error, 'wrong'); return; }
+  const body = document.getElementById('tpBody');
+  const box = document.createElement('div');
+  box.style.cssText = 'margin-top:14px;padding:16px;background:var(--bg2);border:2px solid var(--accent);border-radius:12px;text-align:center';
+  box.innerHTML = `
+    <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Kod resetujący hasło dla <strong>${escHtml(studentName)}</strong> (ważny 24h):</div>
+    <div style="font-size:28px;font-weight:900;letter-spacing:6px;color:var(--accent);font-family:monospace">${data.token}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px">Uczeń wpisuje go na ekranie logowania → „Zapomniałem hasła"</div>
+  `;
+  body.prepend(box);
 }
 
 async function tpRemoveStudent(studentId, studentName) {
