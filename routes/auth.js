@@ -105,6 +105,22 @@ router.post('/login', async (req, res) => {
   });
 });
 
+// ── POST /api/change-password ────────────────────────────────
+router.post('/change-password', async (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'Wymagane logowanie' });
+  const { oldPassword, newPassword } = req.body;
+  if (!oldPassword || !newPassword) return res.status(400).json({ error: 'Wypełnij wszystkie pola.' });
+  if (newPassword.length < 4) return res.status(400).json({ error: 'Nowe hasło musi mieć min. 4 znaki.' });
+
+  const user = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.session.userId);
+  const valid = await bcrypt.compare(oldPassword, user.password_hash);
+  if (!valid) return res.status(400).json({ error: 'Błędne aktualne hasło.' });
+
+  const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, req.session.userId);
+  res.json({ ok: true });
+});
+
 // ── POST /api/logout ─────────────────────────────────────────
 router.post('/logout', (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));

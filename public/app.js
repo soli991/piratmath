@@ -6374,10 +6374,40 @@ function updateUserPanel() {
   dukatyEl.textContent = `🪙 ${d} ${suffix}`;
   dukatyEl.style.display = '';
 
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) logoutBtn.style.display = '';
+  const authBtns = document.getElementById('userAuthBtns');
+  if (authBtns) authBtns.style.display = 'flex';
 
   updateAchBtn();
+}
+
+function openChangePassword() {
+  document.getElementById('changePassOld').value  = '';
+  document.getElementById('changePassNew').value  = '';
+  document.getElementById('changePassNew2').value = '';
+  document.getElementById('changePassError').textContent = '';
+  document.getElementById('changePassModal').style.display = 'flex';
+}
+
+function closeChangePassword() {
+  document.getElementById('changePassModal').style.display = 'none';
+}
+
+async function submitChangePassword() {
+  const oldPass = document.getElementById('changePassOld').value;
+  const newPass = document.getElementById('changePassNew').value;
+  const newPass2 = document.getElementById('changePassNew2').value;
+  const errEl = document.getElementById('changePassError');
+  errEl.textContent = '';
+
+  if (!oldPass || !newPass || !newPass2) { errEl.textContent = 'Wypełnij wszystkie pola.'; return; }
+  if (newPass.length < 4)               { errEl.textContent = 'Nowe hasło musi mieć min. 4 znaki.'; return; }
+  if (newPass !== newPass2)             { errEl.textContent = 'Hasła nie są identyczne.'; return; }
+
+  const data = await api('POST', '/api/change-password', { oldPassword: oldPass, newPassword: newPass });
+  if (data.error) { errEl.textContent = data.error; return; }
+
+  closeChangePassword();
+  showToast('Hasło zostało zmienione!', 'correct');
 }
 
 async function logout() {
