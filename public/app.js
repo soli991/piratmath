@@ -674,15 +674,19 @@ async function tpLoadStudents() {
 }
 
 async function tpResetStudentPassword(studentId, btn) {
+  const cell = btn.parentElement;
   btn.disabled = true;
   btn.textContent = '…';
-  const data = await api('POST', '/api/teacher/reset-token', { studentId, classId: state.teacherClassId });
-  const cell = document.getElementById(`resetcell-${studentId}`);
-  if (data.error) {
-    cell.innerHTML = `<span style="color:var(--red);font-size:11px">${escHtml(data.error)}</span>`;
-    return;
+  try {
+    const data = await api('POST', '/api/teacher/reset-token', { studentId, classId: state.teacherClassId });
+    if (data.error) {
+      cell.innerHTML = `<span style="color:var(--red);font-size:11px">${escHtml(data.error)}</span>`;
+    } else {
+      cell.innerHTML = `<span style="font-family:monospace;font-weight:900;font-size:15px;letter-spacing:3px;color:var(--accent)">${data.token}</span><span style="color:var(--text3);font-size:10px;margin-left:4px">24h</span>`;
+    }
+  } catch(e) {
+    cell.innerHTML = `<span style="color:var(--red);font-size:11px">Błąd</span>`;
   }
-  cell.innerHTML = `<span style="font-family:monospace;font-weight:900;font-size:15px;letter-spacing:3px;color:var(--accent)">${data.token}</span><span style="color:var(--text3);font-size:10px;margin-left:4px">24h</span>`;
 }
 
 async function tpRemoveStudent(studentId, studentName) {
