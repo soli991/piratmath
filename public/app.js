@@ -664,9 +664,17 @@ async function tpLoadStudents() {
           <span class="tp-std-pts tp-std-week" style="${s.week_points > 0 ? 'color:var(--accent)' : ''}">${s.week_points ?? 0}</span>
           <span class="tp-std-pts">${s.class_season_points ?? 0}</span>
           <span class="tp-std-pts">${s.class_total_points ?? 0}</span>
+          <button class="tp-std-reset" title="Resetuj hasło" onclick="tpResetStudentPassword(${s.id}, '${escHtml(s.name)}')">🔑</button>
           <button class="tp-std-remove" title="Usuń z klasy" onclick="tpRemoveStudent(${s.id}, '${escHtml(s.name)}')">✕</button>
         </div>`).join('')}
     </div>`;
+}
+
+async function tpResetStudentPassword(studentId, studentName) {
+  if (!confirm(`Wygenerować jednorazowy kod resetujący hasło dla „${studentName}"?`)) return;
+  const data = await api('POST', '/api/teacher/reset-token', { studentId, classId: state.teacherClassId });
+  if (data.error) { alert(data.error); return; }
+  alert(`Kod resetujący hasło dla „${studentName}":\n\n${data.token}\n\nWażny 24h. Uczeń wpisuje go na ekranie logowania → „Zapomniałem hasła".`);
 }
 
 async function tpRemoveStudent(studentId, studentName) {

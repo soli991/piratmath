@@ -417,6 +417,22 @@ router.delete('/teacher/students/:id', requireTeacher, (req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/teacher/reset-token — nauczyciel generuje kod resetujący hasło ucznia ze swojej klasy
+router.post('/teacher/reset-token', requireTeacher, (req, res) => {
+  const { studentId, classId } = req.body;
+  if (!classId || !teacherOwnsClass(req.session.userId, classId)) return res.status(403).json({ error: 'Brak dostępu do klasy' });
+
+  const student = db.prepare('SELECT id, name, class_id FROM users WHERE id = ? AND role = "student"').get(studentId);
+  if (!student || student.class_id !== classId) return res.status(404).json({ error: 'Uczeń nie jest w tej klasie' });
+
+  db.prepare('DELETE FROM reset_tokens WHERE user_id = ?').run(studentId);
+  const token     = crypto.randomBytes(4).toString('hex').toUpperCase();
+  const expiresAt = Math.floor(Date.now() / 1000) + 24 * 60 * 60; // 24h
+  db.prepare('INSERT INTO reset_tokens (token, user_id, expires_at) VALUES (?, ?, ?)').run(token, studentId, expiresAt);
+
+  res.json({ token, studentName: student.name });
+});
+
 // GET /api/teacher/topics?classId=X
 router.get('/teacher/topics', requireTeacher, (req, res) => {
   const classId = parseInt(req.query.classId);
