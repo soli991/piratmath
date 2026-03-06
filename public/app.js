@@ -254,6 +254,10 @@ let state = {
   bonusPts: 0,
   ownedTitles: [],
   activeTitle: '',
+  server: localStorage.getItem('mq_server') || 'global', // 'global' | 'class'
+  classTopics: null,        // null = brak klasy, Set<string> = odblokowane tematy
+  classInfo: null,          // { className, grade, schoolName }
+  teacherClassId: null,     // aktualnie wybrana klasa w panelu nauczyciela / server select
   pvp: {
     state: 'idle',          // idle | challenge_pending | my_turn_choose | my_turn_playing | waiting_opponent | match_finished
     pollInterval: null,
@@ -268,6 +272,580 @@ let state = {
     iWon: null,
   },
 };
+
+// ============================================================
+// CLASS / SCHOOL SYSTEM
+// ============================================================
+
+// ── Wybór serwera ─────────────────────────────────────────────
+
+function showServerSelect() {
+  const overlay = document.getElementById('serverSelectOverlay');
+  const u = state.currentUser;
+
+  // Podtytuł
+  document.getElementById('serverSelectSub').textContent =
+    u ? `Witaj, ${u.name}! Na który serwer wchodzisz?` : 'Wybierz serwer';
+
+  // Link do panelu nauczyciela
+  const teacherLink = document.getElementById('serverTeacherLink');
+  teacherLink.classList.toggle('visible', !!(u && u.role === 'teacher'));
+
+  // Karta klasowa
+  const classCard        = document.getElementById('serverCardClass');
+  const classBadge       = document.getElementById('serverCardClassBadge');
+  const inviteWrap       = document.getElementById('serverCardInvite');
+  const teacherClassWrap = document.getElementById('serverTeacherClassWrap');
+
+  const isTeacher     = u?.role === 'teacher';
+  const teacherClasses = u?.teacher_classes || [];
+  const studentClassId = u?.class_id || null;
+
+  // Ukryj wszystkie warianty
+  classBadge.style.display       = 'none';
+  inviteWrap.style.display       = 'none';
+  teacherClassWrap.style.display = 'none';
+  classCard.onclick               = null;
+
+  if (!u) {
+    classCard.classList.add('disabled');
+  } else if (isTeacher && teacherClasses.length > 0) {
+    // Nauczyciel z klasami — dropdown wyboru klasy
+    classCard.classList.remove('disabled');
+    teacherClassWrap.style.display = '';
+    const sel = document.getElementById('serverTeacherClassSelect');
+    sel.innerHTML = teacherClasses.map(c =>
+      `<option value="${c.id}" ${state.teacherClassId === c.id ? 'selected' : ''}>Klasa ${c.grade}${c.name}</option>`
+    ).join('');
+    if (!state.teacherClassId) state.teacherClassId = teacherClasses[0].id;
+    sel.onchange = () => { state.teacherClassId = parseInt(sel.value); };
+    classCard.onclick = () => selectServer('class');
+  } else if (studentClassId) {
+    // Uczeń w klasie
+    classCard.classList.remove('disabled');
+    classBadge.style.display = '';
+    classBadge.textContent = state.classInfo
+      ? `Klasa ${state.classInfo.grade}${state.classInfo.className}`
+      : 'Twoja klasa';
+    classCard.onclick = () => selectServer('class');
+  } else {
+    // Brak klasy — pokaż input kodu
+    classCard.classList.remove('disabled');
+    inviteWrap.style.display = '';
+    document.getElementById('serverInviteErr').textContent = '';
+    document.getElementById('serverInviteInput').value = '';
+  }
+
+  overlay.style.display = 'flex';
+}
+
+function hideServerSelect() {
+  document.getElementById('serverSelectOverlay').style.display = 'none';
+}
+
+async function serverJoinClass() {
+  const input = document.getElementById('serverInviteInput');
+  const errEl = document.getElementById('serverInviteErr');
+  const code  = input.value.trim().toUpperCase();
+  errEl.style.color = 'var(--red)';
+  errEl.textContent = '';
+
+  if (!code) { errEl.textContent = 'Wpisz kod!'; return; }
+
+  const check = await api('POST', '/api/invite/check', { code });
+  if (!check.valid) { errEl.textContent = check.error || 'Nieprawidłowy kod'; return; }
+
+  errEl.style.color = 'var(--accent3)';
+  errEl.textContent = `✓ ${check.grade}${check.className} · ${check.schoolName}`;
+
+  const join = await api('POST', '/api/class/join', { code });
+  if (join.error) { errEl.style.color = 'var(--red)'; errEl.textContent = join.error; return; }
+
+  const me = await api('GET', '/api/me');
+  if (me.user) state.currentUser = me.user;
+  await loadClassTopics();
+  // Odśwież kartę i od razu wejdź na serwer klasowy
+  showServerSelect();
+  setTimeout(() => selectServer('class'), 500);
+}
+
+function selectServer(s) {
+  state.server = s;
+  localStorage.setItem('mq_server', s);
+  hideServerSelect();
+  applyClassTopicFilter();
+  updateServerIndicator();
+  renderLeaderboards();
+}
+
+function updateServerIndicator() {
+  const ind = document.getElementById('serverIndicator');
+  const lbl = document.getElementById('serverIndicatorLabel');
+  if (!state.currentUser) { ind.style.display = 'none'; return; }
+  ind.style.display = '';
+  if (state.server === 'class') {
+    ind.className = 'server-indicator class';
+    lbl.textContent = state.classInfo
+      ? `Klasa ${state.classInfo.grade}${state.classInfo.className}`
+      : 'Klasowy';
+  } else {
+    ind.className = 'server-indicator';
+    lbl.textContent = 'Globalny';
+  }
+}
+
+// ── Tematy zarządzane przez nauczyciela ────────────────────────
+
+// Tematy zarządzane przez nauczyciela (muszą odpowiadać ALL_TOPICS w school.js)
+const CLASS_MANAGED_TOPICS = new Set([
+  // Klasy 1–3
+  'Dodawanie i odejmowanie','Mnożenie i dzielenie','Tabliczka mnożenia','Porządkowanie liczb',
+  'Zegar i czas','Figury geometryczne',
+  // Klasy 4–6
+  'Świat liczb','Liczenie w głowie','Własności działań','Dodawanie pisemne','Odejmowanie pisemne',
+  'Mnożenie pisemne','Dzielenie pisemne','Dzielenie z resztą','Mnożenie liczb z zerami na końcu',
+  'O ile? Ile razy?','Kolejność działań','Potęgowanie','Podzielność liczb','Zaokrąglanie',
+  'Systemy liczbowe','Porównywanie liczb całkowitych','Działania na liczbach całkowitych',
+  'Zapisywanie ułamka zwykłego','Skracanie i rozszerzanie ułamków','Zapisywanie liczby mieszanej',
+  'Zamiana liczb mieszanych na ułamki niewłaściwe','Dodawanie i odejmowanie ułamków',
+  'Mnożenie ułamków','Dzielenie ułamków','Zapisywanie i odczytywanie ułamków dziesiętnych',
+  'Dodawanie ułamków dziesiętnych','Odejmowanie ułamków dziesiętnych','Mnożenie ułamków dziesiętnych',
+  'Dzielenie ułamków dziesiętnych','Zamiana ułamków dziesiętnych na zwykłe i odwrotnie',
+  'Zamiana ułamków na procenty','Obliczanie ułamka danej liczby',
+  'Obliczanie liczby, gdy dany jest jej procent','Liczby wymierne',
+  'Tworzenie i odczytywanie wyrażeń algebraicznych','Obliczanie wartości wyrażeń algebraicznych',
+  'Porządkowanie wyrażeń algebraicznych','Równania',
+  'Kąty i proste','Figury płaskie','Trójkąty','Czworokąty','Pola i obwody','Skala',
+  'Graniastosłupy i ich podstawowe własności','Ostrosłupy i ich podstawowe własności',
+  'Walec, stożek, kula','Czas i zegar','Jednostki miar','Szybkość, droga, czas',
+  'Średnia arytmetyczna',
+  // Klasy 7–8
+  'Liczby wymierne i rzeczywiste','Wartość bezwzględna','Liczby pierwsze i złożone',
+  'Rozkład liczby na czynniki pierwsze','Wyznaczanie NWD','Wyznaczanie NWW','Rozwinięcia dziesiętne',
+  'Obliczanie procentu danej liczby','Obliczanie liczby na podstawie jej procentu',
+  'Jakim procentem jednej liczby jest druga?','Obliczenia procentowe w praktyce',
+  'Potęga liczby wymiernej','Mnożenie i dzielenie potęg (ta sama podstawa)',
+  'Mnożenie i dzielenie potęg (ten sam wykładnik)','Potęga potęgi','Notacja wykładnicza',
+  'Pierwiastek kwadratowy i sześcienny','Szacowanie pierwiastków','Działania na pierwiastkach',
+  'Dodawanie i odejmowanie sum algebraicznych','Mnożenie sumy przez jednomian',
+  'Mnożenie sum algebraicznych',
+  'Sprawdzanie, czy dana liczba spełnia równanie','Równania I stopnia z jedną niewiadomą',
+  'Przekształcanie wzorów','Proporcja i jej własności','Wielkości wprost proporcjonalne',
+  'Podział proporcjonalny','Twierdzenie Pitagorasa','Twierdzenie odwrotne do twierdzenia Pitagorasa',
+  'Trójkąt 30-60-90','Trójkąt 45-45-90','Wielokąty i ich pola','Okrąg i koło — długość i pole',
+  'Układ współrzędnych','Graniastosłupy — pole powierzchni i objętość',
+  'Ostrosłupy — pole powierzchni i objętość',
+  'Prawdopodobieństwo zdarzenia','Reguła mnożenia i dodawania',
+  // Szkoła średnia
+  'Liczby wymierne i niewymierne','Wyrażenia algebraiczne','Wzory skróconego mnożenia',
+  'Pierwiastki — upraszczanie i działania','Potęga o wykładniku wymiernym',
+  'Nierówności liniowe i przedziały','Działania na zbiorach',
+  'Wartość bezwzględna — równania i nierówności','Układ równań liniowych',
+  'Równanie liniowe z parametrem','Nierówności kwadratowe','Równanie kwadratowe z parametrem',
+  'Równania wymierne','Pojęcie funkcji','Monotoniczność i miejsce zerowe',
+  'Przekształcenia wykresów funkcji','Wektory','Funkcja liniowa','Funkcja kwadratowa — postaci',
+  'Funkcja wykładnicza','Funkcja logarytmiczna','Pojęcie logarytmu','Własności logarytmów',
+  'Równania wykładnicze','Równania logarytmiczne','Działania na wielomianach',
+  'Dzielenie wielomianów','Równania wielomianowe','Wyrażenia wymierne — upraszczanie',
+  'Trygonometria kąta ostrego','Trygonometria kąta rozwartego','Wzory trygonometryczne',
+  'Twierdzenie sinusów','Twierdzenie cosinusów','Równanie prostej na płaszczyźnie',
+  'Odległość punktów i prostych','Równanie okręgu','Symetrie na płaszczyźnie',
+  'Kąty w okręgu','Twierdzenie Talesa i podobieństwo','Pola i obwody figur',
+  'Ciąg arytmetyczny','Ciąg geometryczny','Zastosowania ciągów',
+  'Permutacje i kombinacje','Prawdopodobieństwo klasyczne','Prawdopodobieństwo warunkowe',
+  'Statystyka opisowa','Graniastosłupy — pola i objętości','Ostrosłupy — pola i objętości',
+  'Walec i stożek — pola i objętości','Kula — pole i objętość',
+  'Granica funkcji','Pochodna — definicja i wzory','Zastosowania pochodnej',
+]);
+
+async function loadClassTopics() {
+  if (!state.currentUser) return;
+
+  if (state.currentUser.role === 'teacher') {
+    // Nauczyciel — zainicjuj teacherClassId jeśli nie ustawiony
+    const classes = state.currentUser.teacher_classes || [];
+    if (!state.teacherClassId && classes.length > 0) state.teacherClassId = classes[0].id;
+    const cls = classes.find(c => c.id === state.teacherClassId);
+    if (cls) {
+      state.classInfo = { className: cls.name, grade: cls.grade, schoolName: cls.schoolName };
+    }
+    // Nauczyciel widzi wszystkie tematy — brak filtrowania
+    state.classTopics = null;
+    applyClassTopicFilter();
+    updateWelcomeClassSection();
+    return;
+  }
+
+  const data = await api('GET', '/api/class/topics');
+  if (data.classId) {
+    state.classTopics = new Set(data.topics.filter(t => t.unlocked).map(t => t.topic));
+    state.classInfo   = { className: data.className, grade: data.grade, schoolName: data.schoolName };
+  } else {
+    state.classTopics = null;
+    state.classInfo   = null;
+  }
+  applyClassTopicFilter();
+  updateWelcomeClassSection();
+}
+
+function applyClassTopicFilter() {
+  const isClassMode = state.server === 'class'
+    && state.classTopics !== null
+    && state.currentUser?.role !== 'teacher';
+
+  // Ukryj/pokaż przyciski tematów
+  document.querySelectorAll('.topic-btn').forEach(btn => {
+    const m = (btn.getAttribute('onclick') || '').match(/selectTopic\('([^']+)'/);
+    if (!m) return;
+    const topic = m[1];
+    const hide = isClassMode && CLASS_MANAGED_TOPICS.has(topic) && !state.classTopics.has(topic);
+    btn.style.display = hide ? 'none' : '';
+    btn.classList.remove('class-locked');
+  });
+
+  // Ukryj etykiety sekcji, po których nie ma widocznych tematów
+  document.querySelectorAll('.topics-list').forEach(list => {
+    let label = null;
+    let hasVisible = false;
+    Array.from(list.children).forEach(el => {
+      if (el.classList.contains('topic-section-label')) {
+        if (label) label.style.display = hasVisible ? '' : 'none';
+        label = el;
+        hasVisible = false;
+      } else if (el.classList.contains('topic-btn')) {
+        if (el.style.display !== 'none') hasVisible = true;
+      }
+    });
+    if (label) label.style.display = hasVisible ? '' : 'none';
+  });
+
+  // Ukryj całe grupy poziomów bez widocznych tematów
+  document.querySelectorAll('.level-group').forEach(group => {
+    const anyVisible = Array.from(group.querySelectorAll('.topic-btn'))
+      .some(btn => btn.style.display !== 'none');
+    group.style.display = anyVisible ? '' : 'none';
+  });
+}
+
+function updateWelcomeClassSection() {
+  // Sekcja welcome screena — badge gdy na serwerze klasowym
+  const badgeEl = document.getElementById('classBadge');
+  const inviteEl = document.getElementById('classInviteSection');
+  if (inviteEl) inviteEl.style.display = 'none'; // przeniesione do server select overlay
+  if (!badgeEl) return;
+  if (state.currentUser && state.classInfo && state.server === 'class') {
+    badgeEl.style.display = '';
+    document.getElementById('classBadgeText').textContent =
+      `Klasa ${state.classInfo.grade}${state.classInfo.className} · ${state.classInfo.schoolName}`;
+  } else {
+    badgeEl.style.display = 'none';
+  }
+}
+
+async function submitInviteCode() {
+  const input  = document.getElementById('inviteCodeInput');
+  const errEl  = document.getElementById('inviteError');
+  const code   = input.value.trim().toUpperCase();
+  errEl.style.color = 'var(--red)';
+  errEl.textContent = '';
+
+  if (!code) { errEl.textContent = 'Wpisz kod!'; return; }
+
+  const check = await api('POST', '/api/invite/check', { code });
+  if (!check.valid) { errEl.textContent = check.error || 'Nieprawidłowy kod'; return; }
+
+  errEl.style.color = 'var(--accent3)';
+  errEl.textContent = `✓ Dołączasz do klasy ${check.grade}${check.className} w ${check.schoolName}…`;
+
+  const join = await api('POST', '/api/class/join', { code });
+  if (join.error) {
+    errEl.style.color = 'var(--red)';
+    errEl.textContent = join.error;
+    return;
+  }
+
+  // Odśwież dane użytkownika
+  const me = await api('GET', '/api/me');
+  if (me.user) state.currentUser = me.user;
+  input.value = '';
+  await loadClassTopics();
+}
+
+async function leaveClass() {
+  await api('POST', '/api/class/leave', {});
+  if (state.currentUser) state.currentUser.class_id = null;
+  state.classTopics = null;
+  state.classInfo   = null;
+  applyClassTopicFilter();
+  updateWelcomeClassSection();
+}
+
+// ============================================================
+// TEACHER PANEL MODAL
+// ============================================================
+
+let _tpTab = 'topics';
+
+function openTeacherPanel() {
+  document.getElementById('tpOverlay').style.display = 'flex';
+  // Wypełnij dropdown klas jeśli nauczyciel ma >0 klas
+  const classes = state.currentUser?.teacher_classes || [];
+  const bar = document.getElementById('tpClassBar');
+  const sel = document.getElementById('tpClassSelect');
+  if (classes.length > 0) {
+    if (!state.teacherClassId) state.teacherClassId = classes[0].id;
+    bar.style.display = '';
+    sel.innerHTML = classes.map(c =>
+      `<option value="${c.id}" ${state.teacherClassId === c.id ? 'selected' : ''}>Klasa ${c.grade}${c.name} · ${c.schoolName}</option>`
+    ).join('');
+  } else {
+    bar.style.display = 'none';
+  }
+  tpShowTab(_tpTab);
+}
+
+function closeTeacherPanel() {
+  document.getElementById('tpOverlay').style.display = 'none';
+}
+
+function tpCloseBg(e) {
+  if (e.target.id === 'tpOverlay') closeTeacherPanel();
+}
+
+function tpShowTab(tab) {
+  _tpTab = tab;
+  document.getElementById('tpTabTopics').classList.toggle('active',   tab === 'topics');
+  document.getElementById('tpTabInvites').classList.toggle('active',  tab === 'invites');
+  document.getElementById('tpTabStudents').classList.toggle('active', tab === 'students');
+  if (tab === 'topics')        tpLoadTopics();
+  else if (tab === 'students') tpLoadStudents();
+  else                         tpLoadInvites();
+}
+
+async function tpLoadStudents() {
+  const body = document.getElementById('tpBody');
+  body.innerHTML = '<div style="color:var(--text3)">Ładowanie…</div>';
+  if (!state.teacherClassId) { body.innerHTML = '<div style="color:var(--text3)">Wybierz klasę.</div>'; return; }
+
+  const students = await api('GET', `/api/teacher/students?classId=${state.teacherClassId}`);
+  if (!Array.isArray(students)) { body.innerHTML = '<div style="color:var(--red)">Błąd ładowania</div>'; return; }
+
+  if (students.length === 0) {
+    body.innerHTML = '<div style="color:var(--text3);font-size:13px">Brak uczniów w tej klasie.</div>';
+    return;
+  }
+
+  body.innerHTML = `
+    <div style="font-size:13px;color:var(--text2);margin-bottom:4px">
+      ${students.length} ${students.length === 1 ? 'uczeń' : 'uczniów'} w klasie
+    </div>
+    <div class="tp-students-table">
+      <div class="tp-students-header">
+        <span class="tp-sth-name">Uczeń</span>
+        <span class="tp-sth-pts">Ten tydzień</span>
+        <span class="tp-sth-pts">Sezonowe</span>
+        <span class="tp-sth-pts">Łącznie</span>
+        <span class="tp-sth-action"></span>
+      </div>
+      ${students.map((s, i) => `
+        <div class="tp-student-row">
+          <span class="tp-std-rank">${i + 1}.</span>
+          <span class="tp-std-name">${escHtml(s.name)}</span>
+          <span class="tp-std-pts tp-std-week" style="${s.week_points > 0 ? 'color:var(--accent)' : ''}">${s.week_points ?? 0}</span>
+          <span class="tp-std-pts">${s.class_season_points ?? 0}</span>
+          <span class="tp-std-pts">${s.class_total_points ?? 0}</span>
+          <button class="tp-std-remove" title="Usuń z klasy" onclick="tpRemoveStudent(${s.id}, '${escHtml(s.name)}')">✕</button>
+        </div>`).join('')}
+    </div>`;
+}
+
+async function tpRemoveStudent(studentId, studentName) {
+  if (!confirm(`Usunąć ucznia „${studentName}" z klasy?\n\nUczeń straci dostęp do serwera klasowego.`)) return;
+  const data = await api('DELETE', `/api/teacher/students/${studentId}?classId=${state.teacherClassId}`);
+  if (data.error) { alert(data.error); return; }
+  tpLoadStudents();
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function tpLoadTopics() {
+  const body = document.getElementById('tpBody');
+  body.innerHTML = '<div style="color:var(--text3)">Ładowanie…</div>';
+  const topics = await api('GET', `/api/teacher/topics?classId=${state.teacherClassId || ''}`);
+  if (!Array.isArray(topics)) { body.innerHTML = '<div style="color:var(--red)">Błąd ładowania</div>'; return; }
+
+  // Grupuj po poziomie, zachowując oryginalną kolejność
+  const levels = [];
+  const levelMap = {};
+  for (const t of topics) {
+    if (!levelMap[t.level]) { levelMap[t.level] = []; levels.push(t.level); }
+    levelMap[t.level].push(t);
+  }
+
+  body.innerHTML = '<div style="font-size:13px;color:var(--text2);margin-bottom:4px">Włącz tematy, które uczniowie mogą ćwiczyć na serwerze klasowym.</div>';
+
+  for (const level of levels) {
+    const ts      = levelMap[level];
+    const onCount = ts.filter(t => t.unlocked).length;
+    const sec     = document.createElement('div');
+    sec.className = 'tp-level-section';
+    sec.innerHTML = `
+      <div class="tp-level-header" onclick="tpToggleLevel(this.parentElement)">
+        <span class="tp-level-arrow">▼</span>
+        <span class="tp-level-name">${level}</span>
+        <span class="tp-level-count" id="tplc-${CSS.escape(level)}">${onCount}/${ts.length}</span>
+      </div>
+      <div class="tp-level-body">
+        ${ts.map(t => `
+          <div class="tp-topic-row ${t.unlocked ? 'on' : ''}" id="tpr-${CSS.escape(t.topic)}">
+            <span class="tp-topic-name">${t.topic}</span>
+            <button class="tp-toggle ${t.unlocked ? 'on' : ''}"
+              onclick="tpToggleTopic('${t.topic.replace(/'/g,"\\'")}', this)"></button>
+          </div>`).join('')}
+      </div>`;
+    body.appendChild(sec);
+  }
+}
+
+function tpToggleLevel(section) {
+  section.classList.toggle('collapsed');
+}
+
+async function tpToggleTopic(topic, btn) {
+  const nowOn = !btn.classList.contains('on');
+  btn.classList.toggle('on', nowOn);
+  const row = btn.closest('.tp-topic-row');
+  row.classList.toggle('on', nowOn);
+  // Zaktualizuj licznik X/Y w nagłówku sekcji
+  const section = row.closest('.tp-level-section');
+  if (section) {
+    const levelName = section.querySelector('.tp-level-name')?.textContent;
+    const rows = section.querySelectorAll('.tp-topic-row');
+    const onRows = section.querySelectorAll('.tp-topic-row.on');
+    const cntEl = document.getElementById('tplc-' + CSS.escape(levelName));
+    if (cntEl) cntEl.textContent = `${onRows.length}/${rows.length}`;
+  }
+  await api('PUT', '/api/teacher/topics', { topic, unlocked: nowOn, classId: state.teacherClassId });
+  await loadClassTopics();
+}
+
+async function tpLoadInvites() {
+  const body = document.getElementById('tpBody');
+  body.innerHTML = '<div style="color:var(--text3)">Ładowanie…</div>';
+  const invites = await api('GET', `/api/teacher/invites?classId=${state.teacherClassId || ''}`);
+
+  body.innerHTML = `
+    <div class="tp-section-header">
+      <span>Kody zaproszenia <span style="color:var(--text3);font-weight:400;font-size:12px">(jednorazowe, ważne 7 dni)</span></span>
+      <button class="btn btn-primary btn-sm" onclick="tpGenerateInvite()">+ Nowy kod</button>
+    </div>
+    <div id="tpInvitesList"></div>`;
+
+  tpRenderInvites(invites);
+}
+
+function tpRenderInvites(invites) {
+  const list = document.getElementById('tpInvitesList');
+  if (!list) return;
+  if (!invites.length) { list.innerHTML = '<div style="color:var(--text3);font-size:13px">Brak kodów.</div>'; return; }
+  list.innerHTML = invites.map(inv => {
+    let meta, codeClass = 'tp-code';
+    if (inv.used) {
+      meta = `<span class="tp-invite-meta used">✓ Użyty: ${inv.usedByName}</span>`;
+    } else if (inv.expired) {
+      meta = `<span class="tp-invite-meta">⌛ Wygasł</span>`;
+      codeClass += ' expired';
+    } else {
+      const days = inv.expiresAt ? Math.ceil((inv.expiresAt - Date.now()/1000) / 86400) : '?';
+      meta = `<span class="tp-invite-meta free">● Wolny · wygasa za ${days}d</span>`;
+    }
+    return `<div class="tp-invite-row">
+      <span class="${codeClass}">${inv.code}</span>
+      ${meta}
+    </div>`;
+  }).join('');
+}
+
+async function tpGenerateInvite() {
+  const data = await api('POST', '/api/teacher/invite', { classId: state.teacherClassId });
+  if (data.code) tpLoadInvites();
+}
+
+function tpSelectClass(classId) {
+  state.teacherClassId = parseInt(classId);
+  tpShowTab(_tpTab); // przeładuj aktualną zakładkę
+}
+
+async function tpDeleteClass() {
+  const cls = (state.currentUser?.teacher_classes || []).find(c => c.id === state.teacherClassId);
+  if (!cls) return;
+
+  const label = `Klasa ${cls.grade}${cls.name} · ${cls.schoolName}`;
+  if (!confirm(`Czy na pewno chcesz usunąć ${label}?\n\nWszyscy uczniowie zostaną odpisani od klasy. Tej operacji nie można cofnąć.`)) return;
+
+  const data = await api('DELETE', `/api/teacher/classes/${state.teacherClassId}`);
+  if (data.error) { alert(data.error); return; }
+
+  // Odśwież dane
+  const me = await api('GET', '/api/me');
+  if (me.user) state.currentUser = me.user;
+
+  const remaining = state.currentUser.teacher_classes || [];
+  state.teacherClassId = remaining.length > 0 ? remaining[0].id : null;
+  openTeacherPanel();
+}
+
+async function tpToggleAddClass() {
+  const form = document.getElementById('tpAddClassForm');
+  const isOpen = form.style.display === 'flex';
+  form.style.display = isOpen ? 'none' : 'flex';
+  document.getElementById('tpAddClassErr').textContent = '';
+  if (!isOpen) {
+    const classes = state.currentUser?.teacher_classes || [];
+    const schoolWrap = document.getElementById('tpNewClassSchoolWrap');
+    if (classes.length === 0) {
+      schoolWrap.style.display = 'flex';
+      const schools = await api('GET', '/api/schools');
+      document.getElementById('tpNewClassSchool').innerHTML =
+        (schools || []).map(s => `<option value="${s.id}">${s.name} — ${s.city}</option>`).join('');
+    } else {
+      schoolWrap.style.display = 'none';
+    }
+  }
+}
+
+async function tpSubmitAddClass() {
+  const name  = document.getElementById('tpNewClassName').value.trim();
+  const grade = document.getElementById('tpNewClassGrade').value;
+  const errEl = document.getElementById('tpAddClassErr');
+  errEl.textContent = '';
+  if (!name || !grade) { errEl.textContent = 'Wpisz nazwę i poziom klasy.'; return; }
+
+  const classes  = state.currentUser?.teacher_classes || [];
+  const schoolId = classes.length === 0
+    ? parseInt(document.getElementById('tpNewClassSchool').value)
+    : null;
+
+  const data = await api('POST', '/api/teacher/classes', { name, grade: parseInt(grade), schoolId });
+  if (data.error) { errEl.textContent = data.error; return; }
+
+  // Odśwież teacher_classes w stanie
+  const me = await api('GET', '/api/me');
+  if (me.user) state.currentUser = me.user;
+
+  state.teacherClassId = data.id;
+  document.getElementById('tpAddClassForm').style.display = 'none';
+  document.getElementById('tpNewClassName').value  = '';
+  document.getElementById('tpNewClassGrade').value = '';
+  openTeacherPanel(); // przeładuj pasek klas i zakładkę
+}
+
+function updateTeacherBtn() {
+  const btn = document.getElementById('teacherPanelBtn');
+  if (btn) btn.style.display = state.currentUser?.role === 'teacher' ? '' : 'none';
+}
 
 // ============================================================
 // POINTS (lokalna kalkulacja do wyświetlania)
@@ -369,6 +947,10 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   renderLeaderboards();
   handleDailyBonus(data.dailyBonus, data.dailyStreak);
   data.newAchs?.forEach(a => showAchievementToast(a));
+  await loadClassTopics();
+  updateServerIndicator();
+  updateTeacherBtn();
+  showServerSelect();
 });
 
 // ============================================================
@@ -398,6 +980,10 @@ async function initApp() {
     updateUserPanel();
     handleDailyBonus(data.dailyBonus, data.dailyStreak);
     data.newAchs?.forEach(a => showAchievementToast(a));
+    await loadClassTopics();
+    updateServerIndicator();
+    updateTeacherBtn();
+    // Przy odświeżeniu strony nie pokazujemy ponownie server select — pamiętamy wybór
   }
 
   renderLeaderboards();
@@ -599,7 +1185,12 @@ function _setupSinusListener(api) {
 
 function _initGgbSinus() {
   const wrap = document.getElementById('ggb-sinus');
-  if (!wrap || wrap.dataset.ggbInit) return;
+  if (!wrap) return;
+  if (wrap.dataset.ggbInit) {
+    // Applet już wstrzyknięty — wymuś przerysowanie po ponownym pokazaniu
+    window.dispatchEvent(new Event('resize'));
+    return;
+  }
   wrap.dataset.ggbInit = '1';
   const applet = new GGBApplet({
     appName:             'graphing',
@@ -624,24 +1215,41 @@ function _initGgbSinus() {
       if (api && typeof api.getValue === 'function') {
         clearInterval(poll);
         _setupSinusListener(api);
+        window.dispatchEvent(new Event('resize'));
       }
     } catch(e) {}
   }, 500);
 }
 
-function selectAids(btn) {
+const AID_TITLES = {
+  sp_mnozenie:  'Tabliczka mnożenia — plansza',
+  sp_ulamki:    'Ułamki — wizualizacja',
+  sp_kolejnosc: 'Kolejność działań — schemat',
+  ss_sinus:     'Przekształcenia wykresu funkcji sinus',
+  ss_kwadrat:   'Funkcja kwadratowa — wykres',
+  ss_trygono:   'Trygonometria — okrąg jednostkowy',
+};
+
+function selectAid(aidId, el) {
   document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('aidsNavBtn').classList.add('active');
-  document.getElementById('welcomeScreen').style.display  = 'none';
+  el.classList.add('active');
+  document.getElementById('welcomeScreen').style.display = 'none';
   document.getElementById('exerciseArea').classList.remove('visible');
   document.getElementById('aidsScreen').classList.add('visible');
-  _loadGeogebra(_initGgbSinus);
+  document.querySelectorAll('.aid-panel').forEach(p => p.style.display = 'none');
+  const panel = document.getElementById('aid-' + aidId);
+  if (panel) panel.style.display = '';
+  const titleEl = document.getElementById('aidTitle');
+  if (titleEl) titleEl.textContent = '📚 ' + (AID_TITLES[aidId] || 'Pomoce naukowe');
+  if (aidId === 'ss_sinus') requestAnimationFrame(() => _loadGeogebra(_initGgbSinus));
 }
 
 function selectTopic(topic, el) {
+  if (state.classTopics !== null && CLASS_MANAGED_TOPICS.has(topic) && !state.classTopics.has(topic)) {
+    showToast('Ten temat nie jest jeszcze odblokowany przez nauczyciela', 'info');
+    return;
+  }
   document.querySelectorAll('.topic-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('aidsNavBtn').classList.remove('active');
   document.getElementById('aidsScreen').classList.remove('visible');
   el.classList.add('active');
 
@@ -4926,7 +5534,9 @@ function generateQuestion(topic, difficulty) {
 
 function markWipTopics() {
   document.querySelectorAll('.topic-btn').forEach(btn => {
-    const match = btn.getAttribute('onclick')?.match(/'([^']+)'/);
+    const onclick = btn.getAttribute('onclick') || '';
+    if (!onclick.startsWith('selectTopic(')) return; // aids buttons are always clickable
+    const match = onclick.match(/'([^']+)'/);
     if (match && !TOPIC_GENERATORS[match[1]]) btn.classList.add('wip');
   });
 }
@@ -5636,13 +6246,18 @@ async function recordCorrect(topic) {
   if (state.pvp.state === 'my_turn_playing') return pvpRecordCorrect(topic);
 
   const comeback = state.mistakes >= 2 && !state.solutionShown;
-  const data = await api('POST', '/api/answer/correct', { topic, streak: state.answerStreak, comeback });
+  const data = await api('POST', '/api/answer/correct', { topic, streak: state.answerStreak, comeback, server: state.server });
   if (!data || data.error || !data.pts) return 0;
 
   // Aktualizuj lokalny stan
   if (state.currentUser) {
-    state.currentUser.season_points = (state.currentUser.season_points || 0) + data.pts;
-    state.currentUser.total_points  = (state.currentUser.total_points  || 0) + data.pts;
+    if (state.server === 'class') {
+      state.currentUser.class_season_points = (state.currentUser.class_season_points || 0) + data.pts;
+      state.currentUser.class_total_points  = (state.currentUser.class_total_points  || 0) + data.pts;
+    } else {
+      state.currentUser.season_points = (state.currentUser.season_points || 0) + data.pts;
+      state.currentUser.total_points  = (state.currentUser.total_points  || 0) + data.pts;
+    }
     if (!state.currentUser.topics) state.currentUser.topics = {};
     if (!state.currentUser.topics[topic]) state.currentUser.topics[topic] = { done: 0, points: 0 };
     state.currentUser.topics[topic].done   = data.done;
@@ -5670,7 +6285,7 @@ let toastTimeout;
 function showToast(msg, type = 'correct') {
   const t = document.getElementById('feedbackToast');
   t.textContent = msg;
-  t.className = 'feedback-toast' + (type === 'wrong' ? ' wrong' : '');
+  t.className = 'feedback-toast' + (type === 'wrong' ? ' wrong' : type === 'info' ? ' info' : '');
   t.classList.add('show');
   clearTimeout(toastTimeout);
   toastTimeout = setTimeout(() => t.classList.remove('show'), 2000);
@@ -5725,9 +6340,18 @@ function updateUserPanel() {
     ? `${pts.toLocaleString()} / ${next.toLocaleString()} PP → poz. ${lvl + 1}`
     : '🏴‍☠️ Maksymalny poziom!';
 
-  // Punkty
-  document.getElementById('userPtsEl').textContent   = (u.season_points || 0).toLocaleString();
-  document.getElementById('userTotalEl').textContent  = (u.total_points || 0).toLocaleString();
+  // Punkty — klasowe lub globalne w zależności od serwera
+  const showClass = state.server === 'class';
+  document.getElementById('userPtsEl').textContent   = (showClass ? (u.class_season_points || 0) : (u.season_points || 0)).toLocaleString();
+  document.getElementById('userTotalEl').textContent = (showClass ? (u.class_total_points  || 0) : (u.total_points  || 0)).toLocaleString();
+
+  // Punkty tygodniowe (tylko gdy zalogowany)
+  const weekEl  = document.getElementById('userWeekEl');
+  const weekPts = showClass ? (u.class_week_points || 0) : (u.week_points || 0);
+  if (weekEl) {
+    document.getElementById('userWeekPts').textContent = weekPts.toLocaleString();
+    weekEl.style.display = '';
+  }
 
   // Dukaty
   const d = state.dukaty;
@@ -5958,13 +6582,64 @@ async function setTitle(id) {
 // LEADERBOARDS → API
 // ============================================================
 
+function getWeekRangeLabel() {
+  const now  = new Date();
+  const day  = now.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const mon  = new Date(now); mon.setHours(0,0,0,0); mon.setDate(now.getDate() + diff);
+  const sun  = new Date(mon); sun.setDate(mon.getDate() + 6);
+  const fmt  = d => d.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' });
+  return `${fmt(mon)} – ${fmt(sun)}`;
+}
+
 async function renderLeaderboards() {
-  const [seasonal, global] = await Promise.all([
-    api('GET', '/api/leaderboard/seasonal').catch(() => []),
-    api('GET', '/api/leaderboard/global').catch(() => [])
-  ]);
-  renderLb('lb-seasonal', seasonal);
-  renderLb('lb-global', global);
+  const isClass = state.server === 'class' && state.currentUser;
+
+  document.getElementById('lb-class-card').style.display    = isClass ? '' : 'none';
+  document.getElementById('lb-seasonal-card').style.display = isClass ? 'none' : '';
+  document.getElementById('lb-global-card').style.display   = isClass ? 'none' : '';
+
+  // Karta tygodniowa — tylko dla zalogowanych
+  const weekCard = document.getElementById('lb-weekly-card');
+  if (weekCard) weekCard.style.display = state.currentUser ? '' : 'none';
+
+  if (isClass) {
+    const classId  = state.teacherClassId || state.currentUser?.class_id;
+    const classParam = classId ? `?classId=${classId}` : '';
+    const [data, weekly] = await Promise.all([
+      api('GET', `/api/leaderboard/class${classParam}`).catch(() => ({ students: [], teacher: null })),
+      api('GET', `/api/leaderboard/weekly${classParam}`).catch(() => [])
+    ]);
+    renderLb('lb-class', (data.students || []).map(u => ({ name: u.name, points: u.season_points })));
+    // Nauczyciel poza rankingiem
+    const teacherEl = document.getElementById('lb-class-teacher');
+    if (data.teacher) {
+      const isMe = state.currentUser.id === data.teacher.id;
+      teacherEl.innerHTML = `
+        <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px">
+          <div class="lb-entry ${isMe ? 'me' : ''}" style="opacity:0.7">
+            <div class="lb-rank" style="font-size:11px">🏫</div>
+            <div class="lb-name">${data.teacher.name}${isMe ? ' 👤' : ''} <span style="font-size:10px;color:var(--text3)">(nauczyciel)</span></div>
+            <div class="lb-pts">${(data.teacher.season_points||0).toLocaleString()}</div>
+          </div>
+        </div>`;
+    } else {
+      teacherEl.innerHTML = '';
+    }
+    renderLb('lb-weekly', weekly);
+  } else {
+    const [seasonal, global, weekly] = await Promise.all([
+      api('GET', '/api/leaderboard/seasonal').catch(() => []),
+      api('GET', '/api/leaderboard/global').catch(() => []),
+      api('GET', '/api/leaderboard/weekly').catch(() => [])
+    ]);
+    renderLb('lb-seasonal', seasonal);
+    renderLb('lb-global', global);
+    renderLb('lb-weekly', weekly);
+  }
+
+  const rangeEl = document.getElementById('lbWeekRange');
+  if (rangeEl) rangeEl.textContent = getWeekRangeLabel();
 }
 
 function renderLb(containerId, users) {

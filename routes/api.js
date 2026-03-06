@@ -52,6 +52,20 @@ function requireAuth(req, res, next) {
   next();
 }
 
+// Poniedziałek 00:00 bieżącego tygodnia jako string YYYY-MM-DD
+function getWeekStart() {
+  const now  = new Date();
+  const day  = now.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const mon  = new Date(now);
+  mon.setHours(0, 0, 0, 0);
+  mon.setDate(now.getDate() + diff);
+  const y = mon.getFullYear();
+  const m = String(mon.getMonth() + 1).padStart(2, '0');
+  const d = String(mon.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 // Logika punktów (identyczna jak w starym localStorage)
 function calcPoints(done) {
   if (done < 10) return 10;
@@ -66,16 +80,18 @@ function getBonusPts(userId) {
 }
 
 // POST /api/answer/correct
-// Body: { topic: string, streak: number }
+// Body: { topic: string, streak: number, server: 'global'|'class' }
 router.post('/answer/correct', requireAuth, (req, res) => {
   try {
-  const { topic, streak = 0, comeback = false } = req.body;
+  const { topic, streak = 0, comeback = false, server = 'global' } = req.body;
   if (!topic) return res.status(400).json({ error: 'Brak tematu' });
-  const userId = req.session.userId;
+  const userId  = req.session.userId;
+  const isClass = server === 'class';
+  const progressTable = isClass ? 'class_topic_progress' : 'topic_progress';
 
-  // Pobierz lub utwórz rekord postępu
+  // Pobierz lub utwórz rekord postępu (globalny lub klasowy)
   const existing = db.prepare(
-    'SELECT done, points FROM topic_progress WHERE user_id = ? AND topic = ?'
+    `SELECT done, points FROM ${progressTable} WHERE user_id = ? AND topic = ?`
   ).get(userId, topic);
 
   const currentDone = existing ? existing.done : 0;
@@ -84,23 +100,43 @@ router.post('/answer/correct', requireAuth, (req, res) => {
 
   if (existing) {
     db.prepare(
-      'UPDATE topic_progress SET done = done + 1, points = points + ? WHERE user_id = ? AND topic = ?'
+      `UPDATE ${progressTable} SET done = done + 1, points = points + ? WHERE user_id = ? AND topic = ?`
     ).run(pts, userId, topic);
   } else {
     db.prepare(
-      'INSERT INTO topic_progress (user_id, topic, done, points) VALUES (?, ?, 1, ?)'
+      `INSERT INTO ${progressTable} (user_id, topic, done, points) VALUES (?, ?, 1, ?)`
     ).run(userId, topic, pts);
   }
 
-  // Aktualizuj users: punkty + total_tasks + max_streak
-  db.prepare(
-    `UPDATE users SET
-       season_points = season_points + ?,
-       total_points  = total_points  + ?,
-       total_tasks   = total_tasks   + 1,
-       max_streak    = CASE WHEN max_streak > ? THEN max_streak ELSE ? END
-     WHERE id = ?`
-  ).run(pts, pts, streak, streak, userId);
+  // Lazy reset tygodniowych punktów
+  const weekStart = getWeekStart();
+  const userRow   = db.prepare('SELECT week_start FROM users WHERE id = ?').get(userId);
+  if (userRow.week_start !== weekStart) {
+    db.prepare('UPDATE users SET week_points = 0, class_week_points = 0, week_start = ? WHERE id = ?').run(weekStart, userId);
+  }
+
+  // Aktualizuj users: odpowiednie kolumny punktów + statystyki globalne
+  if (isClass) {
+    db.prepare(
+      `UPDATE users SET
+         class_season_points = class_season_points + ?,
+         class_total_points  = class_total_points  + ?,
+         class_week_points   = class_week_points   + ?,
+         total_tasks   = total_tasks   + 1,
+         max_streak    = CASE WHEN max_streak > ? THEN max_streak ELSE ? END
+       WHERE id = ?`
+    ).run(pts, pts, pts, streak, streak, userId);
+  } else {
+    db.prepare(
+      `UPDATE users SET
+         season_points = season_points + ?,
+         total_points  = total_points  + ?,
+         week_points   = week_points   + ?,
+         total_tasks   = total_tasks   + 1,
+         max_streak    = CASE WHEN max_streak > ? THEN max_streak ELSE ? END
+       WHERE id = ?`
+    ).run(pts, pts, pts, streak, streak, userId);
+  }
 
   // Flagi time-based
   const now  = new Date();
@@ -274,6 +310,22 @@ router.get('/leaderboard/global', (req, res) => {
   const rows = db.prepare(
     'SELECT name, total_points AS points FROM users ORDER BY total_points DESC LIMIT 10'
   ).all();
+  res.json(rows);
+});
+
+// GET /api/leaderboard/weekly?classId=X
+router.get('/leaderboard/weekly', (req, res) => {
+  const weekStart = getWeekStart();
+  const classId   = req.query.classId ? parseInt(req.query.classId) : null;
+  if (classId) {
+    const rows = db.prepare(
+      'SELECT name, class_week_points AS points FROM users WHERE class_id = ? AND week_start = ? ORDER BY class_week_points DESC LIMIT 10'
+    ).all(classId, weekStart);
+    return res.json(rows);
+  }
+  const rows = db.prepare(
+    'SELECT name, week_points AS points FROM users WHERE week_start = ? ORDER BY week_points DESC LIMIT 10'
+  ).all(weekStart);
   res.json(rows);
 });
 

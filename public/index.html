@@ -158,6 +158,11 @@ header {
 .social-btn.tt .icon { color: var(--text2); }
 .social-btn.tw .icon { color: #9146ff; }
 .social-btn.survey .icon { color: #34a853; }
+.social-btn.about-btn { cursor: pointer; }
+.social-btn.about-btn .icon { color: var(--text2); }
+.aid-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 60px 24px; color: var(--text3); }
+.aid-placeholder-icon { font-size: 48px; }
+.aid-placeholder-text { font-size: 15px; text-align: center; }
 
 .season-box {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
@@ -426,7 +431,69 @@ main {
   overflow-y: auto;
 }
 
-/* WELCOME */
+/* ===== SERVER SELECT OVERLAY ===== */
+.server-select-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px;
+  padding: 24px;
+}
+.server-select-title {
+  font-family: var(--font-head); font-size: 28px; font-weight: 800; text-align: center;
+}
+.server-select-sub { color: var(--text2); font-size: 15px; text-align: center; }
+.server-cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+.server-card {
+  background: var(--card); border: 2px solid var(--border); border-radius: var(--radius);
+  padding: 28px 32px; width: 220px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.server-card:hover:not(.disabled) { border-color: var(--accent); transform: translateY(-3px); }
+.server-card.disabled { opacity: 0.4; cursor: not-allowed; }
+.server-card-icon { font-size: 42px; }
+.server-card-name { font-family: var(--font-head); font-size: 18px; font-weight: 800; }
+.server-card-desc { color: var(--text2); font-size: 13px; line-height: 1.5; }
+.server-card-badge {
+  background: rgba(79,142,247,0.15); color: var(--accent3); border-radius: 8px;
+  padding: 4px 10px; font-size: 12px; font-weight: 700;
+}
+.server-switch-btn {
+  background: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text2); font-family: var(--font-body); font-size: 13px;
+  padding: 6px 16px; cursor: pointer; transition: color 0.15s, border-color 0.15s;
+}
+.server-switch-btn:hover { color: var(--accent); border-color: var(--accent); }
+.server-teacher-link {
+  color: var(--accent2); font-size: 13px; font-weight: 700; cursor: pointer;
+  text-decoration: none; display: none;
+}
+.server-teacher-link.visible { display: block; }
+/* Invite input inside class card */
+.server-card-invite { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.server-card-input {
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg); color: var(--text); font-family: var(--font-body);
+  font-size: 15px; text-transform: uppercase; letter-spacing: 2px; text-align: center;
+  outline: none; width: 100%;
+}
+.server-card-input:focus { border-color: var(--accent3); }
+.server-card-err { font-size: 12px; color: var(--red); min-height: 16px; }
+
+/* Indicator serwera w topbarze */
+.server-indicator {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+  padding: 4px 12px; font-size: 12px; font-weight: 700; cursor: pointer;
+  color: var(--text2); transition: border-color 0.15s;
+}
+.server-indicator:hover { border-color: var(--accent); color: var(--accent); }
+.server-indicator .si-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--text3);
+}
+.server-indicator.class .si-dot { background: var(--accent3); }
+
+/* ===== WELCOME ===== */
 .welcome-screen {
   display: flex;
   flex-direction: column;
@@ -458,6 +525,28 @@ main {
   align-items: center;
   gap: 12px;
 }
+
+/* WELCOME — class invite & badge */
+.welcome-invite-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 22px 28px; max-width: 420px; width: 100%; text-align: left;
+}
+.welcome-invite-title { font-family: var(--font-head); font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+.welcome-invite-sub { color: var(--text2); font-size: 13px; margin-bottom: 14px; }
+.welcome-invite-row { display: flex; gap: 10px; }
+.welcome-invite-input {
+  flex: 1; padding: 9px 13px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 16px;
+  text-transform: uppercase; letter-spacing: 2px; outline: none;
+}
+.welcome-invite-input:focus { border-color: var(--accent3); }
+.welcome-class-badge {
+  background: var(--card); border: 1px solid var(--accent3); border-radius: var(--radius);
+  padding: 12px 24px; font-size: 15px; display: flex; align-items: center; gap: 10px;
+  color: var(--accent3); font-weight: 700;
+}
+.topic-btn.class-locked { opacity: 0.38; cursor: not-allowed; }
+.topic-btn.class-locked .topic-dot { background: var(--text3) !important; box-shadow: none !important; }
 
 /* EXERCISE AREA */
 .exercise-area { display: none; flex-direction: column; gap: 20px; }
@@ -910,6 +999,7 @@ main {
 }
 .feedback-toast.show { transform: translateX(-50%) translateY(0); }
 .feedback-toast.wrong { background: var(--red); }
+.feedback-toast.info  { background: var(--text3); }
 
 /* STREAK BANNER – duże powiadomienie za 10 z rzędu */
 .streak-banner {
@@ -1195,6 +1285,78 @@ main {
 .theme-dot.space { background: linear-gradient(135deg, #4f8ef7, #7b5ef8); }
 .theme-dot.pink { background: linear-gradient(135deg, #f472b6, #e879f9); }
 .theme-dot.classic { background: linear-gradient(135deg, #2563eb, #7c3aed); border: 2px solid var(--border); }
+
+/* ===== TEACHER PANEL MODAL ===== */
+.tp-overlay {
+  position: fixed; inset: 0; z-index: 250;
+  background: rgba(0,0,0,0.75); overflow-y: auto;
+  display: flex; align-items: flex-start; justify-content: center; padding: 24px 16px;
+}
+.tp-modal {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  width: 100%; max-width: 680px; display: flex; flex-direction: column;
+  margin: auto 0;
+}
+.tp-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px; border-bottom: 1px solid var(--border);
+  font-family: var(--font-head); font-size: 18px; font-weight: 800;
+}
+.tp-class-bar { display: flex; align-items: center; gap: 10px; padding: 10px 22px; border-bottom: 1px solid var(--border); background: var(--bg); }
+.tp-class-bar select { flex: 1; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 13px; font-family: var(--font-body); cursor: pointer; }
+.tp-tabs { display: flex; gap: 4px; padding: 12px 22px 0; border-bottom: 1px solid var(--border); }
+.tp-tab {
+  padding: 8px 18px; border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: none; border: 1px solid transparent; border-bottom: none;
+  font-family: var(--font-body); font-size: 13px; font-weight: 700; cursor: pointer;
+  color: var(--text2); transition: all 0.15s;
+}
+.tp-tab.active { background: var(--bg); border-color: var(--border); color: var(--text); }
+.tp-body { padding: 18px 22px; display: flex; flex-direction: column; gap: 12px; }
+/* Tematy — accordion poziomów */
+.tp-level-section { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.tp-level-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; cursor: pointer; background: var(--bg); user-select: none;
+}
+.tp-level-header:hover { background: var(--bg2, var(--bg)); }
+.tp-level-arrow { font-size: 11px; color: var(--text3); transition: transform 0.2s; flex-shrink: 0; }
+.tp-level-section.collapsed .tp-level-arrow { transform: rotate(-90deg); }
+.tp-level-name { font-weight: 800; font-size: 13px; flex: 1; }
+.tp-level-count { font-size: 11px; color: var(--text3); flex-shrink: 0; }
+.tp-level-body { border-top: 1px solid var(--border); padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.tp-level-section.collapsed .tp-level-body { display: none; }
+.tp-topic-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 9px 12px; background: var(--card); border-radius: var(--radius-sm);
+  border: 1px solid var(--border); transition: border-color 0.15s;
+}
+.tp-topic-row.on { border-color: var(--accent3); }
+.tp-topic-name { font-size: 13px; }
+.tp-toggle {
+  flex-shrink: 0; width: 40px; height: 22px; border-radius: 11px; border: none; cursor: pointer;
+  background: var(--border); position: relative; transition: background 0.2s;
+}
+.tp-toggle.on { background: var(--accent3); }
+.tp-toggle::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 18px; height: 18px; border-radius: 50%; background: white; transition: transform 0.2s;
+}
+.tp-toggle.on::after { transform: translateX(18px); }
+/* Kody */
+.tp-invite-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: var(--bg); border-radius: var(--radius-sm); border: 1px solid var(--border);
+}
+.tp-code { font-family: monospace; font-size: 20px; font-weight: 800; letter-spacing: 2px; color: var(--accent3); flex: 1; }
+.tp-code.expired { color: var(--text3); text-decoration: line-through; }
+.tp-invite-meta { font-size: 11px; color: var(--text3); }
+.tp-invite-meta.used { color: var(--text2); }
+.tp-invite-meta.free { color: var(--green); }
+.tp-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--font-head); font-size: 14px; font-weight: 800; margin-bottom: 4px;
+}
 
 /* ===== O PROJEKCIE MODAL ===== */
 .about-modal-overlay {
@@ -2006,6 +2168,21 @@ body.theme-classic .orb1, body.theme-classic .orb2 { display: none; }
 details[open] .tp-level-summary::after { content: '▴'; }
 .tp-level-count { font-size: 11px; font-weight: 600; opacity: 0.6; margin-left: auto; margin-right: 4px; }
 .tp-table { display: flex; flex-direction: column; gap: 4px; padding: 6px 4px 4px; }
+.lb-week-range { font-size: 11px; color: var(--text3); margin: -6px 0 6px; }
+.pts-week { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.pts-week span { color: var(--accent); font-weight: 700; }
+.tp-students-table { display: flex; flex-direction: column; gap: 2px; }
+.tp-students-header { display: flex; align-items: center; gap: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+.tp-sth-name { flex: 1; }
+.tp-sth-pts { width: 72px; text-align: right; }
+.tp-sth-action { width: 28px; }
+.tp-student-row { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 8px; background: rgba(255,255,255,0.04); font-size: 13px; }
+.tp-student-row:hover { background: rgba(255,255,255,0.08); }
+.tp-std-rank { width: 22px; color: var(--text3); font-size: 11px; text-align: right; }
+.tp-std-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tp-std-pts { width: 90px; text-align: right; font-variant-numeric: tabular-nums; color: var(--text2); }
+.tp-std-remove { width: 28px; height: 24px; border: none; background: transparent; color: var(--text3); cursor: pointer; border-radius: 5px; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+.tp-std-remove:hover { background: rgba(255,80,80,0.18); color: var(--red,#f66); }
 .tp-row { display: flex; align-items: center; gap: 10px; padding: 3px 8px; border-radius: 7px; background: rgba(255,255,255,0.03); }
 .tp-name { flex: 1; font-size: 12px; color: var(--text-secondary, #aaa); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 165px; }
 .tp-miles { display: flex; gap: 5px; }
@@ -2709,12 +2886,32 @@ details[open] .tp-level-summary::after { content: '▴'; }
     </div>
 
     <hr class="aids-nav-sep">
-    <button class="aids-nav-btn" id="aidsNavBtn" onclick="selectAids(this)">
-      📚 Pomoce naukowe
+    <button class="aids-nav-btn" id="teacherPanelBtn" onclick="openTeacherPanel()" style="display:none;color:var(--accent3);border-left-color:var(--accent3)">
+      🏫 Zarządzaj klasą
     </button>
-    <button class="aids-nav-btn" onclick="openAboutModal()">
-      ℹ️ O projekcie
-    </button>
+    <div class="level-group">
+      <button class="level-btn" onclick="toggleLevel('aids-sp', this)">
+        <span>📚 Pomoce naukowe SP</span>
+        <div style="display:flex;align-items:center;gap:6px"><span class="level-badge">SP</span><span class="chevron">▾</span></div>
+      </button>
+      <div class="topics-list" id="topics-aids-sp">
+        <button class="topic-btn" onclick="selectAid('sp_mnozenie', this)"><span class="topic-dot"></span>Tabliczka mnożenia — plansza</button>
+        <button class="topic-btn" onclick="selectAid('sp_ulamki', this)"><span class="topic-dot"></span>Ułamki — wizualizacja</button>
+        <button class="topic-btn" onclick="selectAid('sp_kolejnosc', this)"><span class="topic-dot"></span>Kolejność działań — schemat</button>
+      </div>
+    </div>
+
+    <div class="level-group">
+      <button class="level-btn" onclick="toggleLevel('aids-ss', this)">
+        <span>📚 Pomoce naukowe SŚ</span>
+        <div style="display:flex;align-items:center;gap:6px"><span class="level-badge">SŚ</span><span class="chevron">▾</span></div>
+      </button>
+      <div class="topics-list" id="topics-aids-ss">
+        <button class="topic-btn" onclick="selectAid('ss_sinus', this)"><span class="topic-dot"></span>Przekształcenia wykresu sinus</button>
+        <button class="topic-btn" onclick="selectAid('ss_kwadrat', this)"><span class="topic-dot"></span>Funkcja kwadratowa — wykres</button>
+        <button class="topic-btn" onclick="selectAid('ss_trygono', this)"><span class="topic-dot"></span>Trygonometria — okrąg jedn.</button>
+      </div>
+    </div>
 
     <div class="planet-deco">
       <div class="planet">🪐</div>
@@ -2740,12 +2937,19 @@ details[open] .tp-level-summary::after { content: '▴'; }
         <a href="https://forms.gle/QwkWPkEX3JBTtkhE7" target="_blank" class="social-btn survey">
           <span class="icon">📋</span>Ankieta
         </a>
+        <button class="social-btn about-btn" onclick="openAboutModal()">
+          <span class="icon">ℹ️</span>O projekcie
+        </button>
       </div>
 
       <div class="season-box">
         <div class="label">⏳ Koniec sezonu</div>
         <div class="timer" id="seasonTimer">00:00:00</div>
       </div>
+      <button class="server-indicator" id="serverIndicator" onclick="showServerSelect()" style="display:none" title="Zmień serwer">
+        <span class="si-dot"></span>
+        <span id="serverIndicatorLabel">Globalny</span>
+      </button>
     </div>
 
     <div class="fact-box">
@@ -2769,36 +2973,84 @@ details[open] .tp-level-summary::after { content: '▴'; }
         <span style="font-size:24px">✏️</span>
         <span>Weź kartkę i coś do pisania — na pewno się przyda!</span>
       </div>
+      <!-- Sekcja klasy — pokazywana po zalogowaniu -->
+      <div id="classBadge" style="display:none">
+        <div class="welcome-class-badge">
+          <span>🏫</span>
+          <span id="classBadgeText">Twoja klasa</span>
+        </div>
+      </div>
+
+      <!-- Kod zaproszenia — dla ucznia bez klasy -->
+      <div id="classInviteSection" style="display:none">
+        <div class="welcome-invite-card">
+          <div class="welcome-invite-title">🏫 Grasz z klasą?</div>
+          <div class="welcome-invite-sub">Wpisz kod zaproszenia od nauczyciela, żeby dołączyć do swojej klasy</div>
+          <div class="welcome-invite-row">
+            <input id="inviteCodeInput" class="welcome-invite-input" type="text"
+              placeholder="ABC-123" maxlength="7"
+              onkeydown="if(event.key==='Enter') submitInviteCode()">
+            <button class="btn btn-primary btn-sm" onclick="submitInviteCode()">Dołącz</button>
+          </div>
+          <div id="inviteError" style="font-size:13px;margin-top:8px"></div>
+        </div>
+      </div>
+
       <div class="stats-row" id="globalStatsRow"></div>
     </div>
 
     <!-- POMOCE NAUKOWE -->
     <div class="aids-screen" id="aidsScreen">
       <div class="aids-header">
-        <div class="aids-title">📚 Pomoce naukowe</div>
-        <div class="aids-subtitle">Rysunki, schematy i interaktywne narzędzia GeoGebra</div>
+        <div class="aids-title" id="aidTitle">📚 Pomoce naukowe</div>
       </div>
-      <div class="aids-grid" id="aidsGrid">
 
-        <!-- ── Przekształcenia sinusoidy ── -->
-        <div class="aid-section-label">📐 Przekształcenia sinusoidy</div>
-        <div class="aid-card aid-card-wide">
-          <div class="ggb-card-inner">
-            <div class="ggb-wrap" id="ggb-sinus"></div>
-            <div class="ggb-side-panel">
-              <div class="ggb-side-title">Co widać na wykresie?</div>
-              <div id="ggb-sinus-desc" class="ggb-dynamic-desc">
-                <div class="ggb-desc-loading">Ładowanie appletu…</div>
+      <!-- SP: Tabliczka mnożenia -->
+      <div class="aid-panel" id="aid-sp_mnozenie" style="display:none">
+        <div class="aid-placeholder"><div class="aid-placeholder-icon">🚧</div><div class="aid-placeholder-text">Tabliczka mnożenia — interaktywna plansza. Wkrótce!</div></div>
+      </div>
+
+      <!-- SP: Ułamki -->
+      <div class="aid-panel" id="aid-sp_ulamki" style="display:none">
+        <div class="aid-placeholder"><div class="aid-placeholder-icon">🚧</div><div class="aid-placeholder-text">Ułamki — wizualizacja i porównywanie. Wkrótce!</div></div>
+      </div>
+
+      <!-- SP: Kolejność działań -->
+      <div class="aid-panel" id="aid-sp_kolejnosc" style="display:none">
+        <div class="aid-placeholder"><div class="aid-placeholder-icon">🚧</div><div class="aid-placeholder-text">Kolejność działań — schemat krok po kroku. Wkrótce!</div></div>
+      </div>
+
+      <!-- SS: Sinus -->
+      <div class="aid-panel" id="aid-ss_sinus" style="display:none">
+        <div class="aids-grid">
+          <div class="aid-section-label">📐 Przekształcenia sinusoidy</div>
+          <div class="aid-card aid-card-wide">
+            <div class="ggb-card-inner">
+              <div class="ggb-wrap" id="ggb-sinus"></div>
+              <div class="ggb-side-panel">
+                <div class="ggb-side-title">Co widać na wykresie?</div>
+                <div id="ggb-sinus-desc" class="ggb-dynamic-desc">
+                  <div class="ggb-desc-loading">Ładowanie appletu…</div>
+                </div>
+                <div class="ggb-credit">Powered by <a href="https://www.geogebra.org" target="_blank" rel="noopener">GeoGebra</a></div>
               </div>
-              <div class="ggb-credit">Powered by <a href="https://www.geogebra.org" target="_blank" rel="noopener">GeoGebra</a></div>
+            </div>
+            <div class="aid-card-body">
+              <div class="aid-card-title">Interaktywny wykres sinusoidy</div>
+              <div class="aid-card-desc">Zmieniaj suwaki i obserwuj jak zmienia się wykres y = a·sin(bx + c) + d</div>
             </div>
           </div>
-          <div class="aid-card-body">
-            <div class="aid-card-title">Interaktywny wykres sinusoidy</div>
-            <div class="aid-card-desc">Zmieniaj suwaki i obserwuj jak zmienia się wykres y = a·sin(bx + c) + d</div>
-          </div>
         </div>
+      </div>
 
+      <!-- SS: Funkcja kwadratowa -->
+      <div class="aid-panel" id="aid-ss_kwadrat" style="display:none">
+        <div class="aid-placeholder"><div class="aid-placeholder-icon">🚧</div><div class="aid-placeholder-text">Funkcja kwadratowa — interaktywny wykres paraboli. Wkrótce!</div></div>
+      </div>
+
+      <!-- SS: Trygonometria -->
+      <div class="aid-panel" id="aid-ss_trygono" style="display:none">
+        <div class="aid-placeholder"><div class="aid-placeholder-icon">🚧</div><div class="aid-placeholder-text">Trygonometria — okrąg jednostkowy i wartości funkcji. Wkrótce!</div></div>
       </div>
     </div>
 
@@ -2934,6 +3186,7 @@ details[open] .tp-level-summary::after { content: '▴'; }
         <div class="pts" id="userPtsEl">0</div>
         <div>punktów sezonowych</div>
         <div class="pts-label">Łącznie: <span id="userTotalEl">0</span> pkt</div>
+        <div class="pts-week" id="userWeekEl" style="display:none">W tym tygodniu: <span id="userWeekPts">0</span> pkt</div>
       </div>
       <div class="daily-streak-badge" id="dailyStreakEl" style="display:none">
         🔥 <span id="dailyStreakNum">1</span> dni z rzędu!
@@ -2961,15 +3214,29 @@ details[open] .tp-level-summary::after { content: '▴'; }
       </div>
     </div>
 
+    <!-- WEEKLY LEADERBOARD -->
+    <div class="leaderboard-card" id="lb-weekly-card" style="display:none">
+      <div class="lb-title">📅 Punkty w tym tygodniu</div>
+      <div class="lb-week-range" id="lbWeekRange"></div>
+      <div id="lb-weekly"></div>
+    </div>
+
+    <!-- CLASS LEADERBOARD (visible when server=class) -->
+    <div class="leaderboard-card" id="lb-class-card" style="display:none">
+      <div class="lb-title">🏫 Ranking klasy</div>
+      <div id="lb-class"></div>
+      <div id="lb-class-teacher" style="margin-top:8px"></div>
+    </div>
+
     <!-- SEASONAL LEADERBOARD -->
-    <div class="leaderboard-card">
+    <div class="leaderboard-card" id="lb-seasonal-card">
       <div class="lb-title">🏆 Sezon – Top 10</div>
       <div id="lb-seasonal"></div>
       <a class="lb-link" onclick="showFullLb('seasonal')">→ Pełna lista wyników</a>
     </div>
 
     <!-- GLOBAL LEADERBOARD -->
-    <div class="leaderboard-card">
+    <div class="leaderboard-card" id="lb-global-card">
       <div class="lb-title">🌍 Globalnie – Top 10</div>
       <div id="lb-global"></div>
       <a class="lb-link" onclick="showFullLb('global')">→ Pełna lista wyników</a>
@@ -2989,6 +3256,88 @@ details[open] .tp-level-summary::after { content: '▴'; }
 
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script src="/app.js"></script>
+
+<!-- TEACHER PANEL MODAL -->
+<div class="tp-overlay" id="tpOverlay" style="display:none" onclick="tpCloseBg(event)">
+  <div class="tp-modal">
+    <div class="tp-header">
+      🏫 Zarządzaj klasą
+      <button class="close-btn" onclick="closeTeacherPanel()">✕</button>
+    </div>
+    <div class="tp-class-bar" id="tpClassBar" style="display:none">
+      <label style="font-size:12px;color:var(--text3);font-weight:700">KLASA</label>
+      <select id="tpClassSelect" onchange="tpSelectClass(this.value)"></select>
+      <button class="btn btn-sm" onclick="tpToggleAddClass()" title="Dodaj klasę"
+        style="flex-shrink:0;padding:5px 10px;font-size:13px">+ Dodaj</button>
+      <button class="btn btn-sm btn-danger" onclick="tpDeleteClass()" title="Usuń klasę"
+        style="flex-shrink:0;padding:5px 10px;font-size:13px">🗑</button>
+    </div>
+    <div id="tpAddClassForm" style="display:none;padding:12px 22px;border-bottom:1px solid var(--border);background:var(--bg);gap:8px;display:none;flex-wrap:wrap;align-items:flex-end">
+      <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px">
+        <label style="font-size:11px;color:var(--text3);font-weight:700">NAZWA (np. 4b)</label>
+        <input id="tpNewClassName" class="server-card-input" type="text" placeholder="4b" maxlength="10" style="padding:6px 10px;font-size:13px">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;width:80px">
+        <label style="font-size:11px;color:var(--text3);font-weight:700">POZIOM</label>
+        <input id="tpNewClassGrade" class="server-card-input" type="number" min="1" max="8" placeholder="4" style="padding:6px 10px;font-size:13px">
+      </div>
+      <div id="tpNewClassSchoolWrap" style="display:none;flex-direction:column;gap:4px;flex:1;min-width:140px">
+        <label style="font-size:11px;color:var(--text3);font-weight:700">SZKOŁA</label>
+        <select id="tpNewClassSchool" class="server-card-input" style="padding:6px 10px;font-size:13px"></select>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-primary btn-sm" onclick="tpSubmitAddClass()">Dodaj</button>
+        <button class="btn btn-sm" onclick="tpToggleAddClass()">Anuluj</button>
+      </div>
+      <div id="tpAddClassErr" style="width:100%;font-size:12px;color:var(--red)"></div>
+    </div>
+    <div class="tp-tabs">
+      <button class="tp-tab active" id="tpTabTopics"   onclick="tpShowTab('topics')">📚 Tematy</button>
+      <button class="tp-tab"        id="tpTabInvites"  onclick="tpShowTab('invites')">🔑 Kody zaproszenia</button>
+      <button class="tp-tab"        id="tpTabStudents" onclick="tpShowTab('students')">👥 Uczniowie</button>
+    </div>
+    <div class="tp-body" id="tpBody">
+      <div style="color:var(--text3)">Ładowanie…</div>
+    </div>
+  </div>
+</div>
+
+<!-- SERVER SELECT OVERLAY -->
+<div class="server-select-overlay" id="serverSelectOverlay" style="display:none">
+  <div class="server-select-title">Wybierz serwer 🌐</div>
+  <div class="server-select-sub" id="serverSelectSub">Witaj! Na który serwer wchodzisz?</div>
+  <div class="server-cards">
+
+    <!-- GLOBALNY -->
+    <div class="server-card" id="serverCardGlobal" onclick="selectServer('global')">
+      <div class="server-card-icon">🌍</div>
+      <div class="server-card-name">Globalny</div>
+      <div class="server-card-desc">Ranking ze wszystkimi graczami. Wszystkie tematy dostępne.</div>
+    </div>
+
+    <!-- KLASOWY -->
+    <div class="server-card" id="serverCardClass">
+      <div class="server-card-icon">🏫</div>
+      <div class="server-card-name">Klasowy</div>
+      <div class="server-card-desc" id="serverCardClassDesc">Ranking z kolegami z klasy. Tematy wybrane przez nauczyciela.</div>
+      <div class="server-card-badge" id="serverCardClassBadge" style="display:none"></div>
+      <!-- Wybór klasy dla nauczyciela (wiele klas) -->
+      <div id="serverTeacherClassWrap" style="display:none">
+        <select id="serverTeacherClassSelect" class="server-card-input" style="cursor:pointer"></select>
+      </div>
+      <!-- Pokazane gdy user nie ma klasy -->
+      <div class="server-card-invite" id="serverCardInvite" style="display:none">
+        <input id="serverInviteInput" class="server-card-input" type="text"
+          placeholder="KOD-123" maxlength="7"
+          onkeydown="if(event.key==='Enter') serverJoinClass()">
+        <button class="btn btn-primary btn-sm" onclick="serverJoinClass()">Dołącz</button>
+        <div class="server-card-err" id="serverInviteErr"></div>
+      </div>
+    </div>
+
+  </div>
+  <a class="server-teacher-link" id="serverTeacherLink" href="/teacher">📊 Przejdź do panelu nauczyciela</a>
+</div>
 
 <!-- ACHIEVEMENTS OVERLAY -->
 <div class="ach-overlay" id="achOverlay" style="display:none" onclick="closeAchIfBg(event)">

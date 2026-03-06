@@ -112,4 +112,85 @@ db.exec(`
   );
 `);
 
+// ── System szkół i klas (v8) ──────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS schools (
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    city TEXT NOT NULL DEFAULT ''
+  );
+
+  CREATE TABLE IF NOT EXISTS classes (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    school_id  INTEGER NOT NULL REFERENCES schools(id),
+    name       TEXT    NOT NULL,
+    grade      INTEGER NOT NULL,
+    teacher_id INTEGER REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS invites (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    class_id   INTEGER NOT NULL REFERENCES classes(id),
+    code       TEXT    UNIQUE NOT NULL,
+    used_by    INTEGER REFERENCES users(id),
+    created_at INTEGER DEFAULT (strftime('%s','now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS class_topics (
+    class_id INTEGER NOT NULL REFERENCES classes(id),
+    topic    TEXT    NOT NULL,
+    unlocked INTEGER DEFAULT 0,
+    PRIMARY KEY (class_id, topic)
+  );
+`);
+
+try { db.exec('ALTER TABLE users ADD COLUMN class_id INTEGER'); } catch(e) {}
+try { db.exec("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'student'"); } catch(e) {}
+try { db.exec('ALTER TABLE invites ADD COLUMN expires_at INTEGER'); } catch(e) {}
+
+// Kolumny klasowe (v9) – osobne punkty na serwerze klasowym
+try { db.exec('ALTER TABLE users ADD COLUMN class_season_points INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN class_total_points  INTEGER DEFAULT 0'); } catch(e) {}
+
+// Tygodniowe punkty (v10)
+try { db.exec('ALTER TABLE users ADD COLUMN week_points       INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN class_week_points INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec("ALTER TABLE users ADD COLUMN week_start        TEXT    DEFAULT ''"); } catch(e) {}
+
+// Postęp tematów na serwerze klasowym (oddzielny od globalnego)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS class_topic_progress (
+    id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    topic   TEXT    NOT NULL,
+    done    INTEGER DEFAULT 0,
+    points  INTEGER DEFAULT 0,
+    UNIQUE(user_id, topic)
+  );
+`);
+
+// Seed: jedna testowa szkoła, klasa, nauczyciel i kody zaproszenia
+{
+  const bcrypt = require('bcrypt');
+  const existing = db.prepare('SELECT id FROM schools LIMIT 1').get();
+  if (!existing) {
+    const school = db.prepare('INSERT INTO schools (name, city) VALUES (?, ?)').run('Szkoła Przykładowa nr 1', 'Warszawa');
+    const schoolId = school.lastInsertRowid;
+
+    const hash = bcrypt.hashSync('nauczyciel', 10);
+    db.prepare('INSERT OR IGNORE INTO users (name, password_hash, role) VALUES (?, ?, ?)').run('nauczyciel', hash, 'teacher');
+    const teacher = db.prepare("SELECT id FROM users WHERE name = 'nauczyciel'").get();
+
+    const cls = db.prepare('INSERT INTO classes (school_id, name, grade, teacher_id) VALUES (?, ?, ?, ?)').run(schoolId, '4a', 4, teacher.id);
+    const classId = cls.lastInsertRowid;
+
+    for (const code of ['ABC-123', 'DEF-456', 'GHI-789']) {
+      db.prepare('INSERT OR IGNORE INTO invites (class_id, code) VALUES (?, ?)').run(classId, code);
+    }
+
+    console.log('🏫 Seed: szkoła, klasa 4a, nauczyciel (login: nauczyciel / hasło: nauczyciel)');
+    console.log('   Kody zaproszenia: ABC-123, DEF-456, GHI-789');
+  }
+}
+
 module.exports = db;

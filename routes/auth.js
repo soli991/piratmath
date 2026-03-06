@@ -67,10 +67,7 @@ router.post('/register', async (req, res) => {
   const newAchs = checkAndUnlock(result.lastInsertRowid, {});
   const achData = getAchData(result.lastInsertRowid);
 
-  const user = db.prepare(
-    'SELECT id, name, season_points, total_points, dukaty, owned_avatars, owned_titles, active_title FROM users WHERE id = ?'
-  ).get(result.lastInsertRowid);
-
+  const user = getUserFull(result.lastInsertRowid);
   res.json({ user: { ...user, topics: {}, ...achData }, dailyBonus, dailyStreak, newAchs });
 });
 
@@ -95,13 +92,10 @@ router.post('/login', async (req, res) => {
   const achData = getAchData(user.id);
 
   // Odczytaj aktualne punkty (mogły wzrosnąć o bonus)
-  const fresh = db.prepare(
-    'SELECT season_points, total_points, dukaty, owned_avatars, owned_titles, active_title FROM users WHERE id = ?'
-  ).get(user.id);
-
+  const fresh  = getUserFull(user.id);
   const topics = buildTopicsMap(user.id);
   res.json({
-    user: { id: user.id, name: user.name, ...fresh, topics, ...achData },
+    user: { ...fresh, topics, ...achData },
     dailyBonus,
     dailyStreak,
     newAchs,
@@ -122,9 +116,7 @@ router.get('/me', (req, res) => {
   const newAchs = checkAndUnlock(req.session.userId, {});
   const achData = getAchData(req.session.userId);
 
-  const user = db.prepare(
-    'SELECT id, name, season_points, total_points, dukaty, owned_avatars, owned_titles, active_title FROM users WHERE id = ?'
-  ).get(req.session.userId);
+  const user = getUserFull(req.session.userId);
 
   if (!user) {
     req.session.destroy(() => {});
@@ -134,6 +126,19 @@ router.get('/me', (req, res) => {
   const topics = buildTopicsMap(user.id);
   res.json({ user: { ...user, topics, ...achData }, dailyBonus, dailyStreak, newAchs });
 });
+
+function getUserFull(userId) {
+  const u = db.prepare(
+    'SELECT id, name, season_points, total_points, class_season_points, class_total_points, week_points, class_week_points, dukaty, owned_avatars, owned_titles, active_title, class_id, role FROM users WHERE id = ?'
+  ).get(userId);
+  if (!u) return null;
+  const teacherClasses = db.prepare(`
+    SELECT c.id, c.name, c.grade, s.name AS schoolName
+    FROM classes c JOIN schools s ON s.id = c.school_id
+    WHERE c.teacher_id = ? ORDER BY c.grade, c.name
+  `).all(userId);
+  return { ...u, teacher_classes: teacherClasses };
+}
 
 function buildTopicsMap(userId) {
   const rows = db.prepare(

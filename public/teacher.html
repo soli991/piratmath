@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel nauczyciela – Pi-ratMath</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Baloo+2:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e1a; --card: #1a2340; --border: #2a3a6a;
+  --accent: #4f8ef7; --accent2: #7b5ef8; --accent3: #00d4aa;
+  --text: #e8eeff; --text2: #8899cc; --text3: #5566aa;
+  --green: #22c55e; --red: #ef4444;
+  --font-head: 'Baloo 2', cursive; --font-body: 'Nunito', sans-serif;
+  --radius: 16px; --radius-sm: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+.topbar {
+  background: var(--card); border-bottom: 1px solid var(--border);
+  padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.topbar-title { font-family: var(--font-head); font-size: 22px; font-weight: 800; }
+.topbar-right { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--text2); }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 28px 20px; display: grid; gap: 24px; }
+
+.section {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px;
+}
+.section-title {
+  font-family: var(--font-head); font-size: 18px; font-weight: 800; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* Uczniowie */
+.students-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.students-table th { text-align: left; padding: 8px 12px; color: var(--text3); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+.students-table td { padding: 10px 12px; border-bottom: 1px solid rgba(42,58,106,0.4); }
+.students-table tr:last-child td { border-bottom: none; }
+.rank { color: var(--text3); font-size: 12px; }
+.pts-badge { background: rgba(79,142,247,0.15); color: var(--accent); padding: 2px 8px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+.empty-msg { color: var(--text3); font-size: 14px; font-style: italic; padding: 12px 0; }
+
+/* Tematy */
+.topics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.topic-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 14px; background: var(--bg); border-radius: var(--radius-sm);
+  border: 1px solid var(--border); transition: border-color 0.15s;
+}
+.topic-row.unlocked { border-color: var(--accent3); }
+.topic-name { font-size: 13px; }
+.topic-level { font-size: 10px; color: var(--text3); }
+.toggle-btn {
+  flex-shrink: 0; width: 44px; height: 24px; border-radius: 12px; border: none; cursor: pointer;
+  background: var(--border); position: relative; transition: background 0.2s;
+}
+.toggle-btn.on { background: var(--accent3); }
+.toggle-btn::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px; border-radius: 50%; background: white; transition: transform 0.2s;
+}
+.toggle-btn.on::after { transform: translateX(20px); }
+
+/* Kody */
+.invites-list { display: flex; flex-direction: column; gap: 8px; }
+.invite-row {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  background: var(--bg); border-radius: var(--radius-sm); border: 1px solid var(--border);
+}
+.invite-code { font-family: monospace; font-size: 18px; font-weight: 800; letter-spacing: 2px; color: var(--accent3); }
+.invite-status { font-size: 12px; }
+.invite-used { color: var(--text3); }
+.invite-free { color: var(--green); }
+
+.btn {
+  padding: 10px 20px; border: none; border-radius: var(--radius-sm); font-family: var(--font-body);
+  font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
+.btn-sm { padding: 6px 14px; font-size: 13px; }
+.btn-danger { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+
+.class-info { display: flex; gap: 16px; flex-wrap: wrap; }
+.class-chip { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 16px; font-size: 14px; }
+.class-chip span { font-weight: 800; color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">🏫 Panel nauczyciela – Pi-ratMath</div>
+  <div class="topbar-right">
+    <span id="teacherName">…</span>
+    <a href="/" style="color:var(--accent);font-weight:700;text-decoration:none">← Wróć do aplikacji</a>
+    <button class="btn btn-sm btn-danger" onclick="logout()">Wyloguj</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Info o klasie -->
+  <div class="section">
+    <div class="section-title">📋 Moja klasa</div>
+    <div class="class-info" id="classInfo">
+      <div style="color:var(--text3);font-style:italic">Ładowanie…</div>
+    </div>
+  </div>
+
+  <!-- Uczniowie -->
+  <div class="section">
+    <div class="section-title">👥 Uczniowie <span style="font-size:14px;color:var(--text3);font-family:var(--font-body)" id="studentCount"></span></div>
+    <div id="studentsWrap">
+      <div class="empty-msg">Ładowanie…</div>
+    </div>
+  </div>
+
+  <!-- Tematy -->
+  <div class="section">
+    <div class="section-title">📚 Odblokowane tematy</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Uczniowie widzą tylko odblokowane tematy. Możesz zmieniać dostęp w dowolnym momencie.</p>
+    <div class="topics-grid" id="topicsGrid">
+      <div class="empty-msg">Ładowanie…</div>
+    </div>
+  </div>
+
+  <!-- Kody zaproszenia -->
+  <div class="section">
+    <div class="section-title" style="justify-content:space-between">
+      <span>🔑 Kody zaproszenia</span>
+      <button class="btn btn-primary btn-sm" onclick="generateInvite()">+ Nowy kod</button>
+    </div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Każdy kod jest jednorazowy — uczeń wpisuje go przy rejestracji.</p>
+    <div class="invites-list" id="invitesList">
+      <div class="empty-msg">Ładowanie…</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+async function api(path, opts = {}) {
+  const res = await fetch(path, { credentials: 'include', headers: { 'Content-Type': 'application/json' }, ...opts });
+  return res.json();
+}
+
+async function init() {
+  // Sprawdź czy nauczyciel
+  const me = await api('/api/me');
+  if (!me.user || me.user.role !== 'teacher') {
+    location.href = '/';
+    return;
+  }
+  document.getElementById('teacherName').textContent = me.user.name;
+
+  loadClass();
+  loadStudents();
+  loadTopics();
+  loadInvites();
+}
+
+async function loadClass() {
+  const data = await api('/api/teacher/class');
+  const el = document.getElementById('classInfo');
+  if (data.error) { el.innerHTML = `<div class="empty-msg">${data.error}</div>`; return; }
+  el.innerHTML = `
+    <div class="class-chip">Szkoła: <span>${data.school_name}</span></div>
+    <div class="class-chip">Klasa: <span>${data.grade}${data.name}</span></div>
+  `;
+}
+
+async function loadStudents() {
+  const students = await api('/api/teacher/students');
+  const wrap = document.getElementById('studentsWrap');
+  const cnt  = document.getElementById('studentCount');
+  if (!students.length) {
+    wrap.innerHTML = '<div class="empty-msg">Brak uczniów — udostępnij kody zaproszenia.</div>';
+    cnt.textContent = '(0)';
+    return;
+  }
+  cnt.textContent = `(${students.length})`;
+  wrap.innerHTML = `
+    <table class="students-table">
+      <thead><tr><th>#</th><th>Nick</th><th>Punkty sezonowe</th><th>Łącznie</th></tr></thead>
+      <tbody>
+        ${students.map((s, i) => `
+          <tr>
+            <td class="rank">${i + 1}</td>
+            <td>${s.name}</td>
+            <td><span class="pts-badge">${s.season_points} pkt</span></td>
+            <td style="color:var(--text3)">${s.total_points} pkt</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+async function loadTopics() {
+  const topics = await api('/api/teacher/topics');
+  const grid = document.getElementById('topicsGrid');
+  grid.innerHTML = topics.map(t => `
+    <div class="topic-row ${t.unlocked ? 'unlocked' : ''}" id="trow-${encodeURIComponent(t.topic)}">
+      <div>
+        <div class="topic-name">${t.topic}</div>
+        <div class="topic-level">${t.level}</div>
+      </div>
+      <button class="toggle-btn ${t.unlocked ? 'on' : ''}"
+        onclick="toggleTopic('${t.topic.replace(/'/g,"\\'")}', this)"></button>
+    </div>
+  `).join('');
+}
+
+async function toggleTopic(topic, btn) {
+  const nowOn = !btn.classList.contains('on');
+  btn.classList.toggle('on', nowOn);
+  const row = btn.closest('.topic-row');
+  row.classList.toggle('unlocked', nowOn);
+  await api('/api/teacher/topics', {
+    method: 'PUT',
+    body: JSON.stringify({ topic, unlocked: nowOn }),
+  });
+}
+
+async function loadInvites() {
+  const invites = await api('/api/teacher/invites');
+  const list = document.getElementById('invitesList');
+  if (!invites.length) { list.innerHTML = '<div class="empty-msg">Brak kodów.</div>'; return; }
+  list.innerHTML = invites.map(inv => `
+    <div class="invite-row">
+      <div class="invite-code">${inv.code}</div>
+      <div class="invite-status">
+        ${inv.used
+          ? `<span class="invite-used">✓ Użyty przez: ${inv.usedByName}</span>`
+          : `<span class="invite-free">● Wolny</span>`}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function generateInvite() {
+  const data = await api('/api/teacher/invite', { method: 'POST', body: '{}' });
+  if (data.code) loadInvites();
+}
+
+async function logout() {
+  await api('/api/logout', { method: 'POST' });
+  location.href = '/';
+}
+
+init();
+</script>
+</body>
+</html>
