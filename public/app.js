@@ -6,6 +6,11 @@ async function api(method, path, body) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(path, opts);
+  if (res.status === 401 && path !== '/api/me') {
+    // Sesja wygasła (np. po restarcie serwera) — odśwież stronę
+    location.reload();
+    return {};
+  }
   return res.json();
 }
 
