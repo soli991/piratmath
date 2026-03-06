@@ -1254,7 +1254,7 @@ function selectAid(aidId, el) {
 }
 
 function selectTopic(topic, el) {
-  if (state.classTopics !== null && CLASS_MANAGED_TOPICS.has(topic) && !state.classTopics.has(topic)) {
+  if (state.server === 'class' && state.classTopics !== null && CLASS_MANAGED_TOPICS.has(topic) && !state.classTopics.has(topic)) {
     showToast('Ten temat nie jest jeszcze odblokowany przez nauczyciela', 'info');
     return;
   }
