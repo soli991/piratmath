@@ -32,22 +32,6 @@ app.use('/api', apiRoutes);
 app.use('/api/pvp', pvpRoutes);
 app.use('/api', schoolRoutes);
 
-// TYMCZASOWY ENDPOINT — usuń po użyciu
-app.get('/admin/add-class', (req, res) => {
-  const { secret, teacher, grade, name, school } = req.query;
-  if (secret !== (process.env.ADMIN_SECRET || 'zmien-mnie')) return res.status(403).send('Brak dostępu');
-  const db = require('./db');
-  const user = db.prepare('SELECT id FROM users WHERE name = ?').get(teacher || 'soli');
-  if (!user) return res.status(404).send('Nie znaleziono nauczyciela');
-  let schoolRow = db.prepare('SELECT id FROM schools WHERE name = ?').get(school || 'Szkoła Przykładowa nr 1');
-  if (!schoolRow) {
-    const r = db.prepare('INSERT INTO schools (name, city) VALUES (?, ?)').run(school || 'Szkoła Przykładowa nr 1', '');
-    schoolRow = { id: r.lastInsertRowid };
-  }
-  const cls = db.prepare('INSERT INTO classes (school_id, name, grade, teacher_id) VALUES (?, ?, ?, ?)').run(schoolRow.id, name || '1a', parseInt(grade) || 1, user.id);
-  res.send(`OK — klasa ${name || '1a'} (grade ${grade || 1}) utworzona dla ${teacher || 'soli'} (id klasy: ${cls.lastInsertRowid})`);
-});
-
 // Panel nauczyciela — osobna strona
 app.get('/teacher', (req, res) => {
   res.sendFile(require('path').join(__dirname, 'public', 'teacher.html'));
