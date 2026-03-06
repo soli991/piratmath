@@ -1882,6 +1882,13 @@ const TOPIC_GENERATORS = {
     if (showDiv) return { q: `${a * b} ÷ ${b} = ?`, a: a };
     return { q: `${a} × ${b} = ?`, a: a * b };
   },
+  'Zapisywanie ułamka zwykłego': (d) => {
+    const denoms = d === 'easy' ? [2, 3, 4] : [2, 3, 4, 5, 6, 8, 10];
+    const n = denoms[Math.floor(Math.random() * denoms.length)];
+    const k = rand(1, n - 1);
+    const shape = Math.random() < 0.5 ? 'circle' : 'rect';
+    return { type: 'fraction_read', k, n, shape };
+  },
   'Ułamki zwykłe': (d) => {
     const denom = rand(2, d === 'easy' ? 6 : 12);
     const n1 = rand(1, denom - 1), n2 = rand(1, denom - 1);
@@ -4906,6 +4913,137 @@ async function checkDivRem() {
   }
 }
 
+// ============================================================
+// FRACTION READ (SVG visual → uczeń wpisuje ułamek)
+// ============================================================
+
+function fractionCircleSvg(k, n, size = 130) {
+  const cx = size / 2, cy = size / 2, r = size * 0.42;
+  const parts = [];
+  for (let i = 0; i < n; i++) {
+    const a1 = (i / n) * 2 * Math.PI - Math.PI / 2;
+    const a2 = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2;
+    const x1 = (cx + r * Math.cos(a1)).toFixed(3);
+    const y1 = (cy + r * Math.sin(a1)).toFixed(3);
+    const x2 = (cx + r * Math.cos(a2)).toFixed(3);
+    const y2 = (cy + r * Math.sin(a2)).toFixed(3);
+    const large = (1 / n) > 0.5 ? 1 : 0;
+    const fill = i < k ? 'var(--accent)' : 'var(--bg)';
+    parts.push(`<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2} Z" fill="${fill}" stroke="var(--border)" stroke-width="2"/>`);
+  }
+  parts.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="2"/>`);
+  return `<svg width="${size}" height="${size}" style="display:block">${parts.join('')}</svg>`;
+}
+
+function fractionRectSvg(k, n, w = 210, h = 70) {
+  const pw = w / n;
+  const parts = [];
+  for (let i = 0; i < n; i++) {
+    const x = (i * pw).toFixed(3);
+    const fill = i < k ? 'var(--accent)' : 'var(--bg)';
+    parts.push(`<rect x="${x}" y="0" width="${pw.toFixed(3)}" height="${h}" fill="${fill}" stroke="var(--border)" stroke-width="2"/>`);
+  }
+  return `<svg width="${w}" height="${h}" style="display:block">${parts.join('')}</svg>`;
+}
+
+function buildFractionReadHtml(q) {
+  const svg = q.shape === 'circle' ? fractionCircleSvg(q.k, q.n) : fractionRectSvg(q.k, q.n);
+  if (state.solutionShown) {
+    return `<div class="fr-wrap">
+      <div class="fr-question">Jaki ułamek przedstawia rysunek?</div>
+      <div>${svg}</div>
+      <div class="fr-solution">
+        <div>${q.k}</div>
+        <div class="fr-sol-line"></div>
+        <div>${q.n}</div>
+      </div>
+    </div>`;
+  }
+  const hint = state.mistakes >= 1
+    ? `<div class="fr-hint">💡 Mianownik = wszystkie części (${q.n}), licznik = pokolorowane części</div>`
+    : '';
+  return `<div class="fr-wrap">
+    <div class="fr-question">Jaki ułamek przedstawia rysunek?</div>
+    <div>${svg}</div>
+    <div class="fr-input-area">
+      <input id="frNum" class="fr-input" type="number" min="0" max="99" placeholder="?"
+        onkeydown="if(event.key==='Enter'){document.getElementById('frDen')?.focus()}"
+        oninput="this.classList.remove('wrong','correct')">
+      <div class="fr-bar"></div>
+      <input id="frDen" class="fr-input" type="number" min="1" max="99" placeholder="?"
+        onkeydown="if(event.key==='Enter')checkAnswer()"
+        oninput="this.classList.remove('wrong','correct')">
+    </div>
+    ${hint}
+  </div>`;
+}
+
+async function checkFractionRead() {
+  if (state.answerLocked) return;
+  const q   = state.currentQuestion;
+  const numEl = document.getElementById('frNum');
+  const denEl = document.getElementById('frDen');
+  if (!numEl || !denEl) return;
+
+  const k = parseInt(numEl.value, 10);
+  const n = parseInt(denEl.value, 10);
+  if (isNaN(k) || isNaN(n)) { showToast('Wpisz licznik i mianownik', 'info'); numEl.focus(); return; }
+
+  const correct = (k === q.k && n === q.n);
+
+  if (correct) {
+    state.answerLocked = true;
+    playSound('correct');
+    numEl.classList.add('correct');
+    denEl.classList.add('correct');
+    if (state.challengeActive) {
+      state.challengeCorrect++;
+      state.answerStreak++;
+      document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      checkStreakBonus();
+      showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
+      setTimeout(() => loadQuestion(), 700);
+    } else {
+      let pts = 0;
+      const wasFirst = state.isFirstAttempt && !state.solutionShown;
+      if (wasFirst) {
+        state.answerStreak++;
+        if (state.currentUser) { pts = await recordCorrect(state.currentTopic); showPointsPop(pts); updateStatsRow(); checkStreakBonus(); }
+      }
+      reportComeback();
+      const suf = wasFirst ? streakSuffix(state.answerStreak) : '';
+      showToast(pts > 0 ? `✓ Brawo! +${pts} pkt${suf}` : `✓ Brawo!${suf}`, 'correct');
+      setTimeout(() => loadQuestion(), 800);
+    }
+  } else {
+    state.answerStreak = 0;
+    state.mistakes++;
+    state.isFirstAttempt = false;
+    reportMistake();
+    playSound('wrong');
+    if (state.mistakes <= 3) document.getElementById(`dot${state.mistakes - 1}`)?.classList.add('used');
+
+    if (state.mistakes >= 3 && !state.solutionShown) {
+      state.solutionShown = true;
+      state.answerLocked  = true;
+      document.getElementById('writtenAddArea').innerHTML = buildFractionReadHtml(q);
+      showToast(`Odpowiedź: ${q.k}/${q.n}`, 'info');
+      setTimeout(() => loadQuestion(), 3500);
+    } else {
+      numEl.classList.add('wrong');
+      denEl.classList.add('wrong');
+      const left = 3 - state.mistakes;
+      showToast(`✗ Spróbuj jeszcze raz (${left} ${left === 1 ? 'szansa' : 'szanse'})`, 'wrong');
+      setTimeout(() => {
+        numEl.classList.remove('wrong'); denEl.classList.remove('wrong');
+        // Przebuduj HTML (pokaż podpowiedź po 1. błędzie)
+        document.getElementById('writtenAddArea').innerHTML = buildFractionReadHtml(q);
+        document.getElementById('frNum').focus();
+      }, 800);
+    }
+  }
+}
+
 function buildPrimeFactorsHtml(q) {
   const solved = state.solutionShown;
   const inputPart = solved
@@ -5852,7 +5990,7 @@ function loadQuestion() {
   const hintLine = document.getElementById('questionHintLine');
   if (hintLine) hintLine.style.display = 'none';
 
-  const isWA = q.type === 'written-addition' || q.type === 'written-subtraction' || q.type === 'written-multiplication' || q.type === 'written-division' || q.type === 'rounding' || q.type === 'comparison' || q.type === 'divisibility' || q.type === 'power' || q.type === 'order_ops' || q.type === 'num_write' || q.type === 'function_q' || q.type === 'sqrt_bounds' || q.type === 'prime_factors' || q.type === 'nwd' || q.type === 'nww' || q.type === 'abs_value' || q.type === 'int_compare' || q.type === 'int_order' || q.type === 'div_rem';
+  const isWA = q.type === 'written-addition' || q.type === 'written-subtraction' || q.type === 'written-multiplication' || q.type === 'written-division' || q.type === 'rounding' || q.type === 'comparison' || q.type === 'divisibility' || q.type === 'power' || q.type === 'order_ops' || q.type === 'num_write' || q.type === 'function_q' || q.type === 'sqrt_bounds' || q.type === 'prime_factors' || q.type === 'nwd' || q.type === 'nww' || q.type === 'abs_value' || q.type === 'int_compare' || q.type === 'int_order' || q.type === 'div_rem' || q.type === 'fraction_read';
   const questionText = document.getElementById('questionText');
   const answerInput  = document.getElementById('answerInput');
   const waArea       = document.getElementById('writtenAddArea');
@@ -5928,6 +6066,9 @@ function loadQuestion() {
     } else if (q.type === 'div_rem') {
       waArea.innerHTML = buildDivRemHtml(q);
       document.getElementById('drQuot')?.focus();
+    } else if (q.type === 'fraction_read') {
+      waArea.innerHTML = buildFractionReadHtml(q);
+      document.getElementById('frNum')?.focus();
     } else {
       waArea.innerHTML = buildWAHtml(q);
       document.getElementById('wain-0')?.focus(); // start od jedności (prawy)
@@ -6271,7 +6412,8 @@ async function checkAnswer() {
   if (state.currentQuestion?.type === 'abs_value') { await checkAbsValue(); return; }
   if (state.currentQuestion?.type === 'int_compare') return;  // obsługiwane przez przyciski
   if (state.currentQuestion?.type === 'int_order')   { await checkIntOrder(); return; }
-  if (state.currentQuestion?.type === 'div_rem')     { await checkDivRem(); return; }
+  if (state.currentQuestion?.type === 'div_rem')       { await checkDivRem(); return; }
+  if (state.currentQuestion?.type === 'fraction_read') { await checkFractionRead(); return; }
 
   const input = document.getElementById('answerInput');
 
