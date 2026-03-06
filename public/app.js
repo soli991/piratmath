@@ -1857,6 +1857,101 @@ function fmtNum(n) {
   return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
 }
 
+// ── Zadania tekstowe: zapisywanie ułamka ─────────────────────
+function genFractionWordProblem(d) {
+  const maxN = d === 'easy' ? 6 : 12;
+  const P = 'np. 3/4';
+
+  const type = rand(0, 6);
+
+  if (type === 0) {
+    // K z N przedmiotów
+    const n = rand(3, maxN), k = rand(1, n - 1);
+    const tmpl = [
+      [`Było ${n} balonów, a ${k} z nich pękło. Jaki ułamek balonów pękło?`, `${k}/${n}`],
+      [`W klasie jest ${n} uczniów, z czego ${k} nosi okulary. Jaki ułamek uczniów nosi okulary?`, `${k}/${n}`],
+      [`W koszyczku leży ${n} owoców, a ${k} to jabłka. Jaki ułamek owoców stanowią jabłka?`, `${k}/${n}`],
+      [`Ciasto podzielono na ${n} równych kawałków i zjedzono ${k}. Jaki ułamek ciasta zjedzono?`, `${k}/${n}`],
+      [`Na półce stoi ${n} książek. ${k} z nich to powieści. Jaki ułamek książek to powieści?`, `${k}/${n}`],
+      [`W słoiku jest ${n} cukierków, a ${k} to czekoladki. Jaki ułamek stanowią czekoladki?`, `${k}/${n}`],
+      [`Droga ma ${n} km. Przejechano ${k} km. Jaki ułamek drogi pokonano?`, `${k}/${n}`],
+      [`Na parkingu stoi ${n} samochodów, ${k} z nich to rowery elektryczne. Jaki ułamek stanowią rowery?`, `${k}/${n}`],
+      [`W ogrodzie jest ${n} drzew, a ${k} to jabłonie. Jaki ułamek drzew stanowią jabłonie?`, `${k}/${n}`],
+    ];
+    const [q, a] = tmpl[rand(0, tmpl.length - 1)];
+    return { q, a, placeholder: P };
+  }
+
+  if (type === 1) {
+    // Ile pozostało (N - K)
+    const n = rand(3, maxN), k = rand(1, n - 1);
+    const left = n - k;
+    const tmpl = [
+      `Tata kupił ${n} bułek. ${k} już zjedzono. Jaki ułamek bułek pozostał?`,
+      `W paczce było ${n} herbatników. Zjedliśmy ${k}. Jaki ułamek herbatników pozostało?`,
+      `Na talerzu leżało ${n} ciasteczek. Wzięto ${k}. Jaki ułamek ciasteczek został na talerzu?`,
+    ];
+    return { q: tmpl[rand(0, tmpl.length - 1)], a: `${left}/${n}`, placeholder: P };
+  }
+
+  if (type === 2) {
+    // Licznik = k, mianownik = k + diff
+    const k = rand(1, maxN - 2), diff = rand(1, Math.min(maxN - k, 8));
+    const n = k + diff;
+    return {
+      q: `Licznik ułamka wynosi ${k}, a mianownik jest o ${diff} większy od licznika. Jaki to ułamek?`,
+      a: `${k}/${n}`, placeholder: P, hint: `Mianownik = ${k} + ${diff} = ${n}`,
+    };
+  }
+
+  if (type === 3) {
+    // Mianownik = n, licznik = n - diff
+    const n = rand(3, maxN), diff = rand(1, n - 1);
+    const k = n - diff;
+    return {
+      q: `Mianownik ułamka wynosi ${n}, a licznik jest o ${diff} mniejszy od mianownika. Jaki to ułamek?`,
+      a: `${k}/${n}`, placeholder: P, hint: `Licznik = ${n} − ${diff} = ${k}`,
+    };
+  }
+
+  if (type === 4) {
+    // Mianownik = times × licznik
+    const k = rand(1, Math.floor(maxN / 2)), times = rand(2, 4);
+    const n = k * times;
+    return {
+      q: `Licznik ułamka wynosi ${k}. Mianownik jest ${times} razy większy od licznika. Jaki to ułamek?`,
+      a: `${k}/${n}`, placeholder: P, hint: `Mianownik = ${k} × ${times} = ${n}`,
+    };
+  }
+
+  if (type === 5) {
+    // Opis słowny z konkretną liczbą dziesiętną/codzienną
+    const tmpl = d === 'easy' ? [
+      { q: 'Tydzień ma 7 dni. Jaki ułamek tygodnia stanowią 2 dni?', a: '2/7' },
+      { q: 'Tydzień ma 7 dni. Jaki ułamek tygodnia stanowią 3 dni?', a: '3/7' },
+      { q: 'Rok ma 4 pory roku. Jaki ułamek roku stanowi 1 pora roku?', a: '1/4' },
+      { q: 'Doba ma 24 godziny. Jaki ułamek doby stanowią 6 godzin?', a: '6/24', hint: 'Mianownik = liczba godzin w dobie (24)' },
+    ] : [
+      { q: 'Rok ma 12 miesięcy. Jaki ułamek roku stanowią 3 miesiące letnie?', a: '3/12', hint: 'Mianownik to liczba miesięcy w roku' },
+      { q: 'Rok ma 12 miesięcy. Jaki ułamek roku stanowią 4 miesiące?', a: '4/12' },
+      { q: 'Godzina ma 60 minut. Jaki ułamek godziny stanowi kwadrans (15 minut)?', a: '15/60', hint: 'Kwadrans = 15 minut' },
+      { q: 'Godzina ma 60 minut. Jaki ułamek godziny stanowi pół godziny?', a: '30/60' },
+      { q: 'Tydzień ma 7 dni. Jaki ułamek tygodnia stanowią dni weekendowe (sobota i niedziela)?', a: '2/7' },
+      { q: 'Rok ma 12 miesięcy. Jaki ułamek roku stanowią miesiące zimowe (grudzień, styczeń, luty)?', a: '3/12' },
+    ];
+    const t = tmpl[rand(0, tmpl.length - 1)];
+    return { ...t, placeholder: P };
+  }
+
+  // type === 6: różnica między mianownikiem a licznikiem
+  const n = rand(3, maxN), diff = rand(1, n - 2);
+  const k = rand(1, n - diff - 1);
+  return {
+    q: `Mianownik ułamka jest o ${n - k} większy od licznika, który wynosi ${k}. Jaki to ułamek?`,
+    a: `${k}/${n}`, placeholder: P, hint: `Mianownik = ${k} + ${n - k} = ${n}`,
+  };
+}
+
 const TOPIC_GENERATORS = {
   'Dodawanie i odejmowanie': (d) => {
     const max = d === 'easy' ? 20 : d === 'medium' ? 100 : 1000;
@@ -1883,11 +1978,15 @@ const TOPIC_GENERATORS = {
     return { q: `${a} × ${b} = ?`, a: a * b };
   },
   'Zapisywanie ułamka zwykłego': (d) => {
-    const denoms = d === 'easy' ? [2, 3, 4] : [2, 3, 4, 5, 6, 8, 10];
-    const n = denoms[Math.floor(Math.random() * denoms.length)];
-    const k = rand(1, n - 1);
-    const shape = Math.random() < 0.5 ? 'circle' : 'rect';
-    return { type: 'fraction_read', k, n, shape };
+    // 55% szans na rysunek, 45% na zadanie tekstowe
+    if (Math.random() < 0.55) {
+      const denoms = d === 'easy' ? [2, 3, 4] : [2, 3, 4, 5, 6, 8, 10];
+      const n = denoms[Math.floor(Math.random() * denoms.length)];
+      const k = rand(1, n - 1);
+      const shape = Math.random() < 0.5 ? 'circle' : 'rect';
+      return { type: 'fraction_read', k, n, shape };
+    }
+    return genFractionWordProblem(d);
   },
   'Ułamki zwykłe': (d) => {
     const denom = rand(2, d === 'easy' ? 6 : 12);
@@ -6085,7 +6184,7 @@ function loadQuestion() {
     answerInput.className      = 'answer-input';
     const isStringAnswer = typeof state.currentAnswer === 'string';
     answerInput.type        = isStringAnswer ? 'text' : 'number';
-    answerInput.placeholder = isStringAnswer ? 'np. XIV' : '?';
+    answerInput.placeholder = q.placeholder || (isStringAnswer ? 'np. XIV' : '?');
     answerInput.focus();
   }
 
