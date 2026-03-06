@@ -935,6 +935,7 @@ function updateAdminBtn() {
 }
 
 function openAdminPanel() {
+  _apRoleFilter = '';
   document.getElementById('apOverlay').style.display = 'flex';
   apShowTab('users');
 }
@@ -1037,20 +1038,40 @@ async function apAddClass() {
   apLoadSchools();
 }
 
-async function apLoadUsers(q = '') {
+let _apRoleFilter = '';
+let _apSearchTimer = null;
+
+async function apLoadUsers(q = '', role = _apRoleFilter) {
+  _apRoleFilter = role;
   const body = document.getElementById('apBody');
   body.innerHTML = '<div style="color:var(--text3)">Ładowanie…</div>';
-  const params = q ? `?q=${encodeURIComponent(q)}` : '';
-  const users = await api('GET', `/api/admin/users${params}`);
+  const p = new URLSearchParams();
+  if (q)    p.set('q', q);
+  if (role) p.set('role', role);
+  const users = await api('GET', `/api/admin/users${p.toString() ? '?' + p : ''}`);
   if (!Array.isArray(users)) {
-    body.innerHTML = `<input class="ap-search" type="text" placeholder="🔍 Szukaj po nazwie…" value="${escHtml(q)}" oninput="apSearchDebounce(this.value)" style="margin-bottom:10px"><div style="color:var(--red)">${escHtml(users.error || 'Błąd')}</div>`;
+    body.innerHTML = `<div style="color:var(--red)">${escHtml(users.error || 'Błąd')}</div>`;
     return;
   }
+
+  const filters = [
+    { val: '',        lbl: 'Wszyscy' },
+    { val: 'student', lbl: 'Uczniowie' },
+    { val: 'teacher', lbl: 'Nauczyciele' },
+    { val: 'admin',   lbl: 'Admini' },
+  ];
+  const filterBar = filters.map(f => `
+    <button onclick="apLoadUsers(document.getElementById('apSearch')?.value||'','${f.val}')"
+      style="padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:${role===f.val?'var(--accent)':'var(--bg)'};color:${role===f.val?'#fff':'var(--text3)'};font-size:12px;cursor:pointer;font-family:var(--font-body)">
+      ${f.lbl}
+    </button>`).join('');
+
   const plural = users.length === 1 ? 'użytkownik' : 'użytkowników';
   body.innerHTML = `
     <input id="apSearch" class="ap-search" type="text" placeholder="🔍 Szukaj po nazwie…"
       value="${escHtml(q)}" oninput="apSearchDebounce(this.value)">
-    <div style="font-size:12px;color:var(--text3);margin:6px 0 2px">${users.length} ${plural}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px">${filterBar}</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:2px">${users.length} ${plural}</div>
     ${users.map(u => `
       <div class="ap-user-row" id="ap-row-${u.id}">
         <div class="ap-user-name">${escHtml(u.name)}</div>
@@ -1068,7 +1089,6 @@ async function apLoadUsers(q = '') {
   `;
 }
 
-let _apSearchTimer = null;
 function apSearchDebounce(val) {
   clearTimeout(_apSearchTimer);
   _apSearchTimer = setTimeout(() => apLoadUsers(val), 300);

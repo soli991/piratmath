@@ -11,17 +11,24 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// ── GET /api/admin/users?q=search ───────────────────────────
+// ── GET /api/admin/users?q=search&role=teacher ──────────────
 router.get('/admin/users', requireAdmin, (req, res) => {
-  const q = (req.query.q || '').trim();
-  const users = q
-    ? db.prepare(
-        'SELECT id, name, role, season_points, total_points, class_id FROM users WHERE LOWER(name) LIKE LOWER(?) ORDER BY name LIMIT 100'
-      ).all(`%${q}%`)
-    : db.prepare(
-        'SELECT id, name, role, season_points, total_points, class_id FROM users ORDER BY id DESC LIMIT 100'
-      ).all();
-  res.json(users);
+  const q    = (req.query.q    || '').trim();
+  const role = (req.query.role || '').trim();
+  const validRoles = ['student', 'teacher', 'admin'];
+
+  let sql    = 'SELECT id, name, role, season_points, total_points, class_id FROM users';
+  const cond = [];
+  const args = [];
+
+  if (q)    { cond.push('LOWER(name) LIKE LOWER(?)'); args.push(`%${q}%`); }
+  if (role && validRoles.includes(role)) { cond.push('role = ?'); args.push(role); }
+
+  if (cond.length) sql += ' WHERE ' + cond.join(' AND ');
+  sql += q ? ' ORDER BY name' : ' ORDER BY id DESC';
+  sql += ' LIMIT 100';
+
+  res.json(db.prepare(sql).all(...args));
 });
 
 // ── PATCH /api/admin/users/:id/role ─────────────────────────
