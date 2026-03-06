@@ -5168,7 +5168,7 @@ async function checkFractionRead() {
   const n = parseInt(denEl.value, 10);
   if (isNaN(k) || isNaN(n)) { showToast('Wpisz licznik i mianownik', 'info'); numEl.focus(); return; }
 
-  const correct = (k === q.k && n === q.n);
+  const correct = k > 0 && n > 0 && k * q.n === n * q.k;
 
   if (correct) {
     state.answerLocked = true;
