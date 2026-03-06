@@ -673,16 +673,19 @@ async function tpLoadStudents() {
 async function tpResetStudentPassword(studentId, studentName) {
   if (!confirm(`Wygenerować jednorazowy kod resetujący hasło dla „${studentName}"?`)) return;
   const data = await api('POST', '/api/teacher/reset-token', { studentId, classId: state.teacherClassId });
-  if (data.error) { showToast(data.error, 'wrong'); return; }
   const body = document.getElementById('tpBody');
-  const box = document.createElement('div');
-  box.style.cssText = 'margin-top:14px;padding:16px;background:var(--bg2);border:2px solid var(--accent);border-radius:12px;text-align:center';
-  box.innerHTML = `
-    <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Kod resetujący hasło dla <strong>${escHtml(studentName)}</strong> (ważny 24h):</div>
-    <div style="font-size:28px;font-weight:900;letter-spacing:6px;color:var(--accent);font-family:monospace">${data.token}</div>
-    <div style="font-size:11px;color:var(--text3);margin-top:6px">Uczeń wpisuje go na ekranie logowania → „Zapomniałem hasła"</div>
+  if (data.error) {
+    body.insertAdjacentHTML('afterbegin', `<div style="color:var(--red);font-size:13px;margin-bottom:8px">Błąd: ${escHtml(data.error)}</div>`);
+    return;
+  }
+  body.innerHTML = `
+    <div style="padding:20px;background:var(--bg2);border:2px solid var(--accent);border-radius:12px;text-align:center">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Kod resetujący hasło dla <strong>${escHtml(studentName)}</strong> (ważny 24h):</div>
+      <div style="font-size:32px;font-weight:900;letter-spacing:8px;color:var(--accent);font-family:monospace;margin:8px 0">${data.token}</div>
+      <div style="font-size:11px;color:var(--text3)">Uczeń wpisuje go na ekranie logowania → „Zapomniałem hasła"</div>
+    </div>
+    <button class="btn btn-sm" style="margin-top:12px" onclick="tpLoadStudents()">← Wróć do listy</button>
   `;
-  body.prepend(box);
 }
 
 async function tpRemoveStudent(studentId, studentName) {
