@@ -1196,6 +1196,86 @@ main {
 .theme-dot.pink { background: linear-gradient(135deg, #f472b6, #e879f9); }
 .theme-dot.classic { background: linear-gradient(135deg, #2563eb, #7c3aed); border: 2px solid var(--border); }
 
+/* ===== O PROJEKCIE MODAL ===== */
+.about-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(6px);
+}
+.about-modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-width: 620px;
+  width: 100%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.about-modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.about-modal-header h2 {
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 800;
+}
+.about-modal-close {
+  background: none; border: none; cursor: pointer;
+  font-size: 20px; color: var(--text2); line-height: 1;
+  padding: 4px 8px; border-radius: 8px;
+}
+.about-modal-close:hover { background: var(--bg3); color: var(--text); }
+.about-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--text);
+}
+.about-modal-body h3 {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 800;
+  margin: 20px 0 8px;
+}
+.about-modal-body h3:first-child { margin-top: 0; }
+.about-modal-body p { margin-bottom: 14px; color: var(--text2); }
+.about-modal-body p:last-child { margin-bottom: 0; }
+.about-modal-body em { font-style: italic; }
+.about-modal-body strong { color: var(--text); font-weight: 700; }
+
+/* ===== O AUTORZE (sidebar right) ===== */
+.o-autorze {
+  margin-top: 8px;
+  padding: 12px 14px;
+  background: var(--bg3);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* ===== STOPKA ===== */
+.site-footer {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 10px;
+  font-size: 11px;
+  color: var(--text3);
+  opacity: 0.5;
+  font-style: italic;
+}
+
 /* ===== MODAL ===== */
 .modal-overlay {
   position: fixed; inset: 0;
@@ -2632,6 +2712,9 @@ details[open] .tp-level-summary::after { content: '▴'; }
     <button class="aids-nav-btn" id="aidsNavBtn" onclick="selectAids(this)">
       📚 Pomoce naukowe
     </button>
+    <button class="aids-nav-btn" onclick="openAboutModal()">
+      ℹ️ O projekcie
+    </button>
 
     <div class="planet-deco">
       <div class="planet">🪐</div>
@@ -2892,7 +2975,12 @@ details[open] .tp-level-summary::after { content: '▴'; }
       <a class="lb-link" onclick="showFullLb('global')">→ Pełna lista wyników</a>
     </div>
 
+    <div class="o-autorze">O autorze: ty się nie interesujesz, bo kici kici 🐱</div>
+
   </aside>
+
+  <footer class="site-footer">autorstwo: Soli &amp; Claude sp. edutainment and chill</footer>
+
 </div>
 
 
@@ -2924,5 +3012,28 @@ details[open] .tp-level-summary::after { content: '▴'; }
     <div id="pvpContent"></div>
   </div>
 </div>
+
+<!-- O PROJEKCIE MODAL -->
+<div class="about-modal-overlay" id="aboutModalOverlay" style="display:none" onclick="closeAboutModal(event)">
+  <div class="about-modal">
+    <div class="about-modal-header">
+      <h2>ℹ️ O projekcie</h2>
+      <button class="about-modal-close" onclick="closeAboutModal()">✕</button>
+    </div>
+    <div class="about-modal-body">
+      <h3>Po co się w ogóle uczyć?</h3>
+      <p>W erze internetu i AI wiedza na każdy temat jest na wyciągnięcie telefonu. Ktoś mógłby zapytać — po co w takim razie zawracać sobie głowę? Otóż bardzo wielu rzeczy w szkole wcale nie uczymy się, żeby je <em>wiedzieć</em> — uczymy się, żeby zbudować neuronki, nabyć miękkie umiejętności i wypracować styl pracy, który w przyszłości pozwoli nam ogarnąć inne, być może bardziej przydatne rzeczy.</p>
+      <p>Tak, liczenie w słupku może wydawać się głupie i archaiczne. Ale daje bazę. A im mniej podstaw zbudujesz na początku, tym ciężej na starość.</p>
+      <h3>AI ci nie pomoże. (No, trochę pomoże.)</h3>
+      <p>AI da ci informacje. Zrobi rzeczy za ciebie. Może nawet wytłumaczy coś na cztery różne sposoby. Ale nie wykona pracy za twój własny mózg — tak jak koparka co prawda szybciej przerzuci tony gruzu, ale nie zbuduje ci tak bicka jak przewalenie tego gruzu szpadlem.</p>
+      <p>Jak mawiał Konfucjusz: <em>„Wytłumacz — a zapomnę. Pokaż — a zapamiętam. Pozwól zrobić — a zrozumiem."</em> (Tak naprawdę to ściema — nie mówił po polsku. Ale ciiii.)</p>
+      <p>Są rzeczy, które żeby naprawdę zrozumieć, trzeba po prostu przeklepać. Nie obejrzeć. Nie przeczytać. Przeklepać — aż coś w mózgu zaskoczy i nagle to <em>jest</em>.</p>
+      <h3>I właśnie po to jest Pi-ratMath.</h3>
+      <p>Serwis do klepania zadanek szkolnych. Nic więcej, nic mniej — i na razie to w zupełności wystarczy. Testujemy możliwości nasze i sztucznej inteligencji w robieniu tego typu contentu, a to dopiero początek.</p>
+      <p>Zbieraj punkty, zdobywaj achievementy, rywalizuj z innymi. A przy okazji — zbuduj sobie potężny, napakowany mózg i fleksuj nim w towarzystwie.</p>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

@@ -510,6 +510,17 @@ function toggleLevel(idx, btn) {
   }
 }
 
+function openAboutModal() {
+  document.getElementById('aboutModalOverlay').style.display = 'flex';
+}
+function closeAboutModal(e) {
+  if (e && e.target !== document.getElementById('aboutModalOverlay')) return;
+  document.getElementById('aboutModalOverlay').style.display = 'none';
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeAboutModal();
+});
+
 let _ggbLoaded = false;
 function _loadGeogebra(callback) {
   if (typeof GGBApplet !== 'undefined') { callback(); return; }
