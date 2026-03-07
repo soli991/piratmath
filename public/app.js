@@ -3,18 +3,25 @@
 // ============================================================
 
 async function api(method, path, body) {
-  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  const opts = { method, headers: { 'Content-Type': 'application/json' }, signal: controller.signal };
   if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(path, opts);
-  if (res.status === 401 && path !== '/api/me') {
-    // Sesja wygasła (np. po restarcie serwera) — odśwież stronę
-    location.reload();
-    return {};
-  }
   try {
-    return await res.json();
+    const res = await fetch(path, opts);
+    clearTimeout(timer);
+    if (res.status === 401 && path !== '/api/me') {
+      location.reload();
+      return {};
+    }
+    try {
+      return await res.json();
+    } catch(e) {
+      return { error: `HTTP ${res.status}` };
+    }
   } catch(e) {
-    return { error: `HTTP ${res.status}` };
+    clearTimeout(timer);
+    return { error: 'timeout' };
   }
 }
 
@@ -7214,7 +7221,12 @@ async function recordCorrect(topic) {
 
   const comeback = state.mistakes >= 2 && !state.solutionShown;
   const difficulty = state.challengeActive ? 'challenge' : state.currentDifficulty;
-  const data = await api('POST', '/api/answer/correct', { topic, streak: state.answerStreak, comeback, server: state.server, difficulty });
+  let data;
+  try {
+    data = await api('POST', '/api/answer/correct', { topic, streak: state.answerStreak, comeback, server: state.server, difficulty });
+  } catch(e) {
+    return 0;
+  }
   if (!data || data.error || !data.pts) return 0;
 
   // Aktualizuj lokalny stan
