@@ -429,7 +429,7 @@ const CLASS_MANAGED_TOPICS = new Set([
   'Mnożenie pisemne','Dzielenie pisemne','Dzielenie z resztą','Mnożenie liczb z zerami na końcu',
   'O ile? Ile razy?','Kolejność działań','Potęgowanie','Podzielność liczb','Zaokrąglanie',
   'Systemy liczbowe','Porównywanie liczb całkowitych','Działania na liczbach całkowitych',
-  'Zapisywanie ułamka zwykłego','Skracanie i rozszerzanie ułamków','Zapisywanie liczby mieszanej',
+  'Zapisywanie ułamka zwykłego','Porównywanie ułamków','Skracanie i rozszerzanie ułamków','Zapisywanie liczby mieszanej',
   'Zamiana liczb mieszanych na ułamki niewłaściwe','Dodawanie i odejmowanie ułamków',
   'Mnożenie ułamków','Dzielenie ułamków','Zapisywanie i odczytywanie ułamków dziesiętnych',
   'Dodawanie ułamków dziesiętnych','Odejmowanie ułamków dziesiętnych','Mnożenie ułamków dziesiętnych',
@@ -2068,6 +2068,39 @@ const TOPIC_GENERATORS = {
       return { type: 'fraction_read', k, n, shape };
     }
     return genFractionWordProblem(d);
+  },
+  'Porównywanie ułamków': (d) => {
+    const r = Math.random();
+    if (d === 'easy' || r < 0.4) {
+      // Ten sam mianownik
+      const denoms = d === 'easy' ? [2,3,4,5,6,8] : [3,4,5,6,7,8,9,10,12];
+      const n = denoms[rand(0, denoms.length - 1)];
+      let a = rand(1, n - 1), b = rand(1, n - 1);
+      while (a === b) b = rand(1, n - 1);
+      const ans = a < b ? '<' : '>';
+      return { type: 'fraction_compare', a1: a, b1: n, a2: b, b2: n, ans,
+        hint: `Mianowniki równe — porównaj liczniki: większy licznik = większy ułamek` };
+    } else if (r < 0.65) {
+      // Ułamki jednostkowe: 1/a vs 1/b
+      const pool = [2,3,4,5,6,7,8,9,10,12];
+      let a = pool[rand(0, pool.length - 1)], b = pool[rand(0, pool.length - 1)];
+      while (a === b) b = pool[rand(0, pool.length - 1)];
+      const ans = a < b ? '>' : '<'; // 1/2 > 1/3
+      return { type: 'fraction_compare', a1: 1, b1: a, a2: 1, b2: b, ans,
+        hint: `Im większy mianownik, tym mniejsza część — np. 1/10 to mniejszy kawałek niż 1/3` };
+    } else {
+      // Liczby mieszane z tym samym mianownikiem
+      const n = rand(3, 8);
+      const w1 = rand(1, 4), w2 = rand(1, 4);
+      let n1 = rand(1, n - 1), n2 = rand(1, n - 1);
+      while (w1 === w2 && n1 === n2) n2 = rand(1, n - 1);
+      const v1 = w1 + n1 / n, v2 = w2 + n2 / n;
+      const ans = v1 < v2 ? '<' : '>';
+      const hint = w1 !== w2
+        ? `Porównaj części całkowite: ${w1} ${ans} ${w2}`
+        : `Części całkowite równe (${w1}), porównaj ułamki: ${n1}/${n} ${ans} ${n2}/${n}`;
+      return { type: 'fraction_compare', whole1: w1, a1: n1, b1: n, whole2: w2, a2: n2, b2: n, ans, hint };
+    }
   },
   'Ułamki zwykłe': (d) => {
     const denom = rand(2, d === 'easy' ? 6 : 12);
@@ -6093,6 +6126,68 @@ async function submitIntCompare(sym) {
   }
 }
 
+function buildFractionCompareHtml(q) {
+  const frac = (num, den) => `<div class="fc-frac"><span class="fc-top">${num}</span><span class="fc-bar"></span><span class="fc-bot">${den}</span></div>`;
+  const side = (whole, a, b) => whole != null
+    ? `<div class="fc-mixed"><span class="fc-whole">${whole}</span>${frac(a, b)}</div>`
+    : frac(a, b);
+  return `
+    <div class="ic-wrap">
+      <div class="ic-row">
+        <div class="fc-num">${side(q.whole1, q.a1, q.b1)}</div>
+        <div class="ic-btns-v">
+          <button class="ic-btn" data-sym="<" onclick="submitFractionCompare('<')">&lt;</button>
+          <button class="ic-btn" data-sym=">" onclick="submitFractionCompare('>')">&gt;</button>
+        </div>
+        <div class="fc-num">${side(q.whole2, q.a2, q.b2)}</div>
+      </div>
+      <div id="icHint" class="ic-hint" style="display:none"></div>
+    </div>`;
+}
+
+async function submitFractionCompare(sym) {
+  const q = state.currentQuestion;
+  if (!q || q.type !== 'fraction_compare' || state.answerLocked) return;
+  const fracStr = (w, a, b) => w != null ? `${w} ${a}/${b}` : `${a}/${b}`;
+  if (sym === q.ans) {
+    state.answerLocked = true;
+    playSound('correct');
+    document.querySelectorAll('.ic-btn').forEach(b => { if (b.dataset.sym === sym) b.classList.add('ic-btn-correct'); });
+    let pts = 0;
+    const wasFirst = state.isFirstAttempt && !state.solutionShown;
+    if (wasFirst) {
+      state.answerStreak++;
+      if (state.currentUser) { pts = await recordCorrect(state.currentTopic); showPointsPop(pts); updateStatsRow(); checkStreakBonus(); }
+    }
+    reportComeback();
+    const suf = wasFirst ? streakSuffix(state.answerStreak) : '';
+    showToast(pts > 0 ? `✓ Brawo! +${pts} pkt${suf}` : `✓ Brawo!${suf}`, 'correct');
+    setTimeout(() => loadQuestion(), 400);
+  } else {
+    state.mistakes++;
+    state.isFirstAttempt = false;
+    state.answerStreak = 0;
+    reportMistake();
+    playSound('wrong');
+    if (state.mistakes <= 3) document.getElementById(`dot${state.mistakes - 1}`).classList.add('used');
+    document.querySelectorAll('.ic-btn').forEach(b => {
+      if (b.dataset.sym === sym) { b.classList.add('ic-btn-wrong'); setTimeout(() => b.classList.remove('ic-btn-wrong'), 500); }
+    });
+    const hintEl = document.getElementById('icHint');
+    if (state.mistakes >= 3) {
+      state.solutionShown = true;
+      const ans = `${fracStr(q.whole1, q.a1, q.b1)} ${q.ans} ${fracStr(q.whole2, q.a2, q.b2)}`;
+      if (hintEl) { hintEl.textContent = `Odpowiedź: ${ans}`; hintEl.style.display = ''; }
+      setTimeout(() => loadQuestion(), 2000);
+    } else if (state.mistakes === 2 && q.hint && hintEl) {
+      hintEl.textContent = `💡 ${q.hint}`;
+      hintEl.style.display = '';
+    } else {
+      showToast('✗ Spróbuj jeszcze raz!', 'wrong');
+    }
+  }
+}
+
 async function checkIntOrder() {
   const q = state.currentQuestion;
   const area = document.getElementById('ioSortArea');
@@ -6176,7 +6271,7 @@ function loadQuestion() {
   const hintLine = document.getElementById('questionHintLine');
   if (hintLine) hintLine.style.display = 'none';
 
-  const isWA = q.type === 'written-addition' || q.type === 'written-subtraction' || q.type === 'written-multiplication' || q.type === 'written-division' || q.type === 'rounding' || q.type === 'comparison' || q.type === 'divisibility' || q.type === 'power' || q.type === 'order_ops' || q.type === 'num_write' || q.type === 'function_q' || q.type === 'sqrt_bounds' || q.type === 'prime_factors' || q.type === 'nwd' || q.type === 'nww' || q.type === 'abs_value' || q.type === 'int_compare' || q.type === 'int_order' || q.type === 'div_rem' || q.type === 'fraction_read';
+  const isWA = q.type === 'written-addition' || q.type === 'written-subtraction' || q.type === 'written-multiplication' || q.type === 'written-division' || q.type === 'rounding' || q.type === 'comparison' || q.type === 'divisibility' || q.type === 'power' || q.type === 'order_ops' || q.type === 'num_write' || q.type === 'function_q' || q.type === 'sqrt_bounds' || q.type === 'prime_factors' || q.type === 'nwd' || q.type === 'nww' || q.type === 'abs_value' || q.type === 'int_compare' || q.type === 'int_order' || q.type === 'div_rem' || q.type === 'fraction_read' || q.type === 'fraction_compare';
   const questionText = document.getElementById('questionText');
   const answerInput  = document.getElementById('answerInput');
   const waArea       = document.getElementById('writtenAddArea');
@@ -6255,6 +6350,9 @@ function loadQuestion() {
     } else if (q.type === 'fraction_read') {
       waArea.innerHTML = buildFractionReadHtml(q);
       document.getElementById('frNum')?.focus();
+    } else if (q.type === 'fraction_compare') {
+      waArea.innerHTML = buildFractionCompareHtml(q);
+      document.getElementById('checkBtn').style.display = 'none';
     } else {
       waArea.innerHTML = buildWAHtml(q);
       document.getElementById('wain-0')?.focus(); // start od jedności (prawy)

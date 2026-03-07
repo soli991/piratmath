@@ -2502,8 +2502,15 @@ details[open] .tp-level-summary::after { content: '▴'; }
 .abs-solution { text-align: center; font-size: 1.3em; margin-top: 10px; }
 .abs-answer-val { color: #4ade80; font-weight: 700; }
 
-/* Integer compare / order */
+/* Integer / fraction compare */
 .ic-wrap { text-align: center; padding: 12px 0; }
+/* Fraction display inside compare */
+.fc-num { display: flex; align-items: center; justify-content: center; min-width: 64px; }
+.fc-frac { display: inline-flex; flex-direction: column; align-items: center; font-size: 24px; font-weight: 700; color: #e2e8f0; line-height: 1.1; }
+.fc-top, .fc-bot { padding: 0 4px; }
+.fc-bar { width: 100%; min-width: 28px; height: 2px; background: #e2e8f0; margin: 2px 0; }
+.fc-mixed { display: inline-flex; align-items: center; gap: 6px; }
+.fc-whole { font-size: 28px; font-weight: 700; color: #e2e8f0; }
 .ic-row { display: flex; align-items: center; justify-content: center; gap: 20px; }
 .ic-num { font-size: 36px; font-weight: 700; color: #e2e8f0; min-width: 64px; text-align: center; }
 .ic-btns-v { display: flex; flex-direction: column; gap: 8px; }
