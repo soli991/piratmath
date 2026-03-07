@@ -279,13 +279,16 @@ router.post('/class/join', (req, res) => {
   db.prepare('UPDATE users SET class_id = ? WHERE id = ?').run(invite.class_id, req.session.userId);
   db.prepare('UPDATE invites SET used_by = ? WHERE id = ?').run(req.session.userId, invite.id);
 
+  const { checkAndUnlock } = require('../achievements');
+  const newAchs = checkAndUnlock(req.session.userId, { class_join: true });
+
   const cls = db.prepare(`
     SELECT c.name, c.grade, s.name AS school_name
     FROM classes c JOIN schools s ON s.id = c.school_id
     WHERE c.id = ?
   `).get(invite.class_id);
 
-  res.json({ ok: true, className: cls.name, grade: cls.grade, schoolName: cls.school_name });
+  res.json({ ok: true, className: cls.name, grade: cls.grade, schoolName: cls.school_name, newAchs });
 });
 
 // POST /api/class/leave  — uczeń opuszcza klasę

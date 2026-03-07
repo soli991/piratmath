@@ -149,6 +149,17 @@ router.post('/answer/correct', requireAuth, (req, res) => {
     weekend:    day === 0 || day === 6,
   };
 
+  // Sprawdź czy user jest #1 w tygodniowym rankingu klasy
+  if (isClass) {
+    const userRow = db.prepare('SELECT class_id, class_week_points FROM users WHERE id = ?').get(userId);
+    if (userRow?.class_id) {
+      const best = db.prepare(
+        'SELECT class_week_points FROM users WHERE class_id = ? AND id != ? ORDER BY class_week_points DESC LIMIT 1'
+      ).get(userRow.class_id, userId);
+      flags.is_class_top1 = !best || userRow.class_week_points >= best.class_week_points;
+    }
+  }
+
   const newAchs = checkAndUnlock(userId, { ...flags, comeback, topic, topic_done: currentDone + 1 });
 
   res.json({ pts, done: currentDone + 1, newAchs });

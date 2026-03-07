@@ -97,6 +97,10 @@ const ALL_ACHIEVEMENTS = [
   { id: 'pts_25000',     icon: '🌟', name: 'Galaktyczny',                   cat: 'Punkty',         desc: 'Zdobądź 25 000 punktów łącznie.',                 cond: s => s.total_points >= 25000 },
   { id: 'pts_50000',     icon: '🚀', name: 'Kosmonauta punktów',            cat: 'Punkty',         desc: 'Zdobądź 50 000 punktów łącznie.',                 cond: s => s.total_points >= 50000 },
 
+  // KLASA (2)
+  { id: 'class_join',     icon: '🏫', name: 'Klasowy debiut',               cat: 'Klasa',          desc: 'Dołącz do klasy szkolnej.',                       cond: s => s.class_join },
+  { id: 'class_top1_week',icon: '🥇', name: 'Klasowy lider',                cat: 'Klasa',          desc: 'Zajmij 1. miejsce w tygodniowym rankingu klasy.', cond: s => s.is_class_top1 },
+
   // SPECJALNE (2)
   { id: 'theme_change',  icon: '🎨', name: 'Stylista',                      cat: 'Specjalne',      desc: 'Zmień motyw kolorystyczny.',                      cond: s => s.theme_change },
   { id: 'lb_view',       icon: '👀', name: 'Obserwator',                    cat: 'Specjalne',      desc: 'Otwórz pełną tablicę wyników.',                   cond: s => s.lb_view },

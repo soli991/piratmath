@@ -369,6 +369,7 @@ async function serverJoinClass() {
 
   const join = await api('POST', '/api/class/join', { code });
   if (join.error) { errEl.style.color = 'var(--red)'; errEl.textContent = join.error; return; }
+  join.newAchs?.forEach(a => showAchievementToast(a));
 
   const me = await api('GET', '/api/me');
   if (me.user) state.currentUser = me.user;
@@ -585,6 +586,7 @@ async function submitInviteCode() {
     errEl.textContent = join.error;
     return;
   }
+  join.newAchs?.forEach(a => showAchievementToast(a));
 
   // Odśwież dane użytkownika
   const me = await api('GET', '/api/me');
