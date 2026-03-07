@@ -2072,38 +2072,37 @@ const TOPIC_GENERATORS = {
   'Porównywanie ułamków': (d) => {
     const r = Math.random();
     const easy = d === 'easy';
-    if (easy ? r < 0.5 : r < 0.3) {
-      // Ten sam mianownik
-      const denoms = easy ? [2,3,4,5,6,8] : [3,4,5,6,7,8,9,10,12];
+    if (easy ? r < 0.5 : r < 0.1) {
+      // Ten sam mianownik (easy: 50%, medium: 10%)
+      const denoms = easy ? [2,3,4,5,6,8] : [4,5,6,7,8,9,10,12];
       const n = denoms[rand(0, denoms.length - 1)];
       let a = rand(1, n - 1), b = rand(1, n - 1);
       while (a === b) b = rand(1, n - 1);
       const ans = a < b ? '<' : '>';
       return { type: 'fraction_compare', a1: a, b1: n, a2: b, b2: n, ans,
         hint: `Mianowniki równe — porównaj liczniki: większy licznik = większy ułamek` };
-    } else if (easy ? r < 1 : r < 0.55) {
-      // Ułamki jednostkowe: 1/a vs 1/b
+    } else if (easy ? r < 1 : r < 0.3) {
+      // Ułamki jednostkowe (easy: 50%, medium: 20%)
       const pool = easy ? [2,3,4,5,6,8] : [2,3,4,5,6,7,8,9,10,12];
       let a = pool[rand(0, pool.length - 1)], b = pool[rand(0, pool.length - 1)];
       while (a === b) b = pool[rand(0, pool.length - 1)];
-      const ans = a < b ? '>' : '<'; // 1/2 > 1/3
+      const ans = a < b ? '>' : '<';
       return { type: 'fraction_compare', a1: 1, b1: a, a2: 1, b2: b, ans,
         hint: `Im większy mianownik, tym mniejsza część — np. 1/10 to mniejszy kawałek niż 1/3` };
-    } else if (r < 0.7) {
-      // Ten sam licznik: a/b vs a/c
-      const pool = [2,3,4,5,6,7,8,9,10,12];
+    } else if (r < 0.55) {
+      // Ten sam licznik: a/b vs a/c (medium: 25%)
+      const pool = [3,4,5,6,7,8,9,10,12];
       let b = pool[rand(0, pool.length - 1)], c = pool[rand(0, pool.length - 1)];
       while (b === c) c = pool[rand(0, pool.length - 1)];
       const a = rand(2, Math.min(b, c) - 1);
-      const ans = b < c ? '>' : '<'; // a/3 > a/5 bo większy mianownik = mniejszy kawałek
+      const ans = b < c ? '>' : '<';
       return { type: 'fraction_compare', a1: a, b1: b, a2: a, b2: c, ans,
         hint: `Liczniki równe (${a}) — im większy mianownik, tym mniejszy ułamek` };
-    } else if (r < 0.85) {
-      // Ułamki (n-1)/n — blisko 1
+    } else if (r < 0.8) {
+      // Ułamki (n-1)/n — blisko 1 (medium: 25%)
       const pool = [3,4,5,6,7,8,9,10,11,12];
       let b = pool[rand(0, pool.length - 1)], c = pool[rand(0, pool.length - 1)];
       while (b === c) c = pool[rand(0, pool.length - 1)];
-      // (b-1)/b vs (c-1)/c — brakuje 1/b i 1/c; bliżej 1 = większy = mniejszy mianownik
       const ans = b < c ? '>' : '<';
       return { type: 'fraction_compare', a1: b - 1, b1: b, a2: c - 1, b2: c, ans,
         hint: `Sprawdź ile brakuje każdemu do 1: brakuje 1/${b} i 1/${c} — mniejsza różnica = bliżej 1 = większy ułamek` };
