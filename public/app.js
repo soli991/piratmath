@@ -7435,6 +7435,8 @@ const ACHIEVEMENTS_DEF = [
   { id: 'pts_50000',     icon: '🚀', name: 'Kosmonauta punktów',            cat: 'Punkty',         desc: 'Zdobądź 50 000 punktów łącznie.' },
   { id: 'theme_change',  icon: '🎨', name: 'Stylista',                      cat: 'Specjalne',      desc: 'Zmień motyw kolorystyczny.' },
   { id: 'lb_view',       icon: '👀', name: 'Obserwator',                    cat: 'Specjalne',      desc: 'Otwórz pełną tablicę wyników.' },
+  { id: 'class_join',      icon: '🏫', name: 'Klasowy debiut',             cat: 'Klasa',          desc: 'Dołącz do klasy szkolnej.' },
+  { id: 'class_top1_week', icon: '🥇', name: 'Klasowy lider',             cat: 'Klasa',          desc: 'Zajmij 1. miejsce w tygodniowym rankingu klasy.' },
   { id: 'ach_15',        icon: '🥉', name: 'Kolekcjoner',                   cat: 'Meta',           desc: 'Odblokuj 15 osiągnięć.  Nagroda: +1 pkt/zadanie.' },
   { id: 'ach_30',        icon: '🥈', name: 'Entuzjasta',                    cat: 'Meta',           desc: 'Odblokuj 30 osiągnięć.  Nagroda: +2 pkt/zadanie.' },
   { id: 'ach_45',        icon: '🥇', name: 'Koneser',                       cat: 'Meta',           desc: 'Odblokuj 45 osiągnięć.  Nagroda: +3 pkt/zadanie.' },
