@@ -1165,7 +1165,7 @@ let isRegisterMode = false;
 function switchToRegister() {
   isRegisterMode = true;
   document.getElementById('loginTitle').textContent = 'Utwórz konto!';
-  document.getElementById('loginSub').textContent = 'Wybierz unikalną nazwę i hasło';
+  document.getElementById('loginSub').innerHTML = 'Wybierz unikalną nazwę i hasło<br><span style="font-size:0.8em;opacity:0.7">⚠️ Nie używaj prawdziwego imienia ani danych osobowych</span>';
   document.getElementById('loginBtn').innerHTML = '<span>🌟</span> Zarejestruj się!';
   document.getElementById('loginSwitch').innerHTML = 'Masz już konto? <a onclick="switchToLogin()">Zaloguj się</a>';
   document.getElementById('loginDeco').textContent = '⭐';
