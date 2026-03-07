@@ -195,7 +195,17 @@ db.exec(`
 
 // Nadaj rangę admin użytkownikowi Soli (uruchamiane przy każdym starcie serwera)
 db.prepare("UPDATE users SET role = 'admin' WHERE LOWER(name) = 'soli'").run();
-// Zapewnij Soli min. 100 dukatów do testowania
-db.prepare("UPDATE users SET dukaty = MAX(dukaty, 100) WHERE LOWER(name) = 'soli'").run();
+
+// Jednorazowe migracje danych
+db.prepare(`CREATE TABLE IF NOT EXISTS one_time_migrations (id TEXT PRIMARY KEY)`).run();
+function runOnce(id, fn) {
+  if (!db.prepare('SELECT id FROM one_time_migrations WHERE id = ?').get(id)) {
+    fn();
+    db.prepare('INSERT INTO one_time_migrations (id) VALUES (?)').run(id);
+  }
+}
+runOnce('soli_500_dukaty', () => {
+  db.prepare("UPDATE users SET dukaty = dukaty + 500 WHERE LOWER(name) = 'soli'").run();
+});
 
 module.exports = db;
