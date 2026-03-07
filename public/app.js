@@ -934,6 +934,9 @@ function updateAdminBtn() {
   if (btn) btn.style.display = state.currentUser?.role === 'admin' ? '' : 'none';
 }
 
+function openChangelog() { document.getElementById('changelogOverlay').style.display = ''; }
+function closeChangelog() { document.getElementById('changelogOverlay').style.display = 'none'; }
+
 function openAdminPanel() {
   _apRoleFilter = '';
   document.getElementById('apOverlay').style.display = 'flex';

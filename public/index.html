@@ -308,6 +308,25 @@ body.theme-classic .planet-deco { display: none; }
   margin: 8px 12px 4px;
   border-top: 1px solid var(--border);
 }
+.cl-patch {
+  margin-bottom: 20px;
+}
+.cl-patch:last-child { margin-bottom: 0; }
+.cl-tag {
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--accent3);
+  margin-bottom: 6px;
+}
+.cl-patch ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text2);
+  font-size: .9rem;
+  line-height: 1.7;
+}
 .aids-nav-btn {
   display: flex;
   align-items: center;
@@ -2968,6 +2987,10 @@ details[open] .tp-level-summary::after { content: '▴'; }
       </div>
     </div>
 
+    <button class="aids-nav-btn" onclick="openChangelog()" style="margin-top:8px">
+      📋 Co nowego?
+    </button>
+
     <div class="planet-deco">
       <div class="planet">🪐</div>
       <div class="planet">⭐</div>
@@ -3459,6 +3482,47 @@ details[open] .tp-level-summary::after { content: '▴'; }
     </div>
     <div class="tp-body" id="apBody">
       <div style="color:var(--text3)">Ładowanie…</div>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGELOG MODAL -->
+<div id="changelogOverlay" onclick="if(event.target===this)closeChangelog()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1200;overflow-y:auto;padding:24px 16px">
+  <div style="max-width:560px;margin:0 auto;background:var(--card);border-radius:16px;padding:28px 28px 24px;position:relative">
+    <button onclick="closeChangelog()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text2)">✕</button>
+    <h2 style="margin:0 0 20px;font-size:1.25rem">📋 Historia zmian</h2>
+
+    <div class="cl-patch">
+      <div class="cl-tag">v0.3 &mdash; 7 marca 2026</div>
+      <ul>
+        <li>Nowy temat: <strong>Zapisywanie ułamka zwykłego</strong> &mdash; rysunek koła/prostokąta, zadania tekstowe, 12 wariantów algebraicznych</li>
+        <li>Buff kreski ułamkowej: wszystkie zadania ułamkowe używają jednego UI z osobnymi polami na licznik i mianownik. Efektywność ułamkowania wzrosła o <strong>10%</strong></li>
+        <li>Akceptowane są ułamki skrócone &mdash; 1/3, 2/6 i 3/9 to ta sama odpowiedź</li>
+        <li>Buff poziomu średniego: <strong>+5 pkt</strong> za każde zadanie na poziomie medium i challenge. Kalkulator pozostaje niezrównany na poziomie łatwym</li>
+      </ul>
+    </div>
+
+    <div class="cl-patch">
+      <div class="cl-tag">v0.2 &mdash; luty 2026</div>
+      <ul>
+        <li>Wprowadzono rolę <strong>nauczyciela</strong> &mdash; może odblokować tematy dla klasy i resetować hasła uczniów</li>
+        <li>Panel admina dla wybranych</li>
+        <li>System szkół i klas &mdash; rankingi klasowe, tygodniowe tabele wyników</li>
+        <li>Nowe tematy: NWD, NWW, wartość bezwzględna, rozkład na czynniki pierwsze, własności działań i inne</li>
+        <li><strong>Nerfiono kalkulator o 23%</strong> &mdash; przede wszystkim nie działa gdy korzystasz z piratMATH</li>
+        <li>Zwiększono gainsy z obliczeń na kartce o <strong>33%</strong></li>
+      </ul>
+    </div>
+
+    <div class="cl-patch">
+      <div class="cl-tag">v0.1 &mdash; wypłynięcie 🏴‍☠️</div>
+      <ul>
+        <li>Pierwsza wersja piratMATH &mdash; dodawanie, odejmowanie, mnożenie, dzielenie</li>
+        <li>Rankingi sezonowe i globalne</li>
+        <li>Sklep z awatarami i tytułami</li>
+        <li>System osiągnięć</li>
+        <li>Tryb wyzwania (na czas)</li>
+      </ul>
     </div>
   </div>
 </div>
