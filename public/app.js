@@ -2106,17 +2106,31 @@ const TOPIC_GENERATORS = {
       const ans = b < c ? '>' : '<';
       return { type: 'fraction_compare', a1: b - 1, b1: b, a2: c - 1, b2: c, ans,
         hint: `Sprawdź ile brakuje każdemu do 1: brakuje 1/${b} i 1/${c} — mniejsza różnica = bliżej 1 = większy ułamek` };
-    } else {
-      // Liczby mieszane z tym samym mianownikiem
-      const n = rand(3, 8);
-      const w1 = rand(1, 4), w2 = rand(1, 4);
+    } else if (r < 0.9) {
+      // Liczby mieszane z tym samym mianownikiem (w1 === w2 → trzeba porównać ułamki)
+      const n = rand(3, 9);
+      const w = rand(1, 4);
       let n1 = rand(1, n - 1), n2 = rand(1, n - 1);
-      while (w1 === w2 && n1 === n2) n2 = rand(1, n - 1);
+      while (n1 === n2) n2 = rand(1, n - 1);
+      const ans = n1 < n2 ? '<' : '>';
+      return { type: 'fraction_compare', whole1: w, a1: n1, b1: n, whole2: w, a2: n2, b2: n, ans,
+        hint: `Części całkowite równe (${w}), porównaj ułamki: ${n1}/${n} ${ans} ${n2}/${n}` };
+    } else {
+      // Pułapka: liczba mieszana z niewłaściwą częścią ułamkową
+      // np. 1 5/3 vs 2 1/3 — trzeba przeliczyć: 1+5/3 = 2+2/3 > 2+1/3
+      const n = rand(3, 6);
+      const w1 = rand(1, 3);
+      const w2 = w1 + 1; // w2 = w1+1, żeby "wyglądało" jakby w2 było większe
+      // ułamkowa część lewej strony: niewłaściwy (n+1..2n-1)/n
+      const n1 = rand(n + 1, 2 * n - 1);
+      // ułamkowa część prawej: właściwy (1..n-1)/n
+      const n2 = rand(1, n - 1);
       const v1 = w1 + n1 / n, v2 = w2 + n2 / n;
       const ans = v1 < v2 ? '<' : '>';
-      const hint = w1 !== w2
-        ? `Porównaj części całkowite: ${w1} ${ans} ${w2}`
-        : `Części całkowite równe (${w1}), porównaj ułamki: ${n1}/${n} ${ans} ${n2}/${n}`;
+      // wyłącz całości z lewej dla hintu
+      const extraW = Math.floor(n1 / n), remainder = n1 % n;
+      const realW1 = w1 + extraW;
+      const hint = `Uwaga — ${n1}/${n} to ułamek niewłaściwy! ${w1} ${n1}/${n} = ${realW1}${remainder ? ` ${remainder}/${n}` : ''}, porównaj z ${w2} ${n2}/${n}`;
       return { type: 'fraction_compare', whole1: w1, a1: n1, b1: n, whole2: w2, a2: n2, b2: n, ans, hint };
     }
   },
