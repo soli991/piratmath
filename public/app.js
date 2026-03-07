@@ -2033,6 +2033,86 @@ function genFractionAlgebraic(d, maxN) {
   }
 }
 
+// ── Skracanie i rozszerzanie ułamków — helpery ────────────────────────────
+function qFrac(a, b) {
+  return `<span class="qf"><span class="qf-t">${a}</span><span class="qf-b">${b}</span></span>`;
+}
+function qBlank() { return `<span class="qf-blank">?</span>`; }
+
+function genFractionOpByK(d) {
+  const pool = d === 'easy' ? [2,3,4,5,6] : [2,3,4,5,6,7,8,9,10,12];
+  const maxK = d === 'easy' ? 5 : 12;
+  const k = rand(2, maxK);
+  const b = pool[rand(0, pool.length - 1)];
+  const a = rand(1, b - 1);
+  if (Math.random() < 0.5) {
+    return { type: 'fraction_op', a, b, k, op: 'extend', ans_a: a * k, ans_b: b * k,
+      hint: `Rozszerzamy przez ${k}: ${a}×${k}=${a*k}, ${b}×${k}=${b*k}` };
+  } else {
+    return { type: 'fraction_op', a: a * k, b: b * k, k, op: 'reduce', ans_a: a, ans_b: b,
+      hint: `Skracamy przez ${k}: ${a*k}÷${k}=${a}, ${b*k}÷${k}=${b}` };
+  }
+}
+
+function genFractionFillNum(d) {
+  const pool = d === 'easy' ? [2,3,4,5,6] : [2,3,4,5,6,7,8,9,10,12,15];
+  const maxK = d === 'easy' ? 5 : 12;
+  const k = rand(2, maxK), b = pool[rand(0, pool.length - 1)], a = rand(1, b - 1);
+  if (Math.random() < 0.6) {
+    return { q_html: `${qFrac(a,b)} = ${qFrac(qBlank(), b*k)}`, a: a * k,
+      hint: `Mianownik ×${k} (${b}×${k}=${b*k}), więc licznik też ×${k}: ${a}×${k}=${a*k}` };
+  } else {
+    return { q_html: `${qFrac(a*k, b*k)} = ${qFrac(qBlank(), b)}`, a,
+      hint: `Mianownik ÷${k} (${b*k}÷${k}=${b}), więc licznik też ÷${k}: ${a*k}÷${k}=${a}` };
+  }
+}
+
+function genFractionFillDen(d) {
+  const pool = d === 'easy' ? [2,3,4,5,6] : [2,3,4,5,6,7,8,9,10,12,15];
+  const maxK = d === 'easy' ? 5 : 12;
+  const k = rand(2, maxK), b = pool[rand(0, pool.length - 1)], a = rand(1, b - 1);
+  if (Math.random() < 0.6) {
+    return { q_html: `${qFrac(a,b)} = ${qFrac(a*k, qBlank())}`, a: b * k,
+      hint: `Licznik ×${k} (${a}×${k}=${a*k}), więc mianownik też ×${k}: ${b}×${k}=${b*k}` };
+  } else {
+    return { q_html: `${qFrac(a*k, b*k)} = ${qFrac(a, qBlank())}`, a: b,
+      hint: `Licznik ÷${k} (${a*k}÷${k}=${a}), więc mianownik też ÷${k}: ${b*k}÷${k}=${b}` };
+  }
+}
+
+function genFractionChain(d) {
+  const pool = d === 'easy' ? [2,3,4,5] : [2,3,4,5,6,7,8];
+  const b = pool[rand(0, pool.length - 1)], a = rand(1, b - 1);
+  const numSteps = rand(3, 4), usedKs = new Set(), ks = [];
+  while (ks.length < numSteps) { const k = rand(2, d === 'easy' ? 6 : 15); if (!usedKs.has(k)) { ks.push(k); usedKs.add(k); } }
+  ks.sort((x, y) => x - y);
+  const blankIdx = rand(0, numSteps - 1), blankK = ks[blankIdx];
+  const numBlank = Math.random() < 0.5;
+  const parts = ks.map((k, i) => i === blankIdx
+    ? (numBlank ? qFrac(qBlank(), b*k) : qFrac(a*k, qBlank()))
+    : qFrac(a*k, b*k));
+  const hint = numBlank
+    ? `Mianownik to ${b}×${blankK}=${b*blankK}, więc licznik = ${a}×${blankK}=${a*blankK}`
+    : `Licznik to ${a}×${blankK}=${a*blankK}, więc mianownik = ${b}×${blankK}=${b*blankK}`;
+  return { q_html: `${qFrac(a,b)} = ${parts.join(' = ')}`, a: numBlank ? a*blankK : b*blankK, hint };
+}
+
+function genFractionEqCheck(d) {
+  const pool = d === 'easy' ? [2,3,4,5,6] : [2,3,4,5,6,7,8,9,10,12,15];
+  const b = pool[rand(0, pool.length - 1)], a = rand(1, b - 1);
+  if (Math.random() < 0.5) {
+    const k = rand(2, d === 'easy' ? 5 : 10);
+    return { type: 'fraction_eq_check', a1: a, b1: b, a2: a*k, b2: b*k, ans: '=',
+      hint: `${a}×${k}=${a*k}, ${b}×${k}=${b*k} — ten sam ułamek, tylko rozszerzony` };
+  } else {
+    // Pułapka: zmieniony jeden składnik przy rozszerzaniu
+    const k = rand(2, d === 'easy' ? 5 : 10), delta = rand(1, 2);
+    const a2 = a * k + delta;
+    return { type: 'fraction_eq_check', a1: a, b1: b, a2, b2: b*k, ans: '≠',
+      hint: `Sprawdź: ${a}×${k}=${a*k}, a nie ${a2} — licznik jest o ${delta} za duży` };
+  }
+}
+
 const TOPIC_GENERATORS = {
   'Dodawanie i odejmowanie': (d) => {
     const max = d === 'easy' ? 20 : d === 'medium' ? 100 : 1000;
@@ -2133,6 +2213,14 @@ const TOPIC_GENERATORS = {
       const hint = `Uwaga — ${n1}/${n} to ułamek niewłaściwy! ${w1} ${n1}/${n} = ${realW1}${remainder ? ` ${remainder}/${n}` : ''}, porównaj z ${w2} ${n2}/${n}`;
       return { type: 'fraction_compare', whole1: w1, a1: n1, b1: n, whole2: w2, a2: n2, b2: n, ans, hint };
     }
+  },
+  'Skracanie i rozszerzanie ułamków': (d) => {
+    const r = Math.random();
+    if (r < 0.20) return genFractionOpByK(d);
+    if (r < 0.45) return genFractionFillNum(d);
+    if (r < 0.70) return genFractionFillDen(d);
+    if (r < 0.87) return genFractionChain(d);
+    return genFractionEqCheck(d);
   },
   'Ułamki zwykłe': (d) => {
     const denom = rand(2, d === 'easy' ? 6 : 12);
@@ -6220,6 +6308,125 @@ async function submitFractionCompare(sym) {
   }
 }
 
+function buildFractionOpHtml(q) {
+  const opSym = q.op === 'extend' ? `×${q.k}` : `÷${q.k}`;
+  const solved = q.solutionShown;
+  const inp = (id, val) => `<input id="${id}" class="fr-input fop-inp" type="number" min="1" value="${solved ? val : ''}" ${solved ? 'disabled' : ''} onkeydown="if(event.key==='Enter')checkAnswer()">`;
+  return `
+    <div class="fop-wrap">
+      <div class="fop-row">
+        <div class="fc-frac"><span class="fc-top">${q.a}</span><span class="fc-bar"></span><span class="fc-bot">${q.b}</span></div>
+        <div class="fop-op">${opSym}</div>
+        <span class="fop-eq">=</span>
+        <div class="fc-frac">
+          ${inp('fopNum', q.ans_a)}
+          <span class="fc-bar" style="min-width:52px"></span>
+          ${inp('fopDen', q.ans_b)}
+        </div>
+      </div>
+      <div id="fopHint" class="ic-hint" style="display:none"></div>
+    </div>`;
+}
+
+async function checkFractionOp() {
+  const q = state.currentQuestion;
+  if (!q || q.type !== 'fraction_op' || state.answerLocked) return;
+  const num = parseInt(document.getElementById('fopNum')?.value);
+  const den = parseInt(document.getElementById('fopDen')?.value);
+  const correct = num === q.ans_a && den === q.ans_b;
+  const hintEl = document.getElementById('fopHint');
+  if (correct) {
+    state.answerLocked = true;
+    playSound('correct');
+    ['fopNum','fopDen'].forEach(id => document.getElementById(id)?.classList.add('correct'));
+    let pts = 0;
+    const wasFirst = state.isFirstAttempt && !state.solutionShown;
+    if (wasFirst) {
+      state.answerStreak++;
+      if (state.currentUser) { pts = await recordCorrect(state.currentTopic); showPointsPop(pts); updateStatsRow(); checkStreakBonus(); }
+    }
+    reportComeback();
+    const suf = wasFirst ? streakSuffix(state.answerStreak) : '';
+    showToast(pts > 0 ? `✓ Brawo! +${pts} pkt${suf}` : `✓ Brawo!${suf}`, 'correct');
+    setTimeout(() => loadQuestion(), 400);
+  } else {
+    state.mistakes++;
+    state.isFirstAttempt = false;
+    state.answerStreak = 0;
+    reportMistake();
+    playSound('wrong');
+    if (state.mistakes <= 3) document.getElementById(`dot${state.mistakes - 1}`).classList.add('used');
+    ['fopNum','fopDen'].forEach(id => { const el = document.getElementById(id); if (el) { el.classList.add('wrong'); setTimeout(() => el.classList.remove('wrong'), 600); }});
+    if (state.mistakes >= 3) {
+      state.solutionShown = true; state.answerLocked = true;
+      document.getElementById('writtenAddArea').innerHTML = buildFractionOpHtml(q);
+      showToast(`✗ Odpowiedź: ${q.ans_a}/${q.ans_b}`, 'wrong');
+      setTimeout(() => loadQuestion(), 2500);
+    } else if (state.mistakes === 2 && hintEl) {
+      hintEl.textContent = `💡 ${q.hint}`; hintEl.style.display = '';
+    } else {
+      showToast('✗ Spróbuj jeszcze raz!', 'wrong');
+    }
+  }
+}
+
+function buildFractionEqCheckHtml(q) {
+  const frac = (a, b) => `<div class="fc-frac"><span class="fc-top">${a}</span><span class="fc-bar"></span><span class="fc-bot">${b}</span></div>`;
+  return `
+    <div class="ic-wrap">
+      <div class="ic-row">
+        <div class="fc-num">${frac(q.a1, q.b1)}</div>
+        <div class="ic-btns-v">
+          <button class="ic-btn" data-sym="=" onclick="submitFractionEqCheck('=')">=</button>
+          <button class="ic-btn" data-sym="≠" onclick="submitFractionEqCheck('≠')">≠</button>
+        </div>
+        <div class="fc-num">${frac(q.a2, q.b2)}</div>
+      </div>
+      <div id="icHint" class="ic-hint" style="display:none"></div>
+    </div>`;
+}
+
+async function submitFractionEqCheck(sym) {
+  const q = state.currentQuestion;
+  if (!q || q.type !== 'fraction_eq_check' || state.answerLocked) return;
+  if (sym === q.ans) {
+    state.answerLocked = true;
+    playSound('correct');
+    document.querySelectorAll('.ic-btn').forEach(b => { if (b.dataset.sym === sym) b.classList.add('ic-btn-correct'); });
+    let pts = 0;
+    const wasFirst = state.isFirstAttempt && !state.solutionShown;
+    if (wasFirst) {
+      state.answerStreak++;
+      if (state.currentUser) { pts = await recordCorrect(state.currentTopic); showPointsPop(pts); updateStatsRow(); checkStreakBonus(); }
+    }
+    reportComeback();
+    const suf = wasFirst ? streakSuffix(state.answerStreak) : '';
+    showToast(pts > 0 ? `✓ Brawo! +${pts} pkt${suf}` : `✓ Brawo!${suf}`, 'correct');
+    setTimeout(() => loadQuestion(), 400);
+  } else {
+    state.mistakes++;
+    state.isFirstAttempt = false;
+    state.answerStreak = 0;
+    reportMistake();
+    playSound('wrong');
+    if (state.mistakes <= 3) document.getElementById(`dot${state.mistakes - 1}`).classList.add('used');
+    document.querySelectorAll('.ic-btn').forEach(b => {
+      if (b.dataset.sym === sym) { b.classList.add('ic-btn-wrong'); setTimeout(() => b.classList.remove('ic-btn-wrong'), 500); }
+    });
+    const hintEl = document.getElementById('icHint');
+    if (state.mistakes >= 3) {
+      state.solutionShown = true;
+      const ans = `${q.a1}/${q.b1} ${q.ans} ${q.a2}/${q.b2}`;
+      if (hintEl) { hintEl.textContent = `Odpowiedź: ${ans}`; hintEl.style.display = ''; }
+      setTimeout(() => loadQuestion(), 2000);
+    } else if (state.mistakes === 2 && q.hint && hintEl) {
+      hintEl.textContent = `💡 ${q.hint}`; hintEl.style.display = '';
+    } else {
+      showToast('✗ Spróbuj jeszcze raz!', 'wrong');
+    }
+  }
+}
+
 async function checkIntOrder() {
   const q = state.currentQuestion;
   const area = document.getElementById('ioSortArea');
@@ -6303,7 +6510,7 @@ function loadQuestion() {
   const hintLine = document.getElementById('questionHintLine');
   if (hintLine) hintLine.style.display = 'none';
 
-  const isWA = q.type === 'written-addition' || q.type === 'written-subtraction' || q.type === 'written-multiplication' || q.type === 'written-division' || q.type === 'rounding' || q.type === 'comparison' || q.type === 'divisibility' || q.type === 'power' || q.type === 'order_ops' || q.type === 'num_write' || q.type === 'function_q' || q.type === 'sqrt_bounds' || q.type === 'prime_factors' || q.type === 'nwd' || q.type === 'nww' || q.type === 'abs_value' || q.type === 'int_compare' || q.type === 'int_order' || q.type === 'div_rem' || q.type === 'fraction_read' || q.type === 'fraction_compare';
+  const isWA = q.type === 'written-addition' || q.type === 'written-subtraction' || q.type === 'written-multiplication' || q.type === 'written-division' || q.type === 'rounding' || q.type === 'comparison' || q.type === 'divisibility' || q.type === 'power' || q.type === 'order_ops' || q.type === 'num_write' || q.type === 'function_q' || q.type === 'sqrt_bounds' || q.type === 'prime_factors' || q.type === 'nwd' || q.type === 'nww' || q.type === 'abs_value' || q.type === 'int_compare' || q.type === 'int_order' || q.type === 'div_rem' || q.type === 'fraction_read' || q.type === 'fraction_compare' || q.type === 'fraction_op' || q.type === 'fraction_eq_check';
   const questionText = document.getElementById('questionText');
   const answerInput  = document.getElementById('answerInput');
   const waArea       = document.getElementById('writtenAddArea');
@@ -6384,6 +6591,12 @@ function loadQuestion() {
       document.getElementById('frNum')?.focus();
     } else if (q.type === 'fraction_compare') {
       waArea.innerHTML = buildFractionCompareHtml(q);
+      document.getElementById('checkBtn').style.display = 'none';
+    } else if (q.type === 'fraction_op') {
+      waArea.innerHTML = buildFractionOpHtml(q);
+      document.getElementById('fopNum')?.focus();
+    } else if (q.type === 'fraction_eq_check') {
+      waArea.innerHTML = buildFractionEqCheckHtml(q);
       document.getElementById('checkBtn').style.display = 'none';
     } else {
       waArea.innerHTML = buildWAHtml(q);
@@ -6730,6 +6943,7 @@ async function checkAnswer() {
   if (state.currentQuestion?.type === 'int_order')   { await checkIntOrder(); return; }
   if (state.currentQuestion?.type === 'div_rem')       { await checkDivRem(); return; }
   if (state.currentQuestion?.type === 'fraction_read') { await checkFractionRead(); return; }
+  if (state.currentQuestion?.type === 'fraction_op')   { await checkFractionOp();   return; }
 
   const input = document.getElementById('answerInput');
 

@@ -2511,6 +2511,17 @@ details[open] .tp-level-summary::after { content: '▴'; }
 .fc-bar { width: 100%; min-width: 28px; height: 2px; background: #e2e8f0; margin: 2px 0; }
 .fc-mixed { display: inline-flex; align-items: center; gap: 6px; }
 .fc-whole { font-size: 28px; font-weight: 700; color: #e2e8f0; }
+/* Inline fraction in q_html */
+.qf { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 4px; font-weight: 700; color: var(--text); line-height: 1.1; }
+.qf-t { padding: 0 3px; border-bottom: 2px solid currentColor; font-size: 1.1em; }
+.qf-b { padding: 0 3px; font-size: 1.1em; }
+.qf-blank { display: inline-block; min-width: 20px; color: var(--accent); font-weight: 700; text-align: center; border-bottom: 2px solid var(--accent); }
+/* Fraction op (rozszerz/skróć przez k) */
+.fop-wrap { text-align: center; padding: 12px 0; }
+.fop-row { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.fop-op { font-size: 22px; font-weight: 700; color: #f59e0b; min-width: 44px; }
+.fop-eq { font-size: 26px; font-weight: 700; color: #e2e8f0; }
+.fop-inp { width: 60px !important; }
 .ic-row { display: flex; align-items: center; justify-content: center; gap: 20px; }
 .ic-num { font-size: 36px; font-weight: 700; color: #e2e8f0; min-width: 64px; text-align: center; }
 .ic-btns-v { display: flex; flex-direction: column; gap: 8px; }
