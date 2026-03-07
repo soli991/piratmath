@@ -293,6 +293,19 @@ router.post('/title/set', requireAuth, (req, res) => {
   res.json({ ok: true, active_title: titleId || '' });
 });
 
+// POST /api/avatar/set
+router.post('/avatar/set', requireAuth, (req, res) => {
+  const { emoji } = req.body;
+  const userId = req.session.userId;
+  if (emoji) {
+    const user = db.prepare('SELECT owned_avatars FROM users WHERE id = ?').get(userId);
+    const owned = JSON.parse(user?.owned_avatars || '[]');
+    if (!owned.includes(emoji) && emoji !== '') return res.status(400).json({ error: 'Nie posiadasz tego awatara' });
+  }
+  db.prepare('UPDATE users SET avatar_emoji = ? WHERE id = ?').run(emoji || '', userId);
+  res.json({ ok: true });
+});
+
 // GET /api/shop – katalog awatarów i tytułów
 router.get('/shop', (req, res) => {
   res.json({ avatars: AVATAR_DATA, titles: TITLES_LIST });
@@ -301,7 +314,7 @@ router.get('/shop', (req, res) => {
 // GET /api/leaderboard/seasonal
 router.get('/leaderboard/seasonal', (req, res) => {
   const rows = db.prepare(
-    'SELECT name, season_points AS points, active_title FROM users ORDER BY season_points DESC LIMIT 10'
+    'SELECT name, season_points AS points, active_title, avatar_emoji FROM users ORDER BY season_points DESC LIMIT 10'
   ).all();
   res.json(rows);
 });
@@ -309,7 +322,7 @@ router.get('/leaderboard/seasonal', (req, res) => {
 // GET /api/leaderboard/global
 router.get('/leaderboard/global', (req, res) => {
   const rows = db.prepare(
-    'SELECT name, total_points AS points, active_title FROM users ORDER BY total_points DESC LIMIT 10'
+    'SELECT name, total_points AS points, active_title, avatar_emoji FROM users ORDER BY total_points DESC LIMIT 10'
   ).all();
   res.json(rows);
 });
@@ -320,12 +333,12 @@ router.get('/leaderboard/weekly', (req, res) => {
   const classId   = req.query.classId ? parseInt(req.query.classId) : null;
   if (classId) {
     const rows = db.prepare(
-      'SELECT name, class_week_points AS points, active_title FROM users WHERE class_id = ? AND week_start = ? ORDER BY class_week_points DESC LIMIT 10'
+      'SELECT name, class_week_points AS points, active_title, avatar_emoji FROM users WHERE class_id = ? AND week_start = ? ORDER BY class_week_points DESC LIMIT 10'
     ).all(classId, weekStart);
     return res.json(rows);
   }
   const rows = db.prepare(
-    'SELECT name, week_points AS points, active_title FROM users WHERE week_start = ? ORDER BY week_points DESC LIMIT 10'
+    'SELECT name, week_points AS points, active_title, avatar_emoji FROM users WHERE week_start = ? ORDER BY week_points DESC LIMIT 10'
   ).all(weekStart);
   res.json(rows);
 });
@@ -333,7 +346,7 @@ router.get('/leaderboard/weekly', (req, res) => {
 // GET /api/leaderboard/seasonal/full
 router.get('/leaderboard/seasonal/full', (req, res) => {
   const rows = db.prepare(
-    'SELECT name, season_points AS points, active_title FROM users ORDER BY season_points DESC'
+    'SELECT name, season_points AS points, active_title, avatar_emoji FROM users ORDER BY season_points DESC'
   ).all();
   res.json(rows);
 });
@@ -341,7 +354,7 @@ router.get('/leaderboard/seasonal/full', (req, res) => {
 // GET /api/leaderboard/global/full
 router.get('/leaderboard/global/full', (req, res) => {
   const rows = db.prepare(
-    'SELECT name, total_points AS points, active_title FROM users ORDER BY total_points DESC'
+    'SELECT name, total_points AS points, active_title, avatar_emoji FROM users ORDER BY total_points DESC'
   ).all();
   res.json(rows);
 });

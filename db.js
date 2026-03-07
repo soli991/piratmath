@@ -44,6 +44,9 @@ try { db.exec('ALTER TABLE users ADD COLUMN max_streak     INTEGER DEFAULT 0'); 
 try { db.exec("ALTER TABLE users ADD COLUMN owned_titles TEXT DEFAULT '[]'"); } catch(e) {}
 try { db.exec("ALTER TABLE users ADD COLUMN active_title TEXT DEFAULT ''");   } catch(e) {}
 
+// Kolumny dodane w v6 – awatar w bazie
+try { db.exec("ALTER TABLE users ADD COLUMN avatar_emoji TEXT DEFAULT ''"); } catch(e) {}
+
 // Tabela osiągnięć użytkownika
 db.exec(`
   CREATE TABLE IF NOT EXISTS user_achievements (
