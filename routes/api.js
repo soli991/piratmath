@@ -301,7 +301,7 @@ router.get('/shop', (req, res) => {
 // GET /api/leaderboard/seasonal
 router.get('/leaderboard/seasonal', (req, res) => {
   const rows = db.prepare(
-    'SELECT name, season_points AS points FROM users ORDER BY season_points DESC LIMIT 10'
+    'SELECT name, season_points AS points, active_title FROM users ORDER BY season_points DESC LIMIT 10'
   ).all();
   res.json(rows);
 });
@@ -309,7 +309,7 @@ router.get('/leaderboard/seasonal', (req, res) => {
 // GET /api/leaderboard/global
 router.get('/leaderboard/global', (req, res) => {
   const rows = db.prepare(
-    'SELECT name, total_points AS points FROM users ORDER BY total_points DESC LIMIT 10'
+    'SELECT name, total_points AS points, active_title FROM users ORDER BY total_points DESC LIMIT 10'
   ).all();
   res.json(rows);
 });
@@ -320,12 +320,12 @@ router.get('/leaderboard/weekly', (req, res) => {
   const classId   = req.query.classId ? parseInt(req.query.classId) : null;
   if (classId) {
     const rows = db.prepare(
-      'SELECT name, class_week_points AS points FROM users WHERE class_id = ? AND week_start = ? ORDER BY class_week_points DESC LIMIT 10'
+      'SELECT name, class_week_points AS points, active_title FROM users WHERE class_id = ? AND week_start = ? ORDER BY class_week_points DESC LIMIT 10'
     ).all(classId, weekStart);
     return res.json(rows);
   }
   const rows = db.prepare(
-    'SELECT name, week_points AS points FROM users WHERE week_start = ? ORDER BY week_points DESC LIMIT 10'
+    'SELECT name, week_points AS points, active_title FROM users WHERE week_start = ? ORDER BY week_points DESC LIMIT 10'
   ).all(weekStart);
   res.json(rows);
 });
@@ -333,7 +333,7 @@ router.get('/leaderboard/weekly', (req, res) => {
 // GET /api/leaderboard/seasonal/full
 router.get('/leaderboard/seasonal/full', (req, res) => {
   const rows = db.prepare(
-    'SELECT name, season_points AS points FROM users ORDER BY season_points DESC'
+    'SELECT name, season_points AS points, active_title FROM users ORDER BY season_points DESC'
   ).all();
   res.json(rows);
 });
@@ -341,7 +341,7 @@ router.get('/leaderboard/seasonal/full', (req, res) => {
 // GET /api/leaderboard/global/full
 router.get('/leaderboard/global/full', (req, res) => {
   const rows = db.prepare(
-    'SELECT name, total_points AS points FROM users ORDER BY total_points DESC'
+    'SELECT name, total_points AS points, active_title FROM users ORDER BY total_points DESC'
   ).all();
   res.json(rows);
 });

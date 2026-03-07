@@ -7306,9 +7306,11 @@ function renderLb(containerId, users) {
   const rankClasses = ['rank-1','rank-2','rank-3'];
   c.innerHTML = users.map((u, i) => {
     const isMe = state.currentUser && u.name === state.currentUser.name;
+    const titleObj = u.active_title ? TITLES_MAP.get(u.active_title) : null;
+    const titleHtml = titleObj ? `<span class="lb-title">${titleObj.name}</span>` : '';
     return `<div class="lb-entry ${isMe ? 'me' : ''}">
       <div class="lb-rank ${rankClasses[i]||''}">${medals[i] || `${i+1}`}</div>
-      <div class="lb-name">${u.name}${isMe ? ' 👤' : ''}</div>
+      <div class="lb-name">${u.name}${isMe ? ' 👤' : ''}${titleHtml}</div>
       <div class="lb-pts">${(u.points||0).toLocaleString()}</div>
     </div>`;
   }).join('');
@@ -7325,9 +7327,11 @@ async function showFullLb(type) {
   const medals = ['🥇','🥈','🥉'];
   document.getElementById('lbFullEntries').innerHTML = (data || []).map((u, i) => {
     const isMe = state.currentUser && u.name === state.currentUser.name;
+    const titleObj = u.active_title ? TITLES_MAP.get(u.active_title) : null;
+    const titleHtml = titleObj ? `<span class="lb-title">${titleObj.name}</span>` : '';
     return `<div class="lb-entry ${isMe ? 'me' : ''}">
       <div class="lb-rank ${i < 3 ? `rank-${i+1}` : ''}">${medals[i] || `${i+1}.`}</div>
-      <div class="lb-name">${u.name}${isMe ? ' 👤' : ''}</div>
+      <div class="lb-name">${u.name}${isMe ? ' 👤' : ''}${titleHtml}</div>
       <div class="lb-pts">${(u.points||0).toLocaleString()} pkt</div>
     </div>`;
   }).join('');
