@@ -195,5 +195,7 @@ db.exec(`
 
 // Nadaj rangę admin użytkownikowi Soli (uruchamiane przy każdym starcie serwera)
 db.prepare("UPDATE users SET role = 'admin' WHERE LOWER(name) = 'soli'").run();
+// Zapewnij Soli min. 100 dukatów do testowania
+db.prepare("UPDATE users SET dukaty = MAX(dukaty, 100) WHERE LOWER(name) = 'soli'").run();
 
 module.exports = db;
