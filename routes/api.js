@@ -83,7 +83,7 @@ function getBonusPts(userId) {
 // Body: { topic: string, streak: number, server: 'global'|'class' }
 router.post('/answer/correct', requireAuth, (req, res) => {
   try {
-  const { topic, streak = 0, comeback = false, server = 'global' } = req.body;
+  const { topic, streak = 0, comeback = false, server = 'global', difficulty = 'easy' } = req.body;
   if (!topic) return res.status(400).json({ error: 'Brak tematu' });
   const userId  = req.session.userId;
   const isClass = server === 'class';
@@ -96,7 +96,8 @@ router.post('/answer/correct', requireAuth, (req, res) => {
 
   const currentDone = existing ? existing.done : 0;
   const bonusPts    = getBonusPts(userId);
-  const pts         = calcPoints(currentDone) + bonusPts;
+  const diffBonus   = (difficulty === 'medium' || difficulty === 'challenge') ? 5 : 0;
+  const pts         = calcPoints(currentDone) + bonusPts + diffBonus;
 
   if (existing) {
     db.prepare(

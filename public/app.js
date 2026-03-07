@@ -6861,7 +6861,8 @@ async function recordCorrect(topic) {
   if (state.pvp.state === 'my_turn_playing') return pvpRecordCorrect(topic);
 
   const comeback = state.mistakes >= 2 && !state.solutionShown;
-  const data = await api('POST', '/api/answer/correct', { topic, streak: state.answerStreak, comeback, server: state.server });
+  const difficulty = state.challengeActive ? 'challenge' : state.currentDifficulty;
+  const data = await api('POST', '/api/answer/correct', { topic, streak: state.answerStreak, comeback, server: state.server, difficulty });
   if (!data || data.error || !data.pts) return 0;
 
   // Aktualizuj lokalny stan
