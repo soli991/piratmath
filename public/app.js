@@ -2074,7 +2074,7 @@ const TOPIC_GENERATORS = {
     const easy = d === 'easy';
     if (easy ? r < 0.5 : r < 0.1) {
       // Ten sam mianownik (easy: 50%, medium: 10%)
-      const denoms = easy ? [2,3,4,5,6,8] : [4,5,6,7,8,9,10,12];
+      const denoms = easy ? [2,3,4,5,6,8] : [4,5,6,7,8,9,10,12,15,20,25,30];
       const n = denoms[rand(0, denoms.length - 1)];
       let a = rand(1, n - 1), b = rand(1, n - 1);
       while (a === b) b = rand(1, n - 1);
@@ -2083,7 +2083,7 @@ const TOPIC_GENERATORS = {
         hint: `Mianowniki równe — porównaj liczniki: większy licznik = większy ułamek` };
     } else if (easy ? r < 1 : r < 0.3) {
       // Ułamki jednostkowe (easy: 50%, medium: 20%)
-      const pool = easy ? [2,3,4,5,6,8] : [2,3,4,5,6,7,8,9,10,12];
+      const pool = easy ? [2,3,4,5,6,8] : [2,3,4,5,6,7,8,9,10,12,15,20,25,30];
       let a = pool[rand(0, pool.length - 1)], b = pool[rand(0, pool.length - 1)];
       while (a === b) b = pool[rand(0, pool.length - 1)];
       const ans = a < b ? '>' : '<';
@@ -2091,7 +2091,7 @@ const TOPIC_GENERATORS = {
         hint: `Im większy mianownik, tym mniejsza część — np. 1/10 to mniejszy kawałek niż 1/3` };
     } else if (r < 0.55) {
       // Ten sam licznik: a/b vs a/c (medium: 25%)
-      const pool = [3,4,5,6,7,8,9,10,12];
+      const pool = [3,4,5,6,7,8,9,10,12,15,18,20,24,30];
       let b = pool[rand(0, pool.length - 1)], c = pool[rand(0, pool.length - 1)];
       while (b === c) c = pool[rand(0, pool.length - 1)];
       const a = rand(2, Math.min(b, c) - 1);
@@ -2100,7 +2100,7 @@ const TOPIC_GENERATORS = {
         hint: `Liczniki równe (${a}) — im większy mianownik, tym mniejszy ułamek` };
     } else if (r < 0.8) {
       // Ułamki (n-1)/n — blisko 1 (medium: 25%)
-      const pool = [3,4,5,6,7,8,9,10,11,12];
+      const pool = [3,4,5,6,7,8,9,10,11,12,15,19,20,24,29,30];
       let b = pool[rand(0, pool.length - 1)], c = pool[rand(0, pool.length - 1)];
       while (b === c) c = pool[rand(0, pool.length - 1)];
       const ans = b < c ? '>' : '<';
@@ -2108,8 +2108,8 @@ const TOPIC_GENERATORS = {
         hint: `Sprawdź ile brakuje każdemu do 1: brakuje 1/${b} i 1/${c} — mniejsza różnica = bliżej 1 = większy ułamek` };
     } else if (r < 0.9) {
       // Liczby mieszane z tym samym mianownikiem (w1 === w2 → trzeba porównać ułamki)
-      const n = rand(3, 9);
-      const w = rand(1, 4);
+      const n = rand(3, 20);
+      const w = rand(1, 6);
       let n1 = rand(1, n - 1), n2 = rand(1, n - 1);
       while (n1 === n2) n2 = rand(1, n - 1);
       const ans = n1 < n2 ? '<' : '>';
