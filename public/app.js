@@ -7521,6 +7521,7 @@ function openAchievements() {
 
 function closeAchievements() {
   document.getElementById('achOverlay').style.display = 'none';
+  document.getElementById('achTip').style.display = 'none';
 }
 
 function closeAchIfBg(e) {
@@ -7595,6 +7596,29 @@ function renderAchievementsOverlay() {
   }
 
   grid.innerHTML = html;
+
+  // Tooltip dla osiągnięć — fixed, poza overflow kontenerem
+  const tip = document.getElementById('achTip');
+  grid.addEventListener('mouseover', e => {
+    const item = e.target.closest('[data-desc]');
+    if (!item) return;
+    tip.textContent = item.dataset.desc;
+    tip.style.display = 'block';
+  });
+  grid.addEventListener('mousemove', e => {
+    if (tip.style.display === 'none') return;
+    const gap = 10;
+    let x = e.clientX + gap;
+    let y = e.clientY - tip.offsetHeight / 2;
+    if (x + tip.offsetWidth > window.innerWidth - 8) x = e.clientX - tip.offsetWidth - gap;
+    if (y < 4) y = 4;
+    tip.style.left = x + 'px';
+    tip.style.top  = y + 'px';
+  });
+  grid.addEventListener('mouseout', e => {
+    if (!e.target.closest('[data-desc]')) return;
+    tip.style.display = 'none';
+  });
 }
 
 // ============================================================
