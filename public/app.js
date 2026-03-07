@@ -1271,6 +1271,8 @@ async function initApp() {
     state.currentUser = data.user;
     state.dukaty = data.user.dukaty || 0;
     state.ownedAvatars = JSON.parse(data.user.owned_avatars || '[]');
+    state.ownedTitles  = JSON.parse(data.user.owned_titles  || '[]');
+    state.activeTitle  = data.user.active_title || '';
     loadAchievementsState(data.user);
     document.getElementById('loginModal').style.display = 'none';
     updateUserPanel();
