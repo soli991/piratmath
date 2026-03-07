@@ -2180,10 +2180,11 @@ const TOPIC_GENERATORS = {
         hint: `Liczniki równe (${a}) — im większy mianownik, tym mniejszy ułamek` };
     } else if (r < 0.8) {
       // Ułamki (n-1)/n — blisko 1 (medium: 25%)
+      // większy mianownik = bliżej 1 = większy ułamek: 14/15 > 11/12
       const pool = [3,4,5,6,7,8,9,10,11,12,15,19,20,24,29,30];
       let b = pool[rand(0, pool.length - 1)], c = pool[rand(0, pool.length - 1)];
       while (b === c) c = pool[rand(0, pool.length - 1)];
-      const ans = b < c ? '>' : '<';
+      const ans = b > c ? '>' : '<';
       return { type: 'fraction_compare', a1: b - 1, b1: b, a2: c - 1, b2: c, ans,
         hint: `Sprawdź ile brakuje każdemu do 1: brakuje 1/${b} i 1/${c} — mniejsza różnica = bliżej 1 = większy ułamek` };
     } else if (r < 0.9) {
