@@ -2066,10 +2066,10 @@ function genFractionFillNum(d) {
   const maxK = d === 'easy' ? 5 : 12;
   const k = rand(2, maxK), b = pool[rand(0, pool.length - 1)], a = rand(1, b - 1);
   if (Math.random() < 0.6) {
-    return { q_html: `${qFrac(a,b)} = ${qFrac(qBlank(), b*k)}`, a: a * k,
+    return { type: 'fraction_fill', left: {num:a, den:b}, right: {den:b*k}, numBlank: true, a: a*k,
       hint: `Mianownik ×${k} (${b}×${k}=${b*k}), więc licznik też ×${k}: ${a}×${k}=${a*k}` };
   } else {
-    return { q_html: `${qFrac(a*k, b*k)} = ${qFrac(qBlank(), b)}`, a,
+    return { type: 'fraction_fill', left: {num:a*k, den:b*k}, right: {den:b}, numBlank: true, a,
       hint: `Mianownik ÷${k} (${b*k}÷${k}=${b}), więc licznik też ÷${k}: ${a*k}÷${k}=${a}` };
   }
 }
@@ -2079,10 +2079,10 @@ function genFractionFillDen(d) {
   const maxK = d === 'easy' ? 5 : 12;
   const k = rand(2, maxK), b = pool[rand(0, pool.length - 1)], a = rand(1, b - 1);
   if (Math.random() < 0.6) {
-    return { q_html: `${qFrac(a,b)} = ${qFrac(a*k, qBlank())}`, a: b * k,
+    return { type: 'fraction_fill', left: {num:a, den:b}, right: {num:a*k}, numBlank: false, a: b*k,
       hint: `Licznik ×${k} (${a}×${k}=${a*k}), więc mianownik też ×${k}: ${b}×${k}=${b*k}` };
   } else {
-    return { q_html: `${qFrac(a*k, b*k)} = ${qFrac(a, qBlank())}`, a: b,
+    return { type: 'fraction_fill', left: {num:a*k, den:b*k}, right: {num:a}, numBlank: false, a: b,
       hint: `Licznik ÷${k} (${a*k}÷${k}=${a}), więc mianownik też ÷${k}: ${b*k}÷${k}=${b}` };
   }
 }
@@ -6317,6 +6317,56 @@ async function submitFractionCompare(sym) {
   }
 }
 
+function buildFractionFillHtml(q) {
+  const solved = q.solutionShown;
+  const inp = `<input id="ffInput" class="fr-input fc-chain-inp" type="number" min="1"${solved ? ` value="${q.a}" disabled` : ''} onkeydown="if(event.key==='Enter')checkAnswer()">`;
+  const fracEl = (top, bot) => `<div class="fc-frac"><span class="fc-top">${top}</span><span class="fc-bar"></span><span class="fc-bot">${bot}</span></div>`;
+  const left = fracEl(q.left.num, q.left.den);
+  const right = q.numBlank ? fracEl(inp, q.right.den) : fracEl(q.right.num, inp);
+  return `<div class="fc-chain-wrap"><div class="fc-chain-row">${left}<span class="fc-sep">=</span>${right}</div><div id="ffHint" class="ic-hint" style="display:none"></div></div>`;
+}
+
+async function checkFractionFill() {
+  const q = state.currentQuestion;
+  if (!q || q.type !== 'fraction_fill' || state.answerLocked) return;
+  const val = parseInt(document.getElementById('ffInput')?.value);
+  const hintEl = document.getElementById('ffHint');
+  if (val === q.a) {
+    state.answerLocked = true;
+    playSound('correct');
+    document.getElementById('ffInput')?.classList.add('correct');
+    let pts = 0;
+    const wasFirst = state.isFirstAttempt && !state.solutionShown;
+    if (wasFirst) {
+      state.answerStreak++;
+      if (state.currentUser) { pts = await recordCorrect(state.currentTopic); showPointsPop(pts); updateStatsRow(); checkStreakBonus(); }
+    }
+    reportComeback();
+    const suf = wasFirst ? streakSuffix(state.answerStreak) : '';
+    showToast(pts > 0 ? `✓ Brawo! +${pts} pkt${suf}` : `✓ Brawo!${suf}`, 'correct');
+    setTimeout(() => loadQuestion(), 400);
+  } else {
+    state.mistakes++;
+    state.isFirstAttempt = false;
+    state.answerStreak = 0;
+    reportMistake();
+    playSound('wrong');
+    if (state.mistakes <= 3) document.getElementById(`dot${state.mistakes - 1}`).classList.add('used');
+    const inp = document.getElementById('ffInput');
+    if (inp) { inp.classList.add('wrong'); setTimeout(() => inp.classList.remove('wrong'), 600); }
+    if (state.mistakes >= 3) {
+      state.solutionShown = true; state.answerLocked = true;
+      document.getElementById('writtenAddArea').innerHTML = buildFractionFillHtml(q);
+      showToast(`✗ Odpowiedź: ${q.a}`, 'wrong');
+      setTimeout(() => loadQuestion(), 2500);
+    } else if (state.mistakes === 2 && hintEl) {
+      hintEl.textContent = `💡 ${q.hint}`; hintEl.style.display = '';
+    } else {
+      showToast('✗ Spróbuj jeszcze raz!', 'wrong');
+    }
+  }
+}
+
 function buildFractionChainHtml(q) {
   const solved = q.solutionShown;
   const inp = `<input id="fcInput" class="fr-input fc-chain-inp" type="number" min="1"${solved ? ` value="${q.a}" disabled` : ''} onkeydown="if(event.key==='Enter')checkAnswer()">`;
@@ -6571,7 +6621,7 @@ function loadQuestion() {
   const hintLine = document.getElementById('questionHintLine');
   if (hintLine) hintLine.style.display = 'none';
 
-  const isWA = q.type === 'written-addition' || q.type === 'written-subtraction' || q.type === 'written-multiplication' || q.type === 'written-division' || q.type === 'rounding' || q.type === 'comparison' || q.type === 'divisibility' || q.type === 'power' || q.type === 'order_ops' || q.type === 'num_write' || q.type === 'function_q' || q.type === 'sqrt_bounds' || q.type === 'prime_factors' || q.type === 'nwd' || q.type === 'nww' || q.type === 'abs_value' || q.type === 'int_compare' || q.type === 'int_order' || q.type === 'div_rem' || q.type === 'fraction_read' || q.type === 'fraction_compare' || q.type === 'fraction_op' || q.type === 'fraction_eq_check' || q.type === 'fraction_chain';
+  const isWA = q.type === 'written-addition' || q.type === 'written-subtraction' || q.type === 'written-multiplication' || q.type === 'written-division' || q.type === 'rounding' || q.type === 'comparison' || q.type === 'divisibility' || q.type === 'power' || q.type === 'order_ops' || q.type === 'num_write' || q.type === 'function_q' || q.type === 'sqrt_bounds' || q.type === 'prime_factors' || q.type === 'nwd' || q.type === 'nww' || q.type === 'abs_value' || q.type === 'int_compare' || q.type === 'int_order' || q.type === 'div_rem' || q.type === 'fraction_read' || q.type === 'fraction_compare' || q.type === 'fraction_op' || q.type === 'fraction_eq_check' || q.type === 'fraction_chain' || q.type === 'fraction_fill';
   const questionText = document.getElementById('questionText');
   const answerInput  = document.getElementById('answerInput');
   const waArea       = document.getElementById('writtenAddArea');
@@ -6659,6 +6709,9 @@ function loadQuestion() {
     } else if (q.type === 'fraction_eq_check') {
       waArea.innerHTML = buildFractionEqCheckHtml(q);
       document.getElementById('checkBtn').style.display = 'none';
+    } else if (q.type === 'fraction_fill') {
+      waArea.innerHTML = buildFractionFillHtml(q);
+      document.getElementById('ffInput')?.focus();
     } else if (q.type === 'fraction_chain') {
       waArea.innerHTML = buildFractionChainHtml(q);
       document.getElementById('fcInput')?.focus();
@@ -7008,6 +7061,7 @@ async function checkAnswer() {
   if (state.currentQuestion?.type === 'div_rem')       { await checkDivRem(); return; }
   if (state.currentQuestion?.type === 'fraction_read') { await checkFractionRead(); return; }
   if (state.currentQuestion?.type === 'fraction_op')    { await checkFractionOp();    return; }
+  if (state.currentQuestion?.type === 'fraction_fill')  { await checkFractionFill();  return; }
   if (state.currentQuestion?.type === 'fraction_chain') { await checkFractionChain(); return; }
 
   const input = document.getElementById('answerInput');
