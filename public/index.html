@@ -1987,13 +1987,15 @@ body.theme-classic .orb1, body.theme-classic .orb2 { display: none; }
   cursor: pointer; transition: all .15s;
 }
 .title-item:hover { border-color: var(--accent); }
-.title-item.owned { border-color: var(--accent2,#a78bfa); background: var(--card); }
-.title-item.active-title { border-color: var(--gold); background: rgba(255,215,0,.08); }
+.title-item.owned { border-color: var(--accent2,#a78bfa); background: rgba(167,139,250,.07); }
+.title-item.owned .title-item-name::before { content: '🔓 '; font-size: 12px; }
+.title-item.active-title { border-color: var(--gold); background: rgba(255,215,0,.1); box-shadow: 0 0 0 1px rgba(255,215,0,.2); }
+.title-item.active-title .title-item-name::before { content: '✓ '; color: var(--gold); }
 .title-item-name { font-weight: 700; font-size: 14px; color: var(--text); }
 .title-item.locked .title-item-name { color: var(--text-dim); }
 .title-item-price { font-size: 12px; font-weight: 700; color: var(--gold); white-space: nowrap; }
 .title-item.owned .title-item-price { color: var(--accent2,#a78bfa); }
-.title-item.active-title .title-item-price { color: var(--gold); }
+.title-item.active-title .title-item-price { color: var(--gold); font-weight: 900; }
 
 /* ===== USER TITLE DISPLAY ===== */
 .user-title-display {

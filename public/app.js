@@ -7196,7 +7196,7 @@ function renderTitlesGrid() {
 
     const nameEl = document.createElement('span');
     nameEl.className = 'title-item-name';
-    nameEl.textContent = (active ? '✓ ' : '') + t.name;
+    nameEl.textContent = t.name;
 
     const priceEl = document.createElement('span');
     priceEl.className = 'title-item-price';
