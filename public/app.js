@@ -3336,26 +3336,32 @@ const TOPIC_GENERATORS = {
     function posName(i, len) { return posNames[len - 1 - i]; }
 
     function mkPalindrome(len) {
-      // Build a palindrome of given length from scratch
+      // Build a palindrome of given length; all inner digits 1-9 (no 0 in visible positions)
       const half = Math.ceil(len / 2);
-      const leftHalf = Array.from({ length: half }, (_, i) => i === 0 ? rand(1, 9) : rand(0, 9));
+      const leftHalf = Array.from({ length: half }, (_, i) => rand(1, 9));
       const fullArr = [...leftHalf];
       const mirrorStart = len % 2 === 0 ? half - 1 : half - 2;
       for (let i = mirrorStart; i >= 0; i--) fullArr.push(leftHalf[i]);
-      // Blank one symmetric pair (never the middle for odd-length)
-      const maxBlank = half - (len % 2 === 1 ? 2 : 1);
-      const blankPos = rand(0, maxBlank);
-      const mirrorPos = len - 1 - blankPos;
-      // pattern: array of digits (null = blank position)
-      const pattern = fullArr.map((d, i) => (i === blankPos || i === mirrorPos) ? null : d);
-      const display = fullArr.map((d, i) => (i === blankPos || i === mirrorPos) ? '□' : String(d)).join('');
+      // Blank one or two symmetric pairs (never the middle for odd-length)
+      const maxPairIdx = half - (len % 2 === 1 ? 2 : 1); // highest blankable index
+      const numBlanks = len >= 6 ? rand(1, 2) : 1;
+      const allPairs = sfShuffle([...Array(maxPairIdx + 1).keys()]);
+      const blankPairs = allPairs.slice(0, numBlanks);
+      const blankSet = new Set(blankPairs.flatMap(p => [p, len - 1 - p]));
+      const pattern = fullArr.map((d, i) => blankSet.has(i) ? null : d);
+      const display = fullArr.map((d, i) => blankSet.has(i) ? '□' : String(d)).join('');
       const fullNum = parseInt(fullArr.join(''));
+      const hintLines = blankPairs.map(p =>
+        p === len - 1 - p
+          ? `Cyfra na pozycji ${posName(p, len)} to środkowa cyfra palindromu.`
+          : `Cyfra na pozycji ${posName(p, len)} musi być taka sama jak cyfra na pozycji ${posName(len - 1 - p, len)}.`
+      );
       return {
         type: 'palindrome_fill',
         q: `Uzupełnij liczbę, aby była palindromem:\n${display}\nZapisz uzupełnioną liczbę.`,
         pattern,
         answer: fullNum,
-        hint: `💡 Palindrom — liczba, która czyta się tak samo od lewej i od prawej (np. 12321).\nCyfra na pozycji ${posName(blankPos, len)} musi być taka sama jak cyfra na pozycji ${posName(mirrorPos, len)}.`,
+        hint: `💡 Palindrom — liczba, która czyta się tak samo od lewej i od prawej (np. 12321).\n${hintLines.join('\n')}`,
         hint2: `Przykładowa odpowiedź: ${fmtNum(fullNum)}`
       };
     }
@@ -3385,6 +3391,37 @@ const TOPIC_GENERATORS = {
       };
     }
 
+    function mkDigitChange(n) {
+      const str = String(n), len = str.length;
+      const digits = str.split('').map(Number);
+      let pos, delta, newD, tries = 0;
+      do {
+        pos = rand(0, len - 1);
+        const d = digits[pos];
+        const canInc = 9 - d;
+        const canDec = pos === 0 ? d - 1 : d; // no leading zero
+        if (canInc === 0 && canDec === 0) { tries++; continue; }
+        const dir = (canInc === 0) ? -1 : (canDec === 0) ? 1 : (rand(0, 1) ? 1 : -1);
+        const maxDelta = dir === 1 ? canInc : canDec;
+        if (maxDelta === 0) { tries++; continue; }
+        delta = dir * rand(1, Math.min(maxDelta, 9));
+        newD = digits[pos] + delta;
+        tries++;
+      } while ((newD < 0 || newD > 9 || (pos === 0 && newD === 0)) && tries < 100);
+      const newDigits = [...digits];
+      newDigits[pos] = newD;
+      const answer = parseInt(newDigits.join(''));
+      const action = delta > 0 ? `zwiększono o ${delta}` : `zmniejszono o ${Math.abs(delta)}`;
+      const sign = delta > 0 ? '+' : '−';
+      return {
+        type: 'num_read',
+        q: `Cyfrę ${posName(pos, len)} liczby ${fmtNum(n)} ${action}.\nZapisz otrzymaną liczbę.`,
+        answer,
+        hint: `Cyfra ${posName(pos, len)} wynosiła ${digits[pos]}. Po zmianie: ${digits[pos]} ${sign} ${Math.abs(delta)} = ${newD}.`,
+        hint2: `Wynik: ${fmtNum(answer)}`
+      };
+    }
+
     function mkDigitSwap(n) {
       const str = String(n), len = str.length;
       const digits = str.split('').map(Number);
@@ -3408,7 +3445,7 @@ const TOPIC_GENERATORS = {
 
     if (isEasy) {
       const n = rand(100, 999);
-      const subs = ['num_read', 'num_read', 'num_write', 'expand', 'palindrome', 'digit_mod', 'digit_swap'];
+      const subs = ['num_read', 'num_read', 'num_write', 'expand', 'palindrome', 'digit_mod', 'digit_swap', 'digit_change'];
       const sub = subs[rand(0, subs.length - 1)];
       if (sub === 'num_read') {
         return { type: 'num_read', q: `Zapisz cyframi: ${polishNumber(n)}`, answer: n };
@@ -3417,11 +3454,13 @@ const TOPIC_GENERATORS = {
         const opts = sfShuffle([correct, ...wrongNums(n).map(polishNumber)]);
         return { type: 'num_write', n, options: opts, correctIdx: opts.indexOf(correct) };
       } else if (sub === 'palindrome') {
-        return mkPalindrome(3);
+        return mkPalindrome(rand(3, 5));
       } else if (sub === 'digit_mod') {
         return mkDigitMod(n);
       } else if (sub === 'digit_swap') {
         return mkDigitSwap(n);
+      } else if (sub === 'digit_change') {
+        return mkDigitChange(n);
       } else {
         return mkExpand(n);
       }
@@ -3429,7 +3468,7 @@ const TOPIC_GENERATORS = {
       const ranges = [[1000, 9999], [10000, 99999], [100000, 999999], [1000000, 9999999]];
       const [mn, mx] = ranges[rand(0, ranges.length - 1)];
       const n = rand(mn, mx);
-      const subs = ['num_read', 'num_read', 'num_write', 'expand', 'digit_count', 'palindrome', 'digit_mod', 'digit_swap'];
+      const subs = ['num_read', 'num_read', 'num_write', 'expand', 'digit_count', 'palindrome', 'digit_mod', 'digit_swap', 'digit_change'];
       const sub = subs[rand(0, subs.length - 1)];
       if (sub === 'num_write') {
         const correct = polishNumber(n);
@@ -3440,11 +3479,13 @@ const TOPIC_GENERATORS = {
       } else if (sub === 'digit_count') {
         return { type: 'num_read', q: `Ile cyfr ma liczba: ${polishNumber(n)}?`, answer: String(n).length };
       } else if (sub === 'palindrome') {
-        return mkPalindrome(String(n).length);
+        return mkPalindrome(rand(4, 7));
       } else if (sub === 'digit_mod') {
         return mkDigitMod(n);
       } else if (sub === 'digit_swap') {
         return mkDigitSwap(n);
+      } else if (sub === 'digit_change') {
+        return mkDigitChange(n);
       } else {
         return { type: 'num_read', q: `Zapisz cyframi: ${polishNumber(n)}`, answer: n };
       }
