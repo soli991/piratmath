@@ -2163,9 +2163,9 @@ function genFractionAdd(d) {
 
   if (sub === 0) {
     // Liczba mieszana + ułamek, jeden mianownik wielokrotnością drugiego
-    const dens = [2, 3, 4, 5, 6];
+    const dens = [2, 3, 4, 5, 6, 7, 8, 9];
     const b1 = dens[rand(0, dens.length - 1)];
-    const k = rand(2, 4), b2 = b1 * k;
+    const k = rand(2, 6), b2 = b1 * k;
     const w = rand(1, 4), a1 = rand(1, b1 - 1), a2 = rand(1, b2 - 1);
     const n1conv = a1 * k;
     const fracSum = n1conv + a2;
@@ -2176,7 +2176,7 @@ function genFractionAdd(d) {
 
   if (sub === 1) {
     // Liczba mieszana − ułamek z pożyczaniem, ten sam mianownik
-    const dens = [3, 4, 5, 6, 8];
+    const dens = [3, 4, 5, 6, 7, 8, 9, 10, 12];
     const den = dens[rand(0, dens.length - 1)];
     const w = rand(2, 5);
     const a = rand(1, den - 2), b = rand(a + 1, den - 1);
@@ -2189,9 +2189,9 @@ function genFractionAdd(d) {
 
   if (sub === 2) {
     // Jeden mianownik wielokrotnością drugiego (bez liczb mieszanych)
-    const dens = [2, 3, 4, 5, 6];
+    const dens = [2, 3, 4, 5, 6, 7, 8, 9];
     const b1 = dens[rand(0, dens.length - 1)];
-    const k = rand(2, 5), b2 = b1 * k;
+    const k = rand(2, 6), b2 = b1 * k;
     const a1 = rand(1, b1 - 1), a2 = rand(1, b2 - 1);
     const op = Math.random() < 0.6 ? '+' : '-';
     const num1conv = a1 * k;
@@ -2206,7 +2206,7 @@ function genFractionAdd(d) {
 
   if (sub === 3) {
     // Liczba mieszana + ułamek, różne mianowniki (NWW)
-    const pairs = [[2,3],[2,5],[3,4],[3,5],[4,5],[3,7],[5,6],[5,8],[3,8]];
+    const pairs = [[2,3],[2,5],[3,4],[3,5],[4,5],[3,7],[5,6],[5,8],[3,8],[4,7],[5,9],[6,7],[7,8],[4,9],[5,7],[3,10],[7,9]];
     const [b1, b2] = pairs[rand(0, pairs.length - 1)];
     const lcm = lcmOf(b1, b2);
     const w = rand(1, 4), a1 = rand(1, b1 - 1), a2 = rand(1, b2 - 1);
@@ -2218,7 +2218,7 @@ function genFractionAdd(d) {
   }
 
   // sub === 4: różne mianowniki (NWW), bez liczb mieszanych
-  const pairs = [[2,3],[2,5],[3,4],[3,5],[4,5],[2,7],[3,7],[5,6],[4,7],[5,8],[3,8],[4,9],[5,7]];
+  const pairs = [[2,3],[2,5],[3,4],[3,5],[4,5],[2,7],[3,7],[5,6],[4,7],[5,8],[3,8],[4,9],[5,7],[6,7],[7,8],[5,9],[3,10],[4,11],[5,11],[6,11],[7,9],[8,9],[7,10],[5,12],[7,12]];
   const [b1, b2] = pairs[rand(0, pairs.length - 1)];
   const lcm = lcmOf(b1, b2);
   const a1 = rand(1, b1 - 1), a2 = rand(1, b2 - 1);
