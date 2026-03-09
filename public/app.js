@@ -2162,21 +2162,23 @@ function genFractionAdd(d) {
   const sub = rand(0, 4);
 
   if (sub === 0) {
-    // Ten sam mianownik, wynik niewłaściwy → mieszana
-    const dens = [2, 3, 4, 5, 6, 8];
-    const den = dens[rand(0, dens.length - 1)];
-    const a = rand(Math.ceil(den / 2) + 1, den - 1);
-    const b = rand(den - a + 1, den - 1);
-    const ans = norm(a + b, den);
-    return { type: 'fraction_add', left: { whole: 0, num: a, den }, right: { whole: 0, num: b, den }, op: '+', answer: ans,
-      hint: `Dodaj liczniki: ${a}+${b}=${a + b}. Wynik ${a + b}/${den} to ułamek niewłaściwy — zamień na liczbę mieszaną.` };
+    // Liczba mieszana + ułamek, jeden mianownik wielokrotnością drugiego
+    const dens = [2, 3, 4, 5, 6];
+    const b1 = dens[rand(0, dens.length - 1)];
+    const k = rand(2, 4), b2 = b1 * k;
+    const w = rand(1, 4), a1 = rand(1, b1 - 1), a2 = rand(1, b2 - 1);
+    const n1conv = a1 * k;
+    const fracSum = n1conv + a2;
+    const ans = norm(w * b2 + fracSum, b2);
+    return { type: 'fraction_add', left: { whole: w, num: a1, den: b1 }, right: { whole: 0, num: a2, den: b2 }, op: '+', answer: ans,
+      hint: `Wspólny mianownik: ${b2}. ${a1}/${b1}=${n1conv}/${b2}. Ułamki: ${n1conv}+${a2}=${fracSum}. Całe: ${w}.` };
   }
 
   if (sub === 1) {
-    // Liczba mieszana − ułamek z pożyczaniem (b > a)
+    // Liczba mieszana − ułamek z pożyczaniem, ten sam mianownik
     const dens = [3, 4, 5, 6, 8];
     const den = dens[rand(0, dens.length - 1)];
-    const w = rand(1, 4);
+    const w = rand(2, 5);
     const a = rand(1, den - 2), b = rand(a + 1, den - 1);
     const numRes = w * den + a - b;
     if (numRes <= 0) return genFractionAdd(d);
@@ -2186,10 +2188,10 @@ function genFractionAdd(d) {
   }
 
   if (sub === 2) {
-    // Jeden mianownik wielokrotnością drugiego
+    // Jeden mianownik wielokrotnością drugiego (bez liczb mieszanych)
     const dens = [2, 3, 4, 5, 6];
     const b1 = dens[rand(0, dens.length - 1)];
-    const k = rand(2, 4), b2 = b1 * k;
+    const k = rand(2, 5), b2 = b1 * k;
     const a1 = rand(1, b1 - 1), a2 = rand(1, b2 - 1);
     const op = Math.random() < 0.6 ? '+' : '-';
     const num1conv = a1 * k;
@@ -2198,31 +2200,25 @@ function genFractionAdd(d) {
     const ans = norm(numRes, b2);
     const swap = Math.random() < 0.5;
     const [ln, ld, rn, rd] = swap ? [a2, b2, a1, b1] : [a1, b1, a2, b2];
-    const convHint = swap ? `${a1}/${b1} = ${num1conv}/${b2}` : `${a1}/${b1} = ${num1conv}/${b2}`;
     return { type: 'fraction_add', left: { whole: 0, num: ln, den: ld }, right: { whole: 0, num: rn, den: rd }, op, answer: ans,
-      hint: `Wspólny mianownik: ${b2}. ${convHint}. Potem ${op === '+' ? 'dodaj' : 'odejmij'} liczniki.` };
+      hint: `Wspólny mianownik: ${b2}. ${a1}/${b1}=${num1conv}/${b2}. Potem ${op === '+' ? 'dodaj' : 'odejmij'} liczniki.` };
   }
 
   if (sub === 3) {
-    // Liczba mieszana + ułamek, ten sam mianownik
-    const dens = [2, 3, 4, 5, 6, 8];
-    const den = dens[rand(0, dens.length - 1)];
-    const w = rand(1, 4), a = rand(1, den - 1), b = rand(1, den - 1);
-    const fracSum = a + b;
-    const ans = norm(w * den + fracSum, den);
-    let hint;
-    if (fracSum >= den) {
-      const rem = fracSum % den, g = gcdOf(rem, den);
-      hint = `Ułamki: ${a}/${den}+${b}/${den}=${fracSum}/${den}=1 ${rem > 0 ? rem / g + '/' + den / g : ''}. Całe: ${w}+1=${w + 1}.`;
-    } else {
-      const g = gcdOf(fracSum, den);
-      hint = `Ułamki: ${a}/${den}+${b}/${den}=${fracSum}/${den}${g > 1 ? ' = ' + fracSum / g + '/' + den / g : ''}. Całe: ${w}.`;
-    }
-    return { type: 'fraction_add', left: { whole: w, num: a, den }, right: { whole: 0, num: b, den }, op: '+', answer: ans, hint };
+    // Liczba mieszana + ułamek, różne mianowniki (NWW)
+    const pairs = [[2,3],[2,5],[3,4],[3,5],[4,5],[3,7],[5,6],[5,8],[3,8]];
+    const [b1, b2] = pairs[rand(0, pairs.length - 1)];
+    const lcm = lcmOf(b1, b2);
+    const w = rand(1, 4), a1 = rand(1, b1 - 1), a2 = rand(1, b2 - 1);
+    const n1 = a1 * (lcm / b1), n2 = a2 * (lcm / b2);
+    const fracSum = n1 + n2;
+    const ans = norm(w * lcm + fracSum, lcm);
+    return { type: 'fraction_add', left: { whole: w, num: a1, den: b1 }, right: { whole: 0, num: a2, den: b2 }, op: '+', answer: ans,
+      hint: `NWW(${b1},${b2})=${lcm}. ${a1}/${b1}=${n1}/${lcm}, ${a2}/${b2}=${n2}/${lcm}. Ułamki: ${n1}+${n2}=${fracSum}. Całe: ${w}.` };
   }
 
-  // sub === 4: różne mianowniki (NWW)
-  const pairs = [[2,3],[2,5],[3,4],[3,5],[4,5],[2,7],[3,7],[5,6],[4,7],[5,8],[3,8]];
+  // sub === 4: różne mianowniki (NWW), bez liczb mieszanych
+  const pairs = [[2,3],[2,5],[3,4],[3,5],[4,5],[2,7],[3,7],[5,6],[4,7],[5,8],[3,8],[4,9],[5,7]];
   const [b1, b2] = pairs[rand(0, pairs.length - 1)];
   const lcm = lcmOf(b1, b2);
   const a1 = rand(1, b1 - 1), a2 = rand(1, b2 - 1);
