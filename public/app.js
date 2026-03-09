@@ -3366,6 +3366,37 @@ const TOPIC_GENERATORS = {
       };
     }
 
+    // Asymmetric palindrome: blank ONE side of each symmetric pair (mirror is visible)
+    // Student deduces each blank from its visible mirror → unique solution
+    function mkPalindromeAsym(len) {
+      const half = Math.ceil(len / 2);
+      const leftHalf = Array.from({ length: half }, (_, i) => rand(1, 9));
+      const fullArr = [...leftHalf];
+      const mirrorStart = len % 2 === 0 ? half - 1 : half - 2;
+      for (let i = mirrorStart; i >= 0; i--) fullArr.push(leftHalf[i]);
+      // Blank exactly one side of each symmetric pair
+      const blankSet = new Set();
+      const maxPair = len % 2 === 0 ? half - 1 : half - 2;
+      for (let p = 0; p <= maxPair; p++) {
+        blankSet.add(rand(0, 1) ? p : len - 1 - p);
+      }
+      const pattern = fullArr.map((d, i) => blankSet.has(i) ? null : d);
+      const display = fullArr.map((d, i) => blankSet.has(i) ? '□' : String(d)).join('');
+      const fullNum = parseInt(fullArr.join(''));
+      const hintLines = [...blankSet].sort((a, b) => a - b).map(i => {
+        const mirror = len - 1 - i;
+        return `□ na pozycji ${posName(i, len)} = cyfra na pozycji ${posName(mirror, len)} = ${fullArr[mirror]}`;
+      });
+      return {
+        type: 'palindrome_fill',
+        q: `Uzupełnij palindrom:\n${display}\nZapisz uzupełnioną liczbę.`,
+        pattern,
+        answer: fullNum,
+        hint: `💡 Palindrom czyta się tak samo od lewej i od prawej.\n${hintLines.join('\n')}`,
+        hint2: `Uzupełniona liczba to: ${fmtNum(fullNum)}`
+      };
+    }
+
     function mkDigitMod(n) {
       const str = String(n), len = str.length;
       const digits = str.split('').map(Number);
@@ -3445,7 +3476,7 @@ const TOPIC_GENERATORS = {
 
     if (isEasy) {
       const n = rand(100, 999);
-      const subs = ['num_read', 'num_read', 'num_write', 'expand', 'palindrome', 'digit_mod', 'digit_swap', 'digit_change'];
+      const subs = ['num_read', 'num_read', 'num_write', 'expand', 'palindrome', 'palindrome_asym', 'digit_mod', 'digit_swap', 'digit_change'];
       const sub = subs[rand(0, subs.length - 1)];
       if (sub === 'num_read') {
         return { type: 'num_read', q: `Zapisz cyframi: ${polishNumber(n)}`, answer: n };
@@ -3455,6 +3486,8 @@ const TOPIC_GENERATORS = {
         return { type: 'num_write', n, options: opts, correctIdx: opts.indexOf(correct) };
       } else if (sub === 'palindrome') {
         return mkPalindrome(rand(3, 5));
+      } else if (sub === 'palindrome_asym') {
+        return mkPalindromeAsym(rand(3, 5));
       } else if (sub === 'digit_mod') {
         return mkDigitMod(n);
       } else if (sub === 'digit_swap') {
@@ -3468,7 +3501,7 @@ const TOPIC_GENERATORS = {
       const ranges = [[1000, 9999], [10000, 99999], [100000, 999999], [1000000, 9999999]];
       const [mn, mx] = ranges[rand(0, ranges.length - 1)];
       const n = rand(mn, mx);
-      const subs = ['num_read', 'num_read', 'num_write', 'expand', 'digit_count', 'palindrome', 'digit_mod', 'digit_swap', 'digit_change'];
+      const subs = ['num_read', 'num_read', 'num_write', 'expand', 'digit_count', 'palindrome', 'palindrome_asym', 'digit_mod', 'digit_swap', 'digit_change'];
       const sub = subs[rand(0, subs.length - 1)];
       if (sub === 'num_write') {
         const correct = polishNumber(n);
@@ -3480,6 +3513,8 @@ const TOPIC_GENERATORS = {
         return { type: 'num_read', q: `Ile cyfr ma liczba: ${polishNumber(n)}?`, answer: String(n).length };
       } else if (sub === 'palindrome') {
         return mkPalindrome(rand(4, 7));
+      } else if (sub === 'palindrome_asym') {
+        return mkPalindromeAsym(rand(4, 7));
       } else if (sub === 'digit_mod') {
         return mkDigitMod(n);
       } else if (sub === 'digit_swap') {
