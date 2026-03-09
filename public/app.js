@@ -2141,7 +2141,7 @@ function genFractionAdd(d) {
   }
 
   if (easy) {
-    const dens = [2, 3, 4, 5, 6, 8, 10, 12];
+    const dens = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 16, 20, 24];
     const den = dens[rand(0, dens.length - 1)];
     const op = Math.random() < 0.5 ? '+' : '-';
     if (op === '+') {
@@ -6558,17 +6558,14 @@ async function checkFractionAdd() {
       const el = document.getElementById(id);
       if (el) { el.classList.add('wrong'); setTimeout(() => el.classList.remove('wrong'), 600); }
     });
-    if (state.mistakes >= 3) {
-      state.solutionShown = true; state.answerLocked = true;
-      document.getElementById('writtenAddArea').innerHTML = buildFractionAddHtml(q);
+    if (state.mistakes === 3) {
+      state.solutionShown = true;
       const ansStr = ans.atype === 'whole' ? `${ans.whole}`
         : ans.atype === 'mixed' ? `${ans.whole} ${ans.num}/${ans.den}` : `${ans.num}/${ans.den}`;
-      showToast(`✗ Odpowiedź: ${ansStr}`, 'wrong');
-      setTimeout(() => loadQuestion(), 2500);
-    } else if (hintEl && q.hint) {
-      hintEl.textContent = `💡 ${q.hint}`; hintEl.style.display = '';
-    } else {
-      showToast('✗ Spróbuj jeszcze raz!', 'wrong');
+      if (hintEl) { hintEl.innerHTML = `📋 Odpowiedź: <strong>${ansStr}</strong> — przepisz i kliknij Sprawdź`; hintEl.style.display = ''; }
+    } else if (state.mistakes < 3) {
+      if (hintEl && q.hint) { hintEl.textContent = `💡 ${q.hint}`; hintEl.style.display = ''; }
+      else showToast('✗ Spróbuj jeszcze raz!', 'wrong');
     }
   }
 }
