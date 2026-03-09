@@ -7331,7 +7331,7 @@ async function checkFractionAdd() {
         : ans.atype === 'mixed' ? `${ans.whole} ${ans.num}/${ans.den}` : `${ans.num}/${ans.den}`;
       if (hintEl) { hintEl.innerHTML = `📋 Odpowiedź: <strong>${ansStr}</strong> — przepisz i kliknij Sprawdź`; hintEl.style.display = ''; }
     } else if (state.mistakes < 3) {
-      if (hintEl && q.hint) { hintEl.textContent = `💡 ${q.hint}`; hintEl.style.display = ''; }
+      if (hintEl && q.hint) { hintEl.innerHTML = `💡 ${q.hint}`; hintEl.style.display = ''; }
       else showToast('✗ Spróbuj jeszcze raz!', 'wrong');
     }
   }
