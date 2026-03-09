@@ -2455,6 +2455,146 @@ function genFractionMul(d) {
     hint: `Liczniki: ${a}×${c}=${resNum}. Mianowniki: ${b}×${d2}=${resDen}.${g>1?' Skróć przez '+g+': '+(resNum/g)+'/'+(resDen/g)+'.':''}` };
 }
 
+function genFractionDiv(d) {
+  const easy = d === 'easy';
+  const wrap = t => `<div style="text-align:center;max-width:440px;margin:0 auto;line-height:1.6">${t}</div>`;
+
+  function norm(num, den) {
+    if (num === 0) return { whole: 0, num: 0, den: 1, atype: 'whole' };
+    const g = gcdOf(num, den); num /= g; den /= g;
+    if (num % den === 0) return { whole: num / den, num: 0, den: 1, atype: 'whole' };
+    if (num > den) { const w = Math.floor(num / den), r = num % den, g2 = gcdOf(r, den); return { whole: w, num: r/g2, den: den/g2, atype: 'mixed' }; }
+    return { whole: 0, num, den, atype: 'proper' };
+  }
+  // a/b ÷ c/d = a*d / b*c
+  function divHint(aN, aD, bN, bD) {
+    const rN = aN * bD, rD = aD * bN, g = gcdOf(rN, rD);
+    return `Odwróć dzielnik i mnóż: ${qFrac(aN,aD)} × ${qFrac(bD,bN)} = ${rN}/${rD}${g>1?' = '+(rN/g)+'/'+(rD/g):''}`;
+  }
+
+  if (easy) {
+    const dens = [2, 3, 4, 5, 6];
+    if (Math.random() < 0.5) {
+      // proper ÷ proper
+      let a, b, c, d2;
+      do { b = dens[rand(0,dens.length-1)]; d2 = dens[rand(0,dens.length-1)]; a = rand(1,b-1); c = rand(1,d2-1); }
+      while (a*d2 > 30 || b*c > 30); // keep manageable
+      const ans = norm(a*d2, b*c);
+      return { type: 'fraction_div', left:{whole:0,num:a,den:b}, right:{whole:0,num:c,den:d2}, op:'÷', answer:ans,
+        hint: divHint(a,b,c,d2) };
+    } else {
+      // ułamek ÷ liczba całkowita
+      const b = dens[rand(0,dens.length-1)], n = rand(2,6), a = rand(1,b-1);
+      const ans = norm(a, b*n);
+      return { type: 'fraction_div', left:{whole:0,num:a,den:b}, right:{whole:n,num:0,den:1}, op:'÷', answer:ans,
+        hint: `Dzielenie przez ${n} = mnożenie przez ${qFrac(1,n)}: ${a}/${b*n}${gcdOf(a,b*n)>1?' = '+(a/gcdOf(a,b*n))+'/'+(b*n/gcdOf(a,b*n)):''}` };
+    }
+  }
+
+  const sub = rand(0, 5);
+
+  if (sub === 0) {
+    // proper ÷ proper, większe mianowniki
+    const dens = [2,3,4,5,6,7,8,9,10];
+    let a, b, c, d2;
+    do { b = dens[rand(0,dens.length-1)]; d2 = dens[rand(0,dens.length-1)]; a = rand(1,b-1); c = rand(1,d2-1); }
+    while (a*d2 > 60 || b*c > 60);
+    const ans = norm(a*d2, b*c);
+    return { type: 'fraction_div', left:{whole:0,num:a,den:b}, right:{whole:0,num:c,den:d2}, op:'÷', answer:ans,
+      hint: divHint(a,b,c,d2) };
+  }
+
+  if (sub === 1) {
+    // ułamek ÷ liczba całkowita
+    const dens = [2,3,4,5,6,7,8]; const b = dens[rand(0,dens.length-1)], n = rand(2,10), a = rand(1,b-1);
+    const ans = norm(a, b*n);
+    return { type: 'fraction_div', left:{whole:0,num:a,den:b}, right:{whole:n,num:0,den:1}, op:'÷', answer:ans,
+      hint: `Dzielenie przez ${n} = mnożenie przez ${qFrac(1,n)}: ${a}/(${b}×${n}) = ${a}/${b*n}` };
+  }
+
+  if (sub === 2) {
+    // mieszana ÷ ułamek właściwy
+    const dens = [2,3,4,5,6]; const b = dens[rand(0,dens.length-1)], d2 = dens[rand(0,dens.length-1)];
+    const wL = rand(1,4), aL = rand(1,b-1), c = rand(1,d2-1);
+    const impL = wL*b + aL;
+    const ans = norm(impL*d2, b*c);
+    return { type: 'fraction_div', left:{whole:wL,num:aL,den:b}, right:{whole:0,num:c,den:d2}, op:'÷', answer:ans,
+      hint: `Zamień: ${wL} ${aL}/${b} = ${impL}/${b}. Odwróć dzielnik: ${impL}/${b} × ${d2}/${c} = ${impL*d2}/${b*c}` };
+  }
+
+  if (sub === 3) {
+    // liczba całkowita ÷ ułamek właściwy (uczniowie często mylą!)
+    const dens = [2,3,4,5,6,7,8]; const d2 = dens[rand(0,dens.length-1)], n = rand(1,8), c = rand(1,d2-1);
+    const ans = norm(n*d2, c);
+    return { type: 'fraction_div', left:{whole:n,num:0,den:1}, right:{whole:0,num:c,den:d2}, op:'÷', answer:ans,
+      hint: `Odwróć dzielnik: ${n} × ${qFrac(d2,c)} = ${n*d2}/${c}` };
+  }
+
+  if (sub === 4) {
+    // mieszana ÷ mieszana
+    const dens = [2,3,4,5]; const b = dens[rand(0,dens.length-1)], d2 = dens[rand(0,dens.length-1)];
+    const wL = rand(1,3), aL = rand(1,b-1), wR = rand(1,3), cR = rand(1,d2-1);
+    const impL = wL*b + aL, impR = wR*d2 + cR;
+    const ans = norm(impL*d2, b*impR);
+    return { type: 'fraction_div', left:{whole:wL,num:aL,den:b}, right:{whole:wR,num:cR,den:d2}, op:'÷', answer:ans,
+      hint: `Zamień: ${wL} ${aL}/${b}=${impL}/${b}, ${wR} ${cR}/${d2}=${impR}/${d2}. Odwróć dzielnik: ${impL}/${b} × ${d2}/${impR} = ${impL*d2}/${b*impR}` };
+  }
+
+  // sub === 5: zadania tekstowe (pirackie!)
+  const wordKind = rand(0, 2);
+
+  if (wordKind === 0) {
+    // Podział łupu: ile razy mniejszy ułamek mieści się w większym
+    const dens = [2,3,4,5,6,7,8]; const b = dens[rand(0,dens.length-1)], d2 = dens[rand(0,dens.length-1)];
+    const c = rand(1,d2-1);
+    const k = rand(2,6); const a = k * c; // a/b ÷ c/d = a*d/(b*c), chcemy całkowity wynik
+    // Wynik = (a*d2)/(b*c) = (k*c*d2)/(b*c) = k*d2/b — wybieramy b żeby się dzieliło
+    const bd = [2,3,4,5,6]; const d3 = bd[rand(0,bd.length-1)];
+    // Nowe: a = k, b = 1, c/d — wynik = k*d/c (całkowity jeśli c|k*d)
+    const kk = rand(2,5), cc = rand(2,6), dd = rand(2,6);
+    const resN = kk*dd, resD = cc;
+    const ans2 = norm(resN, resD);
+    const ts = [
+      `Kapitan Szczur ma ${qFrac(kk*dd, cc*dd)} beczki rumu. Każda porcja to ${qFrac(1,cc)} beczki. Ile porcji wyjdzie?`,
+      `Piraci zdobyli ${kk} skrzynie złota. Każdy pirat dostaje ${qFrac(cc,dd)} skrzyni. Na ilu piratów starczy?`,
+      `Statek ma ${qFrac(kk,1)} mil do przepłynięcia. W ciągu godziny płynie ${qFrac(cc,dd)} mili. Ile godzin zajmie rejs?`,
+    ];
+    const aNum = kk, aDen = 1, bNum = cc, bDen = dd;
+    const fAns = norm(aNum*bDen, aDen*bNum);
+    return { type: 'fraction_div', left:{whole:kk,num:0,den:1}, right:{whole:0,num:cc,den:dd}, op:'÷', answer:fAns,
+      q_html: wrap(ts[rand(0,ts.length-1)]),
+      hint: `Odwróć dzielnik: ${kk} × ${qFrac(dd,cc)} = ${kk*dd}/${cc}` };
+  }
+
+  if (wordKind === 1) {
+    // Ile kawałków mieści się w całości
+    const dens = [2,3,4,5,6,7,8]; const b = dens[rand(0,dens.length-1)], a = rand(1,b-1);
+    const n = rand(2,8);
+    const fAns = norm(n*b, a);
+    const ts = [
+      `Szczur Barnaba ma ${n} metrów liny. Każdy kawałek do cumowania ma ${qFrac(a,b)} metra. Ile kawałków odtnie?`,
+      `Na statku jest ${n} beczek z wodą. Każdy dzień rejsu zużywa ${qFrac(a,b)} beczki. Ile dni starczy wody?`,
+      `Mapa skarbu ma ${n} dm długości. Każdy odcinek trasy to ${qFrac(a,b)} dm. Ile odcinków liczy trasa?`,
+    ];
+    return { type: 'fraction_div', left:{whole:n,num:0,den:1}, right:{whole:0,num:a,den:b}, op:'÷', answer:fAns,
+      q_html: wrap(ts[rand(0,ts.length-1)]),
+      hint: `Odwróć dzielnik: ${n} × ${qFrac(b,a)} = ${n*b}/${a}` };
+  }
+
+  // wordKind === 2: ułamek ÷ ułamek
+  const dens = [2,3,4,5,6,7]; const b = dens[rand(0,dens.length-1)], d2 = dens[rand(0,dens.length-1)];
+  const a = rand(1,b-1), c = rand(1,d2-1);
+  const fAns = norm(a*d2, b*c);
+  const ts2 = [
+    `Pirat przebiega ${qFrac(a,b)} mili w ${qFrac(c,d2)} godziny. Jaką prędkość ma w milach na godzinę?`,
+    `Skrzynia złota waży ${qFrac(a,b)} tony. Każdy worek z łupem to ${qFrac(c,d2)} tony. Ile worków wypełni skrzynia?`,
+    `Beczka rumu ma ${qFrac(a,b)} litra. Jedna porcja to ${qFrac(c,d2)} litra. Ile porcji wyjdzie z beczki?`,
+  ];
+  return { type: 'fraction_div', left:{whole:0,num:a,den:b}, right:{whole:0,num:c,den:d2}, op:'÷', answer:fAns,
+    q_html: wrap(ts2[rand(0,ts2.length-1)]),
+    hint: divHint(a,b,c,d2) };
+}
+
 function genFractionAdd(d) {
   const easy = d === 'easy';
 
@@ -2676,6 +2816,7 @@ const TOPIC_GENERATORS = {
   'Zamiana liczb mieszanych na ułamki niewłaściwe': (d) => genImproperWrite(d),
   'Dodawanie i odejmowanie ułamków': (d) => genFractionAdd(d),
   'Mnożenie ułamków': (d) => genFractionMul(d),
+  'Dzielenie ułamków': (d) => genFractionDiv(d),
   'Ułamki zwykłe': (d) => {
     const denom = rand(2, d === 'easy' ? 6 : 12);
     const n1 = rand(1, denom - 1), n2 = rand(1, denom - 1);
@@ -7140,7 +7281,7 @@ function buildFractionAddHtml(q) {
 
 async function checkFractionAdd() {
   const q = state.currentQuestion;
-  if (!q || (q.type !== 'fraction_add' && q.type !== 'fraction_mul') || state.answerLocked) return;
+  if (!q || (q.type !== 'fraction_add' && q.type !== 'fraction_mul' && q.type !== 'fraction_div') || state.answerLocked) return;
   const ans = q.answer;
   const hintEl = document.getElementById('faHint');
   let uWhole = 0, uNum = 0, uDen = 1;
@@ -7550,7 +7691,7 @@ function loadQuestion() {
     } else if (q.type === 'mixed_write') {
       waArea.innerHTML = buildMixedWriteHtml(q);
       document.getElementById('mwWhole')?.focus();
-    } else if (q.type === 'fraction_add' || q.type === 'fraction_mul') {
+    } else if (q.type === 'fraction_add' || q.type === 'fraction_mul' || q.type === 'fraction_div') {
       waArea.innerHTML = buildFractionAddHtml(q);
       document.getElementById('faNum')?.focus() || document.getElementById('faWhole')?.focus();
     } else {
@@ -7961,7 +8102,7 @@ async function checkAnswer() {
   if (state.currentQuestion?.type === 'fraction_chain') { await checkFractionChain(); return; }
   if (state.currentQuestion?.type === 'improper_write') { await checkImproperWrite(); return; }
   if (state.currentQuestion?.type === 'mixed_write')    { await checkMixedWrite();    return; }
-  if (state.currentQuestion?.type === 'fraction_add' || state.currentQuestion?.type === 'fraction_mul') { await checkFractionAdd(); return; }
+  if (state.currentQuestion?.type === 'fraction_add' || state.currentQuestion?.type === 'fraction_mul' || state.currentQuestion?.type === 'fraction_div') { await checkFractionAdd(); return; }
   if (state.currentQuestion?.type === 'palindrome_fill') { await checkPalindromeFill(); return; }
 
   const input = document.getElementById('answerInput');
