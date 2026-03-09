@@ -2125,7 +2125,7 @@ function genFractionEqCheck(d) {
 }
 
 function mixedRectHtml(w, num, den) {
-  const cellW = Math.max(8, Math.min(22, Math.floor(100 / den)));
+  const cellW = Math.max(6, Math.min(22, Math.floor(96 / den)));
   const rW = den * cellW, h = 44, col = '#6366f1', brd = '#818cf8';
   const fullR = `<div style="width:${rW}px;height:${h}px;background:${col};border:2px solid ${brd};border-radius:4px"></div>`;
   const cells = Array.from({length: den}, (_, i) =>
@@ -2135,24 +2135,53 @@ function mixedRectHtml(w, num, den) {
   return `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:8px 0">${[...Array(w).fill(fullR), partR].join('')}</div>`;
 }
 
+function mixedCircleHtml(w, num, den) {
+  const r = 34, cx = 38, cy = 38, size = 76, col = '#6366f1', brd = '#818cf8';
+  function pieSvg(filled) {
+    if (filled === den) {
+      return `<svg width="${size}" height="${size}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" stroke="${brd}" stroke-width="2"/>${
+        Array.from({length: den}, (_, i) => {
+          const a = (i / den) * 2 * Math.PI - Math.PI / 2;
+          return `<line x1="${cx}" y1="${cy}" x2="${(cx + r * Math.cos(a)).toFixed(2)}" y2="${(cy + r * Math.sin(a)).toFixed(2)}" stroke="${brd}" stroke-width="1.5"/>`;
+        }).join('')
+      }</svg>`;
+    }
+    const slices = Array.from({length: den}, (_, i) => {
+      const a1 = (i / den) * 2 * Math.PI - Math.PI / 2;
+      const a2 = ((i + 1) / den) * 2 * Math.PI - Math.PI / 2;
+      const x1 = (cx + r * Math.cos(a1)).toFixed(2), y1 = (cy + r * Math.sin(a1)).toFixed(2);
+      const x2 = (cx + r * Math.cos(a2)).toFixed(2), y2 = (cy + r * Math.sin(a2)).toFixed(2);
+      const large = (1 / den) > 0.5 ? 1 : 0;
+      return `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z" fill="${i < filled ? col : 'transparent'}" stroke="${brd}" stroke-width="1.5"/>`;
+    }).join('');
+    return `<svg width="${size}" height="${size}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="transparent" stroke="${brd}" stroke-width="2"/>${slices}</svg>`;
+  }
+  const parts = [...Array(w).fill(pieSvg(den)), pieSvg(num)].join('');
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:8px 0">${parts}</div>`;
+}
+
 function genMixedWrite(d) {
   const easy = d === 'easy';
-  const denPool = easy ? [2, 3, 4] : [2, 3, 4, 5, 6, 8, 10];
+  // Pule mianowników: wizualne muszą być rozsądne, tekstowe/ułamkowe mogą być duże
+  const visualDens = easy ? [2, 3, 4, 5, 6] : [2, 3, 4, 5, 6, 8, 10, 12];
+  const wordDens   = easy ? [2, 3, 4, 5, 6, 8, 10] : [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 50];
+  const sub = rand(0, 2); // 0=słowne, 1=wizualne, 2=ułamek niewłaściwy
+  const denPool = sub === 1 ? visualDens : wordDens;
   const den = denPool[rand(0, denPool.length - 1)];
   const w = rand(1, easy ? 3 : 6);
   const num = rand(1, den - 1);
   const imp = w * den + num;
-  const sub = rand(0, 2);
 
   if (sub === 1) {
-    // Prostokąty
-    const q_html = `<div style="text-align:center">${mixedRectHtml(w, num, den)}<div style="color:#94a3b8;font-size:14px;margin-top:4px">Ile całości pokazuje rysunek?</div></div>`;
+    const useCircle = Math.random() < 0.5;
+    const fig = useCircle ? mixedCircleHtml(w, num, den) : mixedRectHtml(w, num, den);
+    const shape = useCircle ? 'koła' : 'prostokąty';
+    const q_html = `<div style="text-align:center">${fig}<div style="color:#94a3b8;font-size:14px;margin-top:4px">Ile całości pokazują ${shape}?</div></div>`;
     return { type: 'mixed_write', q_html, answer: { whole: w, num, den },
-      hint: `${w} całe prostokąty + ${qFrac(num, den)} kolejnego = ${w} i ${qFrac(num, den)}` };
+      hint: `${w} całe ${shape} + ${qFrac(num, den)} kolejnego = ${w} i ${qFrac(num, den)}` };
   }
 
   if (sub === 2) {
-    // Ułamek niewłaściwy → mieszana
     return { type: 'mixed_write',
       q_html: `<div style="text-align:center;font-size:20px;color:#e2e8f0">Zapisz jako liczbę mieszaną:<br><br>${qFrac(imp, den)}</div>`,
       answer: { whole: w, num, den },
