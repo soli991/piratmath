@@ -7857,18 +7857,19 @@ async function checkPalindromeFill() {
     state.isFirstAttempt = false;
     state.answerStreak = 0;
     state.mistakes++;
+    reportMistake();
     input.classList.add('wrong');
     playSound('wrong');
+    if (state.mistakes <= 3) document.getElementById(`dot${state.mistakes - 1}`).classList.add('used');
     const hintEl = document.getElementById('questionHintLine');
     if (state.mistakes >= 1 && q.hint && hintEl) hintEl.textContent = q.hint;
     if (state.mistakes >= 2 && q.hint2 && hintEl) hintEl.textContent = q.hint + '\n' + q.hint2;
-    if (state.mistakes >= 3) {
-      state.solutionShown = true;
-      if (hintEl) hintEl.textContent = (q.hint || '') + (q.hint2 ? '\n' + q.hint2 : '');
-    }
+    if (state.mistakes >= 3) state.solutionShown = true;
     let msg = !isCorrectLen ? `✗ Liczba powinna mieć ${len} cyfr.`
       : !fixedOk ? '✗ Stałe cyfry się nie zgadzają.'
       : '✗ To nie jest palindrom.';
+    const left = 3 - state.mistakes;
+    if (left > 0) msg += ` (${left} ${left === 1 ? 'szansa' : 'szanse'})`;
     showToast(msg, 'wrong');
     setTimeout(() => input.classList.remove('wrong'), 600);
   }
