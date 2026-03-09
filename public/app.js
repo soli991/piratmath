@@ -3346,14 +3346,17 @@ const TOPIC_GENERATORS = {
       const maxBlank = half - (len % 2 === 1 ? 2 : 1);
       const blankPos = rand(0, maxBlank);
       const mirrorPos = len - 1 - blankPos;
+      // pattern: array of digits (null = blank position)
+      const pattern = fullArr.map((d, i) => (i === blankPos || i === mirrorPos) ? null : d);
       const display = fullArr.map((d, i) => (i === blankPos || i === mirrorPos) ? '□' : String(d)).join('');
       const fullNum = parseInt(fullArr.join(''));
       return {
-        type: 'num_read',
+        type: 'palindrome_fill',
         q: `Uzupełnij liczbę, aby była palindromem:\n${display}\nZapisz uzupełnioną liczbę.`,
+        pattern,
         answer: fullNum,
         hint: `💡 Palindrom — liczba, która czyta się tak samo od lewej i od prawej (np. 12321).\nCyfra na pozycji ${posName(blankPos, len)} musi być taka sama jak cyfra na pozycji ${posName(mirrorPos, len)}.`,
-        hint2: `Uzupełniona liczba to: ${fmtNum(fullNum)}`
+        hint2: `Przykładowa odpowiedź: ${fmtNum(fullNum)}`
       };
     }
 
@@ -7741,6 +7744,60 @@ async function checkWrittenDivision() {
   }
 }
 
+async function checkPalindromeFill() {
+  const q = state.currentQuestion;
+  const input = document.getElementById('answerInput');
+  const raw = input.value.trim().replace(/\s/g, '');
+  if (!raw) { input.classList.add('wrong'); setTimeout(() => input.classList.remove('wrong'), 500); return; }
+  const digits = raw.split('').map(Number);
+  const len = q.pattern.length;
+  // Validate: correct length, fixed positions match, number is a palindrome
+  const isCorrectLen = digits.length === len;
+  const fixedOk = isCorrectLen && q.pattern.every((d, i) => d === null || digits[i] === d);
+  const isPalin = isCorrectLen && raw === raw.split('').reverse().join('');
+  const correct = isCorrectLen && fixedOk && isPalin;
+  if (correct) {
+    state.answerLocked = true;
+    input.classList.add('correct');
+    playSound('correct');
+    if (state.challengeActive) {
+      state.challengeCorrect++; state.answerStreak++;
+      document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      checkStreakBonus();
+      showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
+      setTimeout(() => { input.classList.remove('correct'); loadQuestion(); }, 350);
+    } else {
+      let pts = 0;
+      const wasFirst = state.isFirstAttempt && !state.solutionShown;
+      if (wasFirst) {
+        state.answerStreak++;
+        if (state.currentUser) { pts = await recordCorrect(state.currentTopic); showPointsPop(pts); updateStatsRow(); }
+      }
+      showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
+      setTimeout(() => { input.classList.remove('correct'); loadQuestion(); }, 700);
+    }
+    state.isFirstAttempt = false;
+  } else {
+    state.isFirstAttempt = false;
+    state.answerStreak = 0;
+    state.mistakes++;
+    input.classList.add('wrong');
+    playSound('wrong');
+    const hintEl = document.getElementById('questionHintLine');
+    if (state.mistakes >= 1 && q.hint && hintEl) hintEl.textContent = q.hint;
+    if (state.mistakes >= 2 && q.hint2 && hintEl) hintEl.textContent = q.hint + '\n' + q.hint2;
+    if (state.mistakes >= 3) {
+      state.solutionShown = true;
+      if (hintEl) hintEl.textContent = (q.hint || '') + (q.hint2 ? '\n' + q.hint2 : '');
+    }
+    let msg = !isCorrectLen ? `✗ Liczba powinna mieć ${len} cyfr.`
+      : !fixedOk ? '✗ Stałe cyfry się nie zgadzają.'
+      : '✗ To nie jest palindrom.';
+    showToast(msg, 'wrong');
+    setTimeout(() => input.classList.remove('wrong'), 600);
+  }
+}
+
 async function checkAnswer() {
   if (state.answerLocked) return;
   if (state.currentQuestion?.type === 'written-addition' ||
@@ -7769,6 +7826,7 @@ async function checkAnswer() {
   if (state.currentQuestion?.type === 'improper_write') { await checkImproperWrite(); return; }
   if (state.currentQuestion?.type === 'mixed_write')    { await checkMixedWrite();    return; }
   if (state.currentQuestion?.type === 'fraction_add' || state.currentQuestion?.type === 'fraction_mul') { await checkFractionAdd(); return; }
+  if (state.currentQuestion?.type === 'palindrome_fill') { await checkPalindromeFill(); return; }
 
   const input = document.getElementById('answerInput');
 
