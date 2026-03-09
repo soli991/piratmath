@@ -2256,6 +2256,91 @@ function genImproperWrite(d) {
     hint: `${w} × ${den} + ${num} = ${imp}. Mianownik zostaje ${den}.` };
 }
 
+function genFractionMul(d) {
+  const easy = d === 'easy';
+
+  function norm(num, den) {
+    if (num === 0) return { whole: 0, num: 0, den: 1, atype: 'whole' };
+    const g = gcdOf(num, den); num /= g; den /= g;
+    if (num % den === 0) return { whole: num / den, num: 0, den: 1, atype: 'whole' };
+    if (num > den) { const w = Math.floor(num / den), r = num % den, g2 = gcdOf(r, den); return { whole: w, num: r / g2, den: den / g2, atype: 'mixed' }; }
+    return { whole: 0, num, den, atype: 'proper' };
+  }
+
+  if (easy) {
+    if (Math.random() < 0.5) {
+      // Proper × proper
+      const dens = [2, 3, 4, 5, 6];
+      const b = dens[rand(0, dens.length-1)], d2 = dens[rand(0, dens.length-1)];
+      const a = rand(1, b-1), c = rand(1, d2-1);
+      const ans = norm(a*c, b*d2);
+      const g = gcdOf(a*c, b*d2);
+      return { type: 'fraction_mul', left: {whole:0,num:a,den:b}, right: {whole:0,num:c,den:d2}, op: '×', answer: ans,
+        hint: `Liczniki: ${a}×${c}=${a*c}. Mianowniki: ${b}×${d2}=${b*d2}.${g>1?' Skróć przez '+g+'.':''}` };
+    } else {
+      // Ułamek × liczba całkowita
+      const dens = [2, 3, 4, 5, 6];
+      const b = dens[rand(0, dens.length-1)], n = rand(2, 8), a = rand(1, b-1);
+      const ans = norm(a*n, b);
+      const g = gcdOf(a*n, b);
+      return { type: 'fraction_mul', left: {whole:0,num:a,den:b}, right: {whole:n,num:0,den:1}, op: '×', answer: ans,
+        hint: `Mnożysz licznik: ${a}×${n}=${a*n}. Mianownik ${b} zostaje.${g>1?' Skróć przez '+g+'.':''}` };
+    }
+  }
+
+  const sub = rand(0, 4);
+
+  if (sub === 0) {
+    // Proper × proper, większe mianowniki
+    const dens = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12];
+    const b = dens[rand(0, dens.length-1)], d2 = dens[rand(0, dens.length-1)];
+    const a = rand(1, b-1), c = rand(1, d2-1);
+    const ans = norm(a*c, b*d2);
+    const g = gcdOf(a*c, b*d2);
+    return { type: 'fraction_mul', left: {whole:0,num:a,den:b}, right: {whole:0,num:c,den:d2}, op: '×', answer: ans,
+      hint: `Liczniki: ${a}×${c}=${a*c}. Mianowniki: ${b}×${d2}=${b*d2}.${g>1?' Skróć przez '+g+': '+(a*c/g)+'/'+(b*d2/g)+'.':''}` };
+  }
+
+  if (sub === 1) {
+    // Ułamek × większa liczba całkowita
+    const dens = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const b = dens[rand(0, dens.length-1)], n = rand(2, 15), a = rand(1, b-1);
+    const ans = norm(a*n, b);
+    const g = gcdOf(a*n, b);
+    return { type: 'fraction_mul', left: {whole:0,num:a,den:b}, right: {whole:n,num:0,den:1}, op: '×', answer: ans,
+      hint: `Mnożysz licznik: ${a}×${n}=${a*n}. Mianownik ${b} zostaje.${g>1?' Skróć przez '+g+'.':''}` };
+  }
+
+  if (sub === 2) {
+    // Mieszana × ułamek właściwy
+    const dens = [2, 3, 4, 5, 6];
+    const b = dens[rand(0, dens.length-1)], d2 = dens[rand(0, dens.length-1)];
+    const wL = rand(1, 4), aL = rand(1, b-1), c = rand(1, d2-1);
+    const impL = wL*b + aL, resNum = impL*c, resDen = b*d2, g = gcdOf(resNum, resDen);
+    return { type: 'fraction_mul', left: {whole:wL,num:aL,den:b}, right: {whole:0,num:c,den:d2}, op: '×', answer: norm(resNum, resDen),
+      hint: `Zamień: ${wL} ${aL}/${b} = ${impL}/${b}. Potem ${impL}×${c}=${resNum}, ${b}×${d2}=${resDen}.${g>1?' Skróć przez '+g+'.':''}` };
+  }
+
+  if (sub === 3) {
+    // Mieszana × liczba całkowita
+    const dens = [2, 3, 4, 5, 6, 8];
+    const b = dens[rand(0, dens.length-1)], n = rand(2, 8);
+    const wL = rand(1, 4), aL = rand(1, b-1), impL = wL*b + aL;
+    const g = gcdOf(impL*n, b);
+    return { type: 'fraction_mul', left: {whole:wL,num:aL,den:b}, right: {whole:n,num:0,den:1}, op: '×', answer: norm(impL*n, b),
+      hint: `Zamień: ${wL} ${aL}/${b} = ${impL}/${b}. Potem ${impL}×${n}=${impL*n}, mianownik ${b}.${g>1?' Skróć przez '+g+'.':''}` };
+  }
+
+  // sub === 4: mieszana × mieszana
+  const dens = [2, 3, 4, 5];
+  const b = dens[rand(0, dens.length-1)], d2 = dens[rand(0, dens.length-1)];
+  const wL = rand(1, 3), aL = rand(1, b-1), wR = rand(1, 3), cR = rand(1, d2-1);
+  const impL = wL*b + aL, impR = wR*d2 + cR;
+  const resNum = impL*impR, resDen = b*d2, g = gcdOf(resNum, resDen);
+  return { type: 'fraction_mul', left: {whole:wL,num:aL,den:b}, right: {whole:wR,num:cR,den:d2}, op: '×', answer: norm(resNum, resDen),
+    hint: `Zamień: ${wL} ${aL}/${b}=${impL}/${b}, ${wR} ${cR}/${d2}=${impR}/${d2}. Potem ${impL}×${impR}=${resNum}, ${b}×${d2}=${resDen}.${g>1?' Skróć przez '+g+'.':''}` };
+}
+
 function genFractionAdd(d) {
   const easy = d === 'easy';
 
@@ -2476,6 +2561,7 @@ const TOPIC_GENERATORS = {
   'Zapisywanie liczby mieszanej': (d) => genMixedWrite(d),
   'Zamiana liczb mieszanych na ułamki niewłaściwe': (d) => genImproperWrite(d),
   'Dodawanie i odejmowanie ułamków': (d) => genFractionAdd(d),
+  'Mnożenie ułamków': (d) => genFractionMul(d),
   'Ułamki zwykłe': (d) => {
     const denom = rand(2, d === 'easy' ? 6 : 12);
     const n1 = rand(1, denom - 1), n2 = rand(1, denom - 1);
@@ -6769,7 +6855,7 @@ function buildFractionAddHtml(q) {
 
 async function checkFractionAdd() {
   const q = state.currentQuestion;
-  if (!q || q.type !== 'fraction_add' || state.answerLocked) return;
+  if (!q || (q.type !== 'fraction_add' && q.type !== 'fraction_mul') || state.answerLocked) return;
   const ans = q.answer;
   const hintEl = document.getElementById('faHint');
   let uWhole = 0, uNum = 0, uDen = 1;
@@ -7079,7 +7165,7 @@ function loadQuestion() {
   const hintLine = document.getElementById('questionHintLine');
   if (hintLine) hintLine.style.display = 'none';
 
-  const isWA = q.type === 'written-addition' || q.type === 'written-subtraction' || q.type === 'written-multiplication' || q.type === 'written-division' || q.type === 'rounding' || q.type === 'comparison' || q.type === 'divisibility' || q.type === 'power' || q.type === 'order_ops' || q.type === 'num_write' || q.type === 'function_q' || q.type === 'sqrt_bounds' || q.type === 'prime_factors' || q.type === 'nwd' || q.type === 'nww' || q.type === 'abs_value' || q.type === 'int_compare' || q.type === 'int_order' || q.type === 'div_rem' || q.type === 'fraction_read' || q.type === 'fraction_compare' || q.type === 'fraction_op' || q.type === 'fraction_eq_check' || q.type === 'fraction_chain' || q.type === 'fraction_fill' || q.type === 'fraction_add' || q.type === 'mixed_write' || q.type === 'improper_write';
+  const isWA = q.type === 'written-addition' || q.type === 'written-subtraction' || q.type === 'written-multiplication' || q.type === 'written-division' || q.type === 'rounding' || q.type === 'comparison' || q.type === 'divisibility' || q.type === 'power' || q.type === 'order_ops' || q.type === 'num_write' || q.type === 'function_q' || q.type === 'sqrt_bounds' || q.type === 'prime_factors' || q.type === 'nwd' || q.type === 'nww' || q.type === 'abs_value' || q.type === 'int_compare' || q.type === 'int_order' || q.type === 'div_rem' || q.type === 'fraction_read' || q.type === 'fraction_compare' || q.type === 'fraction_op' || q.type === 'fraction_eq_check' || q.type === 'fraction_chain' || q.type === 'fraction_fill' || q.type === 'fraction_add' || q.type === 'fraction_mul' || q.type === 'mixed_write' || q.type === 'improper_write';
   const questionText = document.getElementById('questionText');
   const answerInput  = document.getElementById('answerInput');
   const waArea       = document.getElementById('writtenAddArea');
@@ -7179,7 +7265,7 @@ function loadQuestion() {
     } else if (q.type === 'mixed_write') {
       waArea.innerHTML = buildMixedWriteHtml(q);
       document.getElementById('mwWhole')?.focus();
-    } else if (q.type === 'fraction_add') {
+    } else if (q.type === 'fraction_add' || q.type === 'fraction_mul') {
       waArea.innerHTML = buildFractionAddHtml(q);
       document.getElementById('faNum')?.focus() || document.getElementById('faWhole')?.focus();
     } else {
@@ -7532,7 +7618,7 @@ async function checkAnswer() {
   if (state.currentQuestion?.type === 'fraction_chain') { await checkFractionChain(); return; }
   if (state.currentQuestion?.type === 'improper_write') { await checkImproperWrite(); return; }
   if (state.currentQuestion?.type === 'mixed_write')    { await checkMixedWrite();    return; }
-  if (state.currentQuestion?.type === 'fraction_add')   { await checkFractionAdd();   return; }
+  if (state.currentQuestion?.type === 'fraction_add' || state.currentQuestion?.type === 'fraction_mul') { await checkFractionAdd(); return; }
 
   const input = document.getElementById('answerInput');
 
