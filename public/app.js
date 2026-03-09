@@ -7864,7 +7864,10 @@ async function checkPalindromeFill() {
     const hintEl = document.getElementById('questionHintLine');
     if (state.mistakes >= 1 && q.hint && hintEl) hintEl.textContent = q.hint;
     if (state.mistakes >= 2 && q.hint2 && hintEl) hintEl.textContent = q.hint + '\n' + q.hint2;
-    if (state.mistakes >= 3) state.solutionShown = true;
+    if (state.mistakes >= 3) {
+      state.solutionShown = true;
+      if (hintEl) hintEl.textContent = `📋 Odpowiedź: ${fmtNum(q.answer)} — przepisz i kliknij Sprawdź`;
+    }
     let msg = !isCorrectLen ? `✗ Liczba powinna mieć ${len} cyfr.`
       : !fixedOk ? '✗ Stałe cyfry się nie zgadzają.'
       : '✗ To nie jest palindrom.';
