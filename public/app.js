@@ -2288,7 +2288,7 @@ function genFractionMul(d) {
     }
   }
 
-  const sub = rand(0, 4);
+  const sub = rand(0, 5);
 
   if (sub === 0) {
     // Proper × proper, większe mianowniki
@@ -2331,14 +2331,72 @@ function genFractionMul(d) {
       hint: `Zamień: ${wL} ${aL}/${b} = ${impL}/${b}. Potem ${impL}×${n}=${impL*n}, mianownik ${b}.${g>1?' Skróć przez '+g+'.':''}` };
   }
 
-  // sub === 4: mieszana × mieszana
-  const dens = [2, 3, 4, 5];
+  if (sub === 4) {
+    // Mieszana × mieszana
+    const dens = [2, 3, 4, 5];
+    const b = dens[rand(0, dens.length-1)], d2 = dens[rand(0, dens.length-1)];
+    const wL = rand(1, 3), aL = rand(1, b-1), wR = rand(1, 3), cR = rand(1, d2-1);
+    const impL = wL*b + aL, impR = wR*d2 + cR;
+    const resNum = impL*impR, resDen = b*d2, g = gcdOf(resNum, resDen);
+    return { type: 'fraction_mul', left: {whole:wL,num:aL,den:b}, right: {whole:wR,num:cR,den:d2}, op: '×', answer: norm(resNum, resDen),
+      hint: `Zamień: ${wL} ${aL}/${b}=${impL}/${b}, ${wR} ${cR}/${d2}=${impR}/${d2}. Potem ${impL}×${impR}=${resNum}, ${b}×${d2}=${resDen}.${g>1?' Skróć przez '+g+'.':''}` };
+  }
+
+  // sub === 5: zadanie tekstowe
+  const names = ['Bartek', 'Tomek', 'Kacper', 'Marek', 'Łukasz'];
+  const name = names[rand(0, names.length - 1)];
+  const wordKind = rand(0, 2);
+  const wrap = t => `<div style="text-align:center;max-width:420px;margin:0 auto;line-height:1.6">${t}</div>`;
+
+  if (wordKind === 0) {
+    // Zliczanie — wynik całkowity (n = k×b, żeby a×n/b = a×k)
+    const dens = [2, 3, 4, 5, 6, 7, 8];
+    const b = dens[rand(0, dens.length-1)], a = rand(1, b-1), k = rand(2, 8), nb = k * b;
+    const ans = norm(a * nb, b); // zawsze całkowita
+    const ts = [
+      `W klasie jest ${nb} uczniów. ${qFrac(a, b)} klasy jedzie na wycieczkę. Ile uczniów jedzie?`,
+      `Na parkingu stoi ${nb} samochodów. ${qFrac(a, b)} z nich to elektryczne. Ile samochodów elektrycznych stoi na parkingu?`,
+      `Biblioteka ma ${nb} książek. ${qFrac(a, b)} to powieści. Ile powieści ma biblioteka?`,
+      `Na zawodach startuje ${nb} drużyn. ${qFrac(a, b)} drużyn przeszło do finału. Ile drużyn gra w finale?`,
+      `Sklep ma ${nb} produktów. ${qFrac(a, b)} to produkty przecenione. Ile produktów jest przecenionych?`,
+    ];
+    return { type: 'fraction_mul', left: {whole:0,num:a,den:b}, right: {whole:nb,num:0,den:1}, op: '×', answer: ans,
+      q_html: wrap(ts[rand(0, ts.length-1)]),
+      hint: `${qFrac(a, b)} × ${nb} = ${a*nb}/${b} = ${a*k}` };
+  }
+
+  if (wordKind === 1) {
+    // Miara — ułamek × liczba całkowita
+    const dens = [2, 3, 4, 5, 6, 7, 8];
+    const b = dens[rand(0, dens.length-1)], a = rand(1, b-1), n = rand(2, 12);
+    const ans = norm(a * n, b);
+    const g = gcdOf(a * n, b);
+    const ts = [
+      `Trasa ma ${n} km. ${name} przebiegł ${qFrac(a, b)} tej trasy. Ile kilometrów przebiegł ${name}?`,
+      `Ogrodnik ma ${n} metrów siatki. Użył ${qFrac(a, b)} siatki na ogrodzenie. Ile metrów zużył?`,
+      `Zbiornik mieści ${n} litrów. Wypełniono ${qFrac(a, b)} zbiornika. Ile litrów wlano?`,
+      `Tkanina kosztuje ${n} zł za metr. ${name} kupił ${qFrac(a, b)} metra. Ile zapłacił?`,
+    ];
+    return { type: 'fraction_mul', left: {whole:0,num:a,den:b}, right: {whole:n,num:0,den:1}, op: '×', answer: ans,
+      q_html: wrap(ts[rand(0, ts.length-1)]),
+      hint: `${a}×${n}=${a*n}, mianownik ${b}.${g>1?' Skróć przez '+g+': '+(a*n/g)+'/'+(b/g)+'.':''}` };
+  }
+
+  // wordKind === 2: ułamek × ułamek
+  const dens = [2, 3, 4, 5, 6, 7, 8];
   const b = dens[rand(0, dens.length-1)], d2 = dens[rand(0, dens.length-1)];
-  const wL = rand(1, 3), aL = rand(1, b-1), wR = rand(1, 3), cR = rand(1, d2-1);
-  const impL = wL*b + aL, impR = wR*d2 + cR;
-  const resNum = impL*impR, resDen = b*d2, g = gcdOf(resNum, resDen);
-  return { type: 'fraction_mul', left: {whole:wL,num:aL,den:b}, right: {whole:wR,num:cR,den:d2}, op: '×', answer: norm(resNum, resDen),
-    hint: `Zamień: ${wL} ${aL}/${b}=${impL}/${b}, ${wR} ${cR}/${d2}=${impR}/${d2}. Potem ${impL}×${impR}=${resNum}, ${b}×${d2}=${resDen}.${g>1?' Skróć przez '+g+'.':''}` };
+  const a = rand(1, b-1), c = rand(1, d2-1);
+  const resNum = a * c, resDen = b * d2, g = gcdOf(resNum, resDen);
+  const ans = norm(resNum, resDen);
+  const ts = [
+    `Działka ma ${qFrac(c, d2)} hektara. ${qFrac(a, b)} działki przeznaczono na ogród. Ile hektarów zajmuje ogród?`,
+    `Rura ma ${qFrac(c, d2)} metra długości. Robotnicy zamontowali ${qFrac(a, b)} tej rury. Ile metrów zamontowali?`,
+    `Butelka zawiera ${qFrac(c, d2)} litra soku. ${name} wypił ${qFrac(a, b)} butelki. Ile litrów soku wypił ${name}?`,
+    `Ścieżka ma ${qFrac(c, d2)} km. ${name} przeszedł ${qFrac(a, b)} ścieżki. Ile kilometrów przeszedł?`,
+  ];
+  return { type: 'fraction_mul', left: {whole:0,num:a,den:b}, right: {whole:0,num:c,den:d2}, op: '×', answer: ans,
+    q_html: wrap(ts[rand(0, ts.length-1)]),
+    hint: `Liczniki: ${a}×${c}=${resNum}. Mianowniki: ${b}×${d2}=${resDen}.${g>1?' Skróć przez '+g+': '+(resNum/g)+'/'+(resDen/g)+'.':''}` };
 }
 
 function genFractionAdd(d) {
@@ -6844,6 +6902,15 @@ function buildFractionAddHtml(q) {
     ansHtml = `<div class="fc-mixed">${mkInp('faWhole', ans.whole)}${fracEl(mkInp('faNum', ans.num), mkInp('faDen', ans.den))}</div>`;
   } else {
     ansHtml = fracEl(mkInp('faNum', ans.num), mkInp('faDen', ans.den));
+  }
+  if (q.q_html) {
+    return `<div class="fc-chain-wrap">
+      <div style="margin-bottom:14px">${q.q_html}</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+        <span style="color:#94a3b8;font-size:15px">Odpowiedź:</span>${ansHtml}
+      </div>
+      <div id="faHint" class="ic-hint" style="display:none"></div>
+    </div>`;
   }
   return `<div class="fc-chain-wrap">
     <div class="fc-chain-row">
