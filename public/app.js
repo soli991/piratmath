@@ -3346,15 +3346,14 @@ const TOPIC_GENERATORS = {
       const maxBlank = half - (len % 2 === 1 ? 2 : 1);
       const blankPos = rand(0, maxBlank);
       const mirrorPos = len - 1 - blankPos;
-      const answer = fullArr[blankPos];
       const display = fullArr.map((d, i) => (i === blankPos || i === mirrorPos) ? '□' : String(d)).join('');
-      const full = fullArr.join('');
+      const fullNum = parseInt(fullArr.join(''));
       return {
         type: 'num_read',
-        q: `Uzupełnij liczbę, aby była palindromem:\n${display}\nJaka cyfra zastępuje □?`,
-        answer,
+        q: `Uzupełnij liczbę, aby była palindromem:\n${display}\nZapisz uzupełnioną liczbę.`,
+        answer: fullNum,
         hint: `💡 Palindrom — liczba, która czyta się tak samo od lewej i od prawej (np. 12321).\nCyfra na pozycji ${posName(blankPos, len)} musi być taka sama jak cyfra na pozycji ${posName(mirrorPos, len)}.`,
-        hint2: `Uzupełniona liczba to: ${full}`
+        hint2: `Uzupełniona liczba to: ${fmtNum(fullNum)}`
       };
     }
 
