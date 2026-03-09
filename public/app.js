@@ -1664,6 +1664,9 @@ function setDifficulty(diff, el) {
   state.currentDifficulty = diff;
   state.mistakes = 0;
 
+  const nextBtn = document.getElementById('nextExampleBtn');
+  if (nextBtn) nextBtn.style.display = diff === 'easy' ? '' : 'none';
+
   if (diff === 'challenge') {
     stopChallenge();
     showChallengeSetup();
@@ -8576,7 +8579,7 @@ async function endPvpTurn() {
   const nextBtn  = document.getElementById('nextExampleBtn');
   const banner   = document.getElementById('pvpExerciseBanner');
   if (diffTabs) diffTabs.style.display = '';
-  if (nextBtn)  nextBtn.style.display  = '';
+  if (nextBtn)  nextBtn.style.display  = state.currentDifficulty === 'easy' ? '' : 'none';
   if (banner)   banner.style.display   = 'none';
 
   const data = await api('POST', '/api/pvp/end-turn').catch(() => null);
