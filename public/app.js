@@ -4,12 +4,42 @@
 
 function ratSqueak() {
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const squeaks = [
-    { t: 0,    f0: 2800, f1: 4200, dur: 0.08 },
-    { t: 0.11, f0: 3200, f1: 2400, dur: 0.07 },
-    { t: 0.20, f0: 3800, f1: 4800, dur: 0.06 },
+
+  // Each variant: array of note objects { t, f0, f1, dur, vol? }
+  const variants = [
+    // 1. Krótki przestraszony pisk w górę
+    [{ t: 0, f0: 2600, f1: 4800, dur: 0.09 }],
+
+    // 2. Podwójny pisk (pytajnik)
+    [{ t: 0, f0: 3000, f1: 4200, dur: 0.07 },
+     { t: 0.12, f0: 3000, f1: 4500, dur: 0.07 }],
+
+    // 3. Opadający pisk (niezadowolony)
+    [{ t: 0, f0: 4500, f1: 2200, dur: 0.12 }],
+
+    // 4. Potrójny szybki pisk (podekscytowany)
+    [{ t: 0,    f0: 3200, f1: 4000, dur: 0.05 },
+     { t: 0.08, f0: 3400, f1: 4200, dur: 0.05 },
+     { t: 0.16, f0: 3600, f1: 4600, dur: 0.05 }],
+
+    // 5. Falujący (góra-dół-góra)
+    [{ t: 0,    f0: 3000, f1: 4400, dur: 0.07 },
+     { t: 0.10, f0: 4400, f1: 2800, dur: 0.07 },
+     { t: 0.20, f0: 2800, f1: 4200, dur: 0.06 }],
+
+    // 6. Długi przeciągły pisk
+    [{ t: 0, f0: 3400, f1: 3800, dur: 0.22, vol: 0.2 }],
+
+    // 7. Gwałtowny krótki pisk (zaskoczony)
+    [{ t: 0, f0: 1800, f1: 5200, dur: 0.07, vol: 0.35 }],
+
+    // 8. Dwa opadające (zrezygnowany)
+    [{ t: 0,    f0: 4200, f1: 2600, dur: 0.10 },
+     { t: 0.15, f0: 3800, f1: 2200, dur: 0.10 }],
   ];
-  squeaks.forEach(({ t, f0, f1, dur }) => {
+
+  const notes = variants[Math.floor(Math.random() * variants.length)];
+  notes.forEach(({ t, f0, f1, dur, vol = 0.28 }) => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain); gain.connect(ctx.destination);
@@ -17,10 +47,10 @@ function ratSqueak() {
     const start = ctx.currentTime + t;
     osc.frequency.setValueAtTime(f0, start);
     osc.frequency.exponentialRampToValueAtTime(f1, start + dur);
-    gain.gain.setValueAtTime(0.28, start);
-    gain.gain.exponentialRampToValueAtTime(0.001, start + dur + 0.02);
+    gain.gain.setValueAtTime(vol, start);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + dur + 0.03);
     osc.start(start);
-    osc.stop(start + dur + 0.03);
+    osc.stop(start + dur + 0.04);
   });
 }
 
