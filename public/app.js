@@ -2211,6 +2211,43 @@ function genMixedWrite(d) {
     answer: { whole: w, num, den }, hint };
 }
 
+function genImproperWrite(d) {
+  const easy = d === 'easy';
+  const visualDens = easy ? [2,3,4,5,6] : [2,3,4,5,6,8,10,12];
+  const wordDens   = easy ? [2,3,4,5,6,8,10] : [2,3,4,5,6,7,8,9,10,12,15,20,25,30,50];
+  const sub = rand(0, 2);
+  const den = (sub === 1 ? visualDens : wordDens)[rand(0, (sub === 1 ? visualDens : wordDens).length - 1)];
+  const w = rand(1, easy ? 3 : 6), num = rand(1, den - 1), imp = w * den + num;
+
+  if (sub === 1) {
+    const useCircle = Math.random() < 0.5;
+    const fig = useCircle ? mixedCircleHtml(w, num, den) : mixedRectHtml(w, num, den);
+    const q_html = `<div style="text-align:center">${fig}<div style="color:#94a3b8;font-size:14px;margin-top:4px">Zapisz jako ułamek niewłaściwy.</div></div>`;
+    return { type: 'improper_write', q_html, answer: { num: imp, den },
+      hint: `${w} całych × ${den} = ${w*den}. Plus ${num}: ${w*den}+${num}=${imp}. Mianownik: ${den}.` };
+  }
+
+  if (sub === 2) {
+    const names = ['Bartek', 'Tomek', 'Kacper', 'Marek', 'Łukasz'];
+    const name = names[rand(0, names.length - 1)];
+    const texts = [
+      `${name} ma ${w} całe pizze i jeszcze ${qFrac(num, den)} pizzy. Każdą pizzę podzielono na ${den} kawałki. Ile kawałków łącznie ma ${name}? Podaj jako ułamek.`,
+      `${name} przebiegł ${w} całe okrążenia i jeszcze ${qFrac(num, den)} okrążenia. Ile okrążeń przebiegł łącznie? Podaj jako ułamek niewłaściwy.`,
+    ];
+    return { type: 'improper_write',
+      q_html: `<div style="text-align:center;max-width:400px;margin:0 auto;line-height:1.6">${texts[rand(0,1)]}</div>`,
+      answer: { num: imp, den },
+      hint: `${w} × ${den} = ${w*den}, plus ${num} = ${imp}. Odpowiedź: ${qFrac(imp, den)}.` };
+  }
+
+  // sub === 0: pokazana liczba mieszana → zamień
+  const mixDisp = `<div class="fc-mixed" style="font-size:28px;justify-content:center"><span class="fc-whole">${w}</span><div class="fc-frac"><span class="fc-top">${num}</span><span class="fc-bar"></span><span class="fc-bot">${den}</span></div></div>`;
+  return { type: 'improper_write',
+    q_html: `<div style="text-align:center">Zamień na ułamek niewłaściwy:<br><br>${mixDisp}</div>`,
+    answer: { num: imp, den },
+    hint: `${w} × ${den} + ${num} = ${imp}. Mianownik zostaje ${den}.` };
+}
+
 function genFractionAdd(d) {
   const easy = d === 'easy';
 
@@ -2429,6 +2466,7 @@ const TOPIC_GENERATORS = {
     return genFractionEqCheck(d);
   },
   'Zapisywanie liczby mieszanej': (d) => genMixedWrite(d),
+  'Zamiana liczb mieszanych na ułamki niewłaściwe': (d) => genImproperWrite(d),
   'Dodawanie i odejmowanie ułamków': (d) => genFractionAdd(d),
   'Ułamki zwykłe': (d) => {
     const denom = rand(2, d === 'easy' ? 6 : 12);
@@ -6566,6 +6604,67 @@ async function checkFractionFill() {
   }
 }
 
+function buildImproperWriteHtml(q) {
+  const solved = q.solutionShown;
+  const ans = q.answer;
+  const fracEl = (top, bot) =>
+    `<div class="fc-frac"><span class="fc-top">${top}</span><span class="fc-bar"></span><span class="fc-bot">${bot}</span></div>`;
+  const mkInp = (id, val) =>
+    `<input id="${id}" class="fr-input fc-chain-inp" type="number" min="1"${solved ? ` value="${val}" disabled` : ''} onkeydown="if(event.key==='Enter')checkAnswer()">`;
+  return `<div class="fc-chain-wrap">
+    <div style="margin-bottom:14px">${q.q_html}</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+      <span style="color:#94a3b8;font-size:15px">Odpowiedź:</span>${fracEl(mkInp('iwNum', ans.num), mkInp('iwDen', ans.den))}
+    </div>
+    <div id="iwHint" class="ic-hint" style="display:none"></div>
+  </div>`;
+}
+
+async function checkImproperWrite() {
+  const q = state.currentQuestion;
+  if (!q || q.type !== 'improper_write' || state.answerLocked) return;
+  const ans = q.answer;
+  const hintEl = document.getElementById('iwHint');
+  const uNum = parseInt(document.getElementById('iwNum')?.value) || 0;
+  const uDen = parseInt(document.getElementById('iwDen')?.value) || 0;
+  if (uDen === 0) { showToast('Podaj mianownik!', 'wrong'); return; }
+  const correct = uNum * ans.den === ans.num * uDen;
+  if (correct) {
+    state.answerLocked = true;
+    playSound('correct');
+    ['iwNum', 'iwDen'].forEach(id => document.getElementById(id)?.classList.add('correct'));
+    let pts = 0;
+    const wasFirst = state.isFirstAttempt && !state.solutionShown;
+    if (wasFirst) {
+      state.answerStreak++;
+      if (state.currentUser) { pts = await recordCorrect(state.currentTopic); showPointsPop(pts); updateStatsRow(); checkStreakBonus(); }
+    }
+    reportComeback();
+    const suf = wasFirst ? streakSuffix(state.answerStreak) : '';
+    showToast(pts > 0 ? `✓ Brawo! +${pts} pkt${suf}` : `✓ Brawo!${suf}`, 'correct');
+    setTimeout(() => loadQuestion(), 400);
+  } else {
+    state.mistakes++;
+    state.isFirstAttempt = false;
+    state.answerStreak = 0;
+    reportMistake();
+    playSound('wrong');
+    if (state.mistakes <= 3) document.getElementById(`dot${state.mistakes - 1}`)?.classList.add('used');
+    ['iwNum', 'iwDen'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.classList.add('wrong'); setTimeout(() => el.classList.remove('wrong'), 600); }
+    });
+    if (state.mistakes === 3) {
+      state.solutionShown = true;
+      if (hintEl) { hintEl.innerHTML = `📋 Odpowiedź: <strong>${ans.num}/${ans.den}</strong> — przepisz i kliknij Sprawdź`; hintEl.style.display = ''; }
+    } else if (state.mistakes < 3 && hintEl && q.hint) {
+      hintEl.innerHTML = `💡 ${q.hint}`; hintEl.style.display = '';
+    } else if (state.mistakes < 3) {
+      showToast('✗ Spróbuj jeszcze raz!', 'wrong');
+    }
+  }
+}
+
 function buildMixedWriteHtml(q) {
   const solved = q.solutionShown;
   const ans = q.answer;
@@ -6972,7 +7071,7 @@ function loadQuestion() {
   const hintLine = document.getElementById('questionHintLine');
   if (hintLine) hintLine.style.display = 'none';
 
-  const isWA = q.type === 'written-addition' || q.type === 'written-subtraction' || q.type === 'written-multiplication' || q.type === 'written-division' || q.type === 'rounding' || q.type === 'comparison' || q.type === 'divisibility' || q.type === 'power' || q.type === 'order_ops' || q.type === 'num_write' || q.type === 'function_q' || q.type === 'sqrt_bounds' || q.type === 'prime_factors' || q.type === 'nwd' || q.type === 'nww' || q.type === 'abs_value' || q.type === 'int_compare' || q.type === 'int_order' || q.type === 'div_rem' || q.type === 'fraction_read' || q.type === 'fraction_compare' || q.type === 'fraction_op' || q.type === 'fraction_eq_check' || q.type === 'fraction_chain' || q.type === 'fraction_fill' || q.type === 'fraction_add' || q.type === 'mixed_write';
+  const isWA = q.type === 'written-addition' || q.type === 'written-subtraction' || q.type === 'written-multiplication' || q.type === 'written-division' || q.type === 'rounding' || q.type === 'comparison' || q.type === 'divisibility' || q.type === 'power' || q.type === 'order_ops' || q.type === 'num_write' || q.type === 'function_q' || q.type === 'sqrt_bounds' || q.type === 'prime_factors' || q.type === 'nwd' || q.type === 'nww' || q.type === 'abs_value' || q.type === 'int_compare' || q.type === 'int_order' || q.type === 'div_rem' || q.type === 'fraction_read' || q.type === 'fraction_compare' || q.type === 'fraction_op' || q.type === 'fraction_eq_check' || q.type === 'fraction_chain' || q.type === 'fraction_fill' || q.type === 'fraction_add' || q.type === 'mixed_write' || q.type === 'improper_write';
   const questionText = document.getElementById('questionText');
   const answerInput  = document.getElementById('answerInput');
   const waArea       = document.getElementById('writtenAddArea');
@@ -7066,6 +7165,9 @@ function loadQuestion() {
     } else if (q.type === 'fraction_chain') {
       waArea.innerHTML = buildFractionChainHtml(q);
       document.getElementById('fcInput')?.focus();
+    } else if (q.type === 'improper_write') {
+      waArea.innerHTML = buildImproperWriteHtml(q);
+      document.getElementById('iwNum')?.focus();
     } else if (q.type === 'mixed_write') {
       waArea.innerHTML = buildMixedWriteHtml(q);
       document.getElementById('mwWhole')?.focus();
@@ -7420,6 +7522,7 @@ async function checkAnswer() {
   if (state.currentQuestion?.type === 'fraction_op')    { await checkFractionOp();    return; }
   if (state.currentQuestion?.type === 'fraction_fill')  { await checkFractionFill();  return; }
   if (state.currentQuestion?.type === 'fraction_chain') { await checkFractionChain(); return; }
+  if (state.currentQuestion?.type === 'improper_write') { await checkImproperWrite(); return; }
   if (state.currentQuestion?.type === 'mixed_write')    { await checkMixedWrite();    return; }
   if (state.currentQuestion?.type === 'fraction_add')   { await checkFractionAdd();   return; }
 
