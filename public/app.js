@@ -2468,8 +2468,11 @@ function genFractionDiv(d) {
   }
   // a/b ÷ c/d = a*d / b*c
   function divHint(aN, aD, bN, bD) {
+    return `Odwróć dzielnik i mnóż: ${qFrac(aN,aD)} × ${qFrac(bD,bN)}`;
+  }
+  function divHint2(aN, aD, bN, bD) {
     const rN = aN * bD, rD = aD * bN, g = gcdOf(rN, rD);
-    return `Odwróć dzielnik i mnóż: ${qFrac(aN,aD)} × ${qFrac(bD,bN)} = ${rN}/${rD}${g>1?' = '+(rN/g)+'/'+(rD/g):''}`;
+    return `= ${rN}/${rD}${g>1?' = '+(rN/g)+'/'+(rD/g):''}`;
   }
 
   if (easy) {
@@ -2481,7 +2484,7 @@ function genFractionDiv(d) {
       while (a*d2 > 30 || b*c > 30); // keep manageable
       const ans = norm(a*d2, b*c);
       return { type: 'fraction_div', left:{whole:0,num:a,den:b}, right:{whole:0,num:c,den:d2}, op:'÷', answer:ans,
-        hint: divHint(a,b,c,d2) };
+        hint: divHint(a,b,c,d2), hint2: divHint2(a,b,c,d2) };
     } else {
       // ułamek ÷ liczba całkowita
       const b = dens[rand(0,dens.length-1)], n = rand(2,6), a = rand(1,b-1);
@@ -2501,7 +2504,7 @@ function genFractionDiv(d) {
     while (a*d2 > 60 || b*c > 60);
     const ans = norm(a*d2, b*c);
     return { type: 'fraction_div', left:{whole:0,num:a,den:b}, right:{whole:0,num:c,den:d2}, op:'÷', answer:ans,
-      hint: divHint(a,b,c,d2) };
+      hint: divHint(a,b,c,d2), hint2: divHint2(a,b,c,d2) };
   }
 
   if (sub === 1) {
@@ -2592,7 +2595,7 @@ function genFractionDiv(d) {
   ];
   return { type: 'fraction_div', left:{whole:0,num:a,den:b}, right:{whole:0,num:c,den:d2}, op:'÷', answer:fAns,
     q_html: wrap(ts2[rand(0,ts2.length-1)]),
-    hint: divHint(a,b,c,d2) };
+    hint: divHint(a,b,c,d2), hint2: divHint2(a,b,c,d2) };
 }
 
 function genFractionAdd(d) {
@@ -7331,8 +7334,10 @@ async function checkFractionAdd() {
         : ans.atype === 'mixed' ? `${ans.whole} ${ans.num}/${ans.den}` : `${ans.num}/${ans.den}`;
       if (hintEl) { hintEl.innerHTML = `📋 Odpowiedź: <strong>${ansStr}</strong> — przepisz i kliknij Sprawdź`; hintEl.style.display = ''; }
     } else if (state.mistakes < 3) {
-      if (hintEl && q.hint) { hintEl.innerHTML = `💡 ${q.hint}`; hintEl.style.display = ''; }
-      else showToast('✗ Spróbuj jeszcze raz!', 'wrong');
+      if (hintEl && q.hint) {
+        const h2 = state.mistakes >= 2 && q.hint2 ? `<br>💡 ${q.hint2}` : '';
+        hintEl.innerHTML = `💡 ${q.hint}${h2}`; hintEl.style.display = '';
+      } else showToast('✗ Spróbuj jeszcze raz!', 'wrong');
     }
   }
 }
