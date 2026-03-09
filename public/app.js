@@ -1,4 +1,30 @@
 // ============================================================
+// RAT SQUEAK
+// ============================================================
+
+function ratSqueak() {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const squeaks = [
+    { t: 0,    f0: 2800, f1: 4200, dur: 0.08 },
+    { t: 0.11, f0: 3200, f1: 2400, dur: 0.07 },
+    { t: 0.20, f0: 3800, f1: 4800, dur: 0.06 },
+  ];
+  squeaks.forEach(({ t, f0, f1, dur }) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    const start = ctx.currentTime + t;
+    osc.frequency.setValueAtTime(f0, start);
+    osc.frequency.exponentialRampToValueAtTime(f1, start + dur);
+    gain.gain.setValueAtTime(0.28, start);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + dur + 0.02);
+    osc.start(start);
+    osc.stop(start + dur + 0.03);
+  });
+}
+
+// ============================================================
 // API HELPER
 // ============================================================
 
