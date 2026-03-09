@@ -2231,11 +2231,19 @@ function genImproperWrite(d) {
     const names = ['Bartek', 'Tomek', 'Kacper', 'Marek', 'Łukasz'];
     const name = names[rand(0, names.length - 1)];
     const texts = [
-      `${name} ma ${w} całe pizze i jeszcze ${qFrac(num, den)} pizzy. Każdą pizzę podzielono na ${den} kawałki. Ile kawałków łącznie ma ${name}? Podaj jako ułamek.`,
-      `${name} przebiegł ${w} całe okrążenia i jeszcze ${qFrac(num, den)} okrążenia. Ile okrążeń przebiegł łącznie? Podaj jako ułamek niewłaściwy.`,
+      `${name} zjadł ${w} całe pizze i jeszcze ${qFrac(num, den)} pizzy. Ile pizzy zjadł łącznie? Podaj jako ułamek niewłaściwy.`,
+      `${name} przebiegł ${w} całe okrążenia i jeszcze ${qFrac(num, den)} okrążenia. Ile okrążeń przebiegł łącznie? Podaj jako ułamek.`,
+      `${name} kupił ${w} całe metry wstążki i jeszcze ${qFrac(num, den)} metra. Ile metrów wstążki kupił łącznie? Podaj jako ułamek.`,
+      `Mama upiekła ${w} całe ciasta i jeszcze ${qFrac(num, den)} ciasta. Ile ciasta upiekła łącznie? Podaj jako ułamek.`,
+      `${name} wypił ${w} pełne butelki soku i jeszcze ${qFrac(num, den)} butelki. Ile butelek soku wypił? Podaj jako ułamek niewłaściwy.`,
+      `Każdą tabliczkę czekolady podzielono na ${den} kawałki. ${name} dostał ${imp} kawałków czekolady. Ile tabliczek to jest? Podaj jako ułamek.`,
+      `${name} napisał ${w} całe strony wypracowania i jeszcze ${qFrac(num, den)} strony. Ile stron napisał łącznie? Podaj jako ułamek.`,
+      `Ogrodnik zebrał ${w} pełne kosze jabłek i jeszcze ${qFrac(num, den)} kosza. Ile koszy zebrał? Podaj jako ułamek niewłaściwy.`,
+      `${name} przeczytał ${w} całe rozdziały książki i jeszcze ${qFrac(num, den)} rozdziału. Ile rozdziałów przeczytał łącznie? Podaj jako ułamek.`,
+      `Każdą rolkę materiału podzielono na ${den} równe kawałki. ${name} wziął ${imp} kawałków materiału. Ile rolek to jest? Podaj jako ułamek.`,
     ];
     return { type: 'improper_write',
-      q_html: `<div style="text-align:center;max-width:400px;margin:0 auto;line-height:1.6">${texts[rand(0,1)]}</div>`,
+      q_html: `<div style="text-align:center;max-width:400px;margin:0 auto;line-height:1.6">${texts[rand(0,9)]}</div>`,
       answer: { num: imp, den },
       hint: `${w} × ${den} = ${w*den}, plus ${num} = ${imp}. Odpowiedź: ${qFrac(imp, den)}.` };
   }
