@@ -1625,6 +1625,8 @@ body.theme-pink .theme-corner-deco { opacity: 1; }
   width: 38px;
   height: 38px;
   flex-shrink: 0;
+  object-fit: contain;
+  filter: invert(1) drop-shadow(0 0 4px rgba(99,102,241,0.5));
 }
 .welcome-rat {
   width: 72px;
@@ -2724,45 +2726,7 @@ details[open] .tp-level-summary::after { content: '▴'; }
   <aside class="sidebar-left">
     <div class="sidebar-title">
       <div class="logo-wrap">
-        <svg class="logo-rat" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Pirate hat -->
-          <ellipse cx="40" cy="24" rx="22" ry="6" fill="#1a1a2e"/>
-          <rect x="28" y="10" width="24" height="16" rx="4" fill="#1a1a2e"/>
-          <!-- Pi on hat -->
-          <text x="40" y="23" font-family="serif" font-size="11" font-weight="900" fill="#ffd700" text-anchor="middle">π</text>
-          <!-- Skull crossbones small -->
-          <circle cx="40" cy="14" r="3" fill="#ffd700" opacity="0.7"/>
-          <!-- Rat face -->
-          <ellipse cx="40" cy="46" rx="18" ry="16" fill="#c8a878"/>
-          <!-- Ears -->
-          <circle cx="24" cy="36" r="7" fill="#c8a878"/>
-          <circle cx="56" cy="36" r="7" fill="#c8a878"/>
-          <circle cx="24" cy="36" r="4" fill="#e8c0b0"/>
-          <circle cx="56" cy="36" r="4" fill="#e8c0b0"/>
-          <!-- Eyes -->
-          <circle cx="34" cy="44" r="3.5" fill="#1a1a2e"/>
-          <circle cx="46" cy="44" r="3.5" fill="#1a1a2e"/>
-          <circle cx="35" cy="43" r="1" fill="white"/>
-          <circle cx="47" cy="43" r="1" fill="white"/>
-          <!-- Eyepatch (pirate!) -->
-          <ellipse cx="34" cy="44" rx="5" ry="4" fill="#1a1a2e" opacity="0.85"/>
-          <line x1="29" y1="44" x2="22" y2="42" stroke="#1a1a2e" stroke-width="1.5"/>
-          <line x1="39" y1="44" x2="42" y2="42" stroke="#1a1a2e" stroke-width="1.5"/>
-          <!-- Nose -->
-          <ellipse cx="40" cy="52" rx="4" ry="3" fill="#d4887a"/>
-          <!-- Whiskers -->
-          <line x1="36" y1="52" x2="22" y2="49" stroke="#8a7060" stroke-width="0.8"/>
-          <line x1="36" y1="53" x2="22" y2="55" stroke="#8a7060" stroke-width="0.8"/>
-          <line x1="44" y1="52" x2="58" y2="49" stroke="#8a7060" stroke-width="0.8"/>
-          <line x1="44" y1="53" x2="58" y2="55" stroke="#8a7060" stroke-width="0.8"/>
-          <!-- Smile -->
-          <path d="M35 57 Q40 62 45 57" stroke="#8a5040" stroke-width="1.5" fill="none"/>
-          <!-- Teeth -->
-          <rect x="37" y="57" width="3" height="4" rx="1" fill="white"/>
-          <rect x="40" y="57" width="3" height="4" rx="1" fill="white"/>
-          <!-- Body hint -->
-          <ellipse cx="40" cy="70" rx="12" ry="8" fill="#b09060"/>
-        </svg>
+        <img src="rat2.png" class="logo-rat" alt="Pi-ratMath logo">
         <span>Pi-ratMath</span>
       </div>
     </div>
