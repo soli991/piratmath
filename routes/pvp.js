@@ -325,14 +325,13 @@ router.post('/accept/:id', requireAuth, (req, res) => {
   `).run(challenge.challenger_id, userId, challenge.level, actualDukats, actualPoints);
   const matchId = matchResult.lastInsertRowid;
 
-  // Utwórz 6 tur; runda 1 ma temat z wyzwania i p1 startuje od razu
+  // Utwórz 6 tur; runda 1 ma temat z wyzwania — obaj zaczynają w 'waiting', klikają "Zacznij!" sami
   const r1Topic = challenge.topic || '';
-  const r1Start = nowSec();
-  // Runda 1: p1 (challenger) startuje aktywnie, p2 czeka na temat
-  db.prepare("INSERT INTO pvp_turns (match_id, round_num, player_id, topic, status, started_at) VALUES (?,?,?,?,'waiting',NULL)")
+  // Runda 1: obaj gracze mają temat ustawiony, ale jeszcze nie startują (waiting)
+  db.prepare("INSERT INTO pvp_turns (match_id, round_num, player_id, topic) VALUES (?,?,?,?)")
     .run(matchId, 1, userId, r1Topic);                         // p2 runda 1
-  db.prepare("INSERT INTO pvp_turns (match_id, round_num, player_id, topic, status, started_at) VALUES (?,?,?,?,'active',?)")
-    .run(matchId, 1, challenge.challenger_id, r1Topic, r1Start); // p1 runda 1
+  db.prepare("INSERT INTO pvp_turns (match_id, round_num, player_id, topic) VALUES (?,?,?,?)")
+    .run(matchId, 1, challenge.challenger_id, r1Topic);        // p1 runda 1
   // Rundy 2-3: normalnie (bez tematu)
   for (let r = 2; r <= 3; r++) {
     db.prepare('INSERT INTO pvp_turns (match_id, round_num, player_id) VALUES (?,?,?)')
@@ -409,20 +408,18 @@ router.get('/status', requireAuth, (req, res) => {
       }
 
       // Tura 'waiting'
-      const selectorIdCur = getSelectorId(myTurn.round_num, resolved);
-      if (userId !== selectorIdCur && myTurn.topic) {
-        // Non-selector: temat już wybrany przez selectora — czeka na kliknięcie "Zacznij"
+      if (myTurn.topic) {
+        // Temat już znany (z wyzwania lub wybrany przez selectora) — czeka na kliknięcie "Zacznij"
         return res.json({
           state: 'my_turn_ready',
           match: baseInfo,
           topic: myTurn.topic,
           opponent_name: oppMy?.name || '?',
         });
-      } else {
-        // Selector wybiera temat
-        const topics = pickRandom(TOPICS[resolved.level] || [], 4);
-        return res.json({ state: 'my_turn_choose', match: baseInfo, topics, opponent_name: oppMy?.name || '?' });
       }
+      // Selector musi wybrać temat
+      const topics = pickRandom(TOPICS[resolved.level] || [], 4);
+      return res.json({ state: 'my_turn_choose', match: baseInfo, topics, opponent_name: oppMy?.name || '?' });
     }
 
     // Nie moja tura — czekam
@@ -603,10 +600,6 @@ router.post('/start-turn', requireAuth, (req, res) => {
   const myTurn = isMyTurn(match.id, userId, match);
   if (!myTurn || myTurn.status !== 'waiting' || !myTurn.topic)
     return res.status(400).json({ error: 'Nie możesz teraz zacząć tury' });
-
-  const selectorId = getSelectorId(myTurn.round_num, match);
-  if (userId === selectorId)
-    return res.status(400).json({ error: 'Selector startuje turę przez choose-topic' });
 
   const startedAt = nowSec();
   db.prepare("UPDATE pvp_turns SET status = 'active', started_at = ? WHERE id = ?")
