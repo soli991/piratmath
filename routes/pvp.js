@@ -572,14 +572,30 @@ router.post('/answer', requireAuth, (req, res) => {
       .run(userId, topic, pts);
   }
 
+  // Lazy reset tygodniowych punktów (tak jak w /api/answer/correct)
+  const weekStart = (() => {
+    const now2 = new Date();
+    const day  = now2.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const mon  = new Date(now2);
+    mon.setHours(0, 0, 0, 0);
+    mon.setDate(now2.getDate() + diff);
+    return `${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
+  })();
+  const wRow = db.prepare('SELECT week_start FROM users WHERE id = ?').get(userId);
+  if (wRow.week_start !== weekStart) {
+    db.prepare('UPDATE users SET week_points = 0, class_week_points = 0, week_start = ? WHERE id = ?').run(weekStart, userId);
+  }
+
   db.prepare(`
     UPDATE users SET
       season_points = season_points + ?,
       total_points  = total_points  + ?,
+      week_points   = week_points   + ?,
       total_tasks   = total_tasks   + 1,
       max_streak    = CASE WHEN max_streak > ? THEN max_streak ELSE ? END
     WHERE id = ?
-  `).run(pts, pts, streak, streak, userId);
+  `).run(pts, pts, pts, streak, streak, userId);
 
   const newAchs = checkAndUnlock(userId, { topic, topic_done: currentDone + 1 });
 
