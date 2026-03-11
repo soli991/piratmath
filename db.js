@@ -222,5 +222,8 @@ function runOnce(id, fn) {
 runOnce('soli_500_dukaty', () => {
   db.prepare("UPDATE users SET dukaty = dukaty + 500 WHERE LOWER(name) = 'soli'").run();
 });
+runOnce('soli_20_galeony', () => {
+  db.prepare("UPDATE users SET galeony = galeony + 20 WHERE LOWER(name) = 'soli'").run();
+});
 
 module.exports = db;
