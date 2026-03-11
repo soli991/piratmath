@@ -108,4 +108,25 @@ router.get('/admin/stats', requireAdmin, (req, res) => {
   res.json({ totalUsers, totalTeachers, totalAdmins, totalSchools, totalClasses });
 });
 
+// ── DELETE /api/admin/pvp-match/:id — usuń mecz (do testów) ──
+router.delete('/admin/pvp-match/:id', requireAdmin, (req, res) => {
+  const id = parseInt(req.params.id);
+  db.prepare('DELETE FROM pvp_turns   WHERE match_id = ?').run(id);
+  db.prepare('DELETE FROM pvp_matches WHERE id = ?').run(id);
+  res.json({ ok: true });
+});
+
+// ── GET /api/admin/pvp-matches — lista aktywnych meczy ────────
+router.get('/admin/pvp-matches', requireAdmin, (req, res) => {
+  const matches = db.prepare(`
+    SELECT m.*, u1.name AS p1_name, u2.name AS p2_name
+    FROM pvp_matches m
+    JOIN users u1 ON u1.id = m.p1_id
+    JOIN users u2 ON u2.id = m.p2_id
+    WHERE m.status NOT IN ('seen')
+    ORDER BY m.id DESC LIMIT 20
+  `).all();
+  res.json({ matches });
+});
+
 module.exports = router;
