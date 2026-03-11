@@ -56,6 +56,9 @@ try { db.exec("ALTER TABLE users ADD COLUMN active_frame TEXT DEFAULT ''"); } ca
 // Kolumny dodane w v8 – ranking PvP (+2 wygrana, -1 porażka, floor 0)
 try { db.exec('ALTER TABLE users ADD COLUMN pvp_rating INTEGER DEFAULT 0'); } catch(e) {}
 
+// Kolumny dodane w v9 – temat wyzwania PvP (wybierany przy tworzeniu wyzwania)
+try { db.exec("ALTER TABLE pvp_challenges ADD COLUMN topic TEXT DEFAULT ''"); } catch(e) {}
+
 // Tabela osiągnięć użytkownika
 db.exec(`
   CREATE TABLE IF NOT EXISTS user_achievements (

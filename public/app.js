@@ -9443,6 +9443,22 @@ function renderAchievementsOverlay() {
 // ============================================================
 
 const PVP_LEVEL_NAMES = { k13: 'Klasy 1–3', k46: 'Klasy 4–6', k78: 'Klasy 7–8', sr: 'Szkoła średnia' };
+const PVP_TOPICS = {
+  k13: ['Dodawanie i odejmowanie', 'Mnożenie i dzielenie', 'Tabliczka mnożenia'],
+  k46: ['Świat liczb', 'Liczenie w głowie', 'Własności działań',
+        'Dodawanie pisemne', 'Odejmowanie pisemne', 'Mnożenie pisemne', 'Dzielenie pisemne',
+        'Dzielenie z resztą', 'Mnożenie liczb z zerami na końcu', 'O ile? Ile razy?',
+        'Kolejność działań', 'Potęgowanie', 'Podzielność liczb', 'Zaokrąglanie',
+        'Porównywanie liczb całkowitych'],
+  k78: ['Wartość bezwzględna', 'Rozkład liczby na czynniki pierwsze',
+        'Wyznaczanie NWD', 'Wyznaczanie NWW', 'Szacowanie pierwiastków',
+        'Średnia arytmetyczna', 'Systemy liczbowe', 'Działania na liczbach całkowitych'],
+  sr:  ['Pojęcie logarytmu', 'Własności logarytmów', 'Liczby wymierne i niewymierne',
+        'Wyrażenia algebraiczne', 'Wzory skróconego mnożenia', 'Nierówności liniowe i przedziały',
+        'Układ równań liniowych', 'Równanie kwadratowe z parametrem', 'Funkcja liniowa',
+        'Funkcja kwadratowa — postaci', 'Ciąg arytmetyczny', 'Ciąg geometryczny',
+        'Trygonometria kąta ostrego', 'Prawdopodobieństwo klasyczne'],
+};
 
 function openPvp() {
   document.getElementById('pvpOverlay').style.display = 'flex';
@@ -9567,19 +9583,23 @@ function startPendingCountdown() {
 
 /* ── Ekran: brak aktywności ── */
 function renderPvpIdle() {
+  const defaultLevel = 'k46';
+  const topicBtns = pvpTopicButtons(defaultLevel);
   return `
     <div class="pvp-form">
       <p style="margin:0 0 12px;font-size:14px;opacity:0.8">Stwórz wyzwanie lub zaakceptuj cudze. Stawka trafia do zwycięzcy, gra wa banque.</p>
       <div>
         <label>Poziom</label>
-        <select id="pvpLevel">
+        <select id="pvpLevel" onchange="pvpRefreshTopics()">
           <option value="k13">Klasy 1–3</option>
-          <option value="k46">Klasy 4–6</option>
+          <option value="k46" selected>Klasy 4–6</option>
           <option value="k78">Klasy 7–8</option>
           <option value="sr">Szkoła średnia</option>
         </select>
       </div>
-      <div class="pvp-stake-row">
+      <div style="margin:10px 0 4px;font-size:12px;opacity:0.6">Temat rundy 1 (Ty wybierasz dla obu):</div>
+      <div class="pvp-topic-grid" id="pvpTopicPicker">${topicBtns}</div>
+      <div class="pvp-stake-row" style="margin-top:10px">
         <div>
           <label>Stawka dukatów (0–5)</label>
           <input type="number" id="pvpStakeDukats" value="0" min="0" max="5">
@@ -9593,6 +9613,27 @@ function renderPvpIdle() {
     </div>
     <div id="pvpChallengeListWrap" style="margin-top:22px">${renderAvailableChallenges()}</div>
   `;
+}
+
+function pvpTopicButtons(level) {
+  const all = PVP_TOPICS[level] || [];
+  // Losuj 4 tematy
+  const shuffled = [...all].sort(() => Math.random() - 0.5).slice(0, 4);
+  return shuffled.map(t =>
+    `<button class="pvp-topic-btn" onclick="pvpSelectTopic(this,'${t.replace(/'/g, "\\'")}')">${t}</button>`
+  ).join('');
+}
+
+function pvpRefreshTopics() {
+  const level = document.getElementById('pvpLevel')?.value;
+  const picker = document.getElementById('pvpTopicPicker');
+  if (picker) picker.innerHTML = pvpTopicButtons(level);
+}
+
+function pvpSelectTopic(btn, topic) {
+  document.querySelectorAll('#pvpTopicPicker .pvp-topic-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  btn.dataset.topic = topic;
 }
 
 function renderAvailableChallenges() {
@@ -9610,7 +9651,7 @@ function renderPvpPending() {
     <div style="text-align:center;padding:20px 0">
       <div style="font-size:48px">⏳</div>
       <div style="font-size:18px;font-weight:800;margin:12px 0 6px">Czekam na przeciwnika…</div>
-      <div style="font-size:14px;opacity:0.65;margin-bottom:6px">${PVP_LEVEL_NAMES[c.level]} | ${c.stake_dukats}🪙 | ${c.stake_points} pkt</div>
+      <div style="font-size:14px;opacity:0.65;margin-bottom:6px">${PVP_LEVEL_NAMES[c.level]} | ${c.topic || '?'} | ${c.stake_dukats}🪙 | ${c.stake_points} pkt</div>
       <div style="font-size:13px;opacity:0.5;margin-bottom:18px">Wygasa za <span id="pvpPendingCountdown">${mm}:${ss}</span></div>
       <button class="pvp-submit-btn" style="background:rgba(255,255,255,0.1);color:var(--text)" onclick="cancelChallenge()">Anuluj wyzwanie</button>
     </div>
@@ -9671,21 +9712,42 @@ function renderPvpReady() {
 async function startMyTurn() {
   const data = await api('POST', '/api/pvp/start-turn').catch(() => null);
   if (!data?.ok) { showToast('Błąd startu tury', 'wrong'); return; }
-  state.pvp.topic     = data.topic;
+
+  const topic = data.topic;
+  state.pvp.topic     = topic;
   state.pvp.startedAt = data.started_at;
   state.pvp.pvpScore  = 0;
   state.pvp.state     = 'my_turn_playing';
+
+  state.currentTopic      = topic;
+  state.currentDifficulty = 'medium';
+  state.mistakes          = 0;
+  state.questionIndex     = 0;
+  state.isFirstAttempt    = true;
+  state.answerLocked      = false;
+  state.solutionShown     = false;
+
+  document.getElementById('welcomeScreen').style.display = 'none';
+  document.getElementById('exerciseArea').classList.add('visible');
+  const titleEl = document.getElementById('topicTitle');
+  if (titleEl) titleEl.textContent = `⚔️ PvP – ${topic}`;
+
+  const multPanel = document.getElementById('multTablePanel');
+  if (multPanel) multPanel.style.display = topic === 'Tabliczka mnożenia' ? 'block' : 'none';
+
+  const diffTabs = document.getElementById('difficultyTabs');
+  const nextBtn  = document.getElementById('nextExampleBtn');
+  if (diffTabs) diffTabs.style.display = 'none';
+  if (nextBtn)  nextBtn.style.display  = 'none';
+
+  const banner = document.getElementById('pvpExerciseBanner');
+  if (banner) banner.style.display = '';
+
+  closePvp();
+  hideChallengeSetup();
+  showExerciseCard();
+  loadQuestion();
   startPvpTimer();
-  renderPvpContent();
-  // Zamknij overlay i zacznij grać
-  setTimeout(() => {
-    closePvp();
-    hideChallengeSetup();
-    showExerciseCard();
-    loadQuestion();
-    const banner = document.getElementById('pvpExerciseBanner');
-    if (banner) banner.style.display = '';
-  }, 100);
 }
 
 /* ── Ekran: czekam na przeciwnika ── */
@@ -9771,8 +9833,11 @@ async function createChallenge() {
     const level = document.getElementById('pvpLevel')?.value;
     const dukats = parseInt(document.getElementById('pvpStakeDukats')?.value) || 0;
     const points = parseInt(document.getElementById('pvpStakePoints')?.value) || 0;
+    const selectedBtn = document.querySelector('#pvpTopicPicker .pvp-topic-btn.selected');
+    const topic = selectedBtn?.textContent?.trim() || '';
+    if (!topic) { showToast('Wybierz temat rundy 1!', 'wrong'); return; }
 
-    const data = await api('POST', '/api/pvp/challenge', { level, stake_dukats: dukats, stake_points: points });
+    const data = await api('POST', '/api/pvp/challenge', { level, stake_dukats: dukats, stake_points: points, topic });
     if (data.error) { showToast(data.error, 'wrong'); return; }
 
     // Natychmiastowa aktualizacja stanu z odpowiedzi (bez czekania na poll)
@@ -9808,7 +9873,7 @@ async function loadAvailableChallenges() {
     <div class="pvp-challenge-item">
       <div class="pvp-challenge-info">
         <strong>${c.challenger_name}</strong>
-        ${PVP_LEVEL_NAMES[c.level]} | ${c.stake_dukats}🪙 | ${c.stake_points} pkt
+        ${PVP_LEVEL_NAMES[c.level]} | ${c.topic || '?'} | ${c.stake_dukats}🪙 | ${c.stake_points} pkt
       </div>
       <button class="pvp-accept-btn" onclick="acceptChallenge(${c.id})">Przyjmij</button>
     </div>

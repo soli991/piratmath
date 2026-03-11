@@ -235,8 +235,9 @@ function isMyTurn(matchId, userId, match) {
 
 // ── POST /api/pvp/challenge ───────────────────────────────────
 router.post('/challenge', requireAuth, (req, res) => {
-  const { level, stake_dukats = 0, stake_points = 0 } = req.body;
+  const { level, stake_dukats = 0, stake_points = 0, topic = '' } = req.body;
   if (!TOPICS[level]) return res.status(400).json({ error: 'Nieprawidłowy poziom' });
+  if (!TOPICS[level].includes(topic)) return res.status(400).json({ error: 'Wybierz temat rundy 1' });
 
   const dukats = Math.max(0, Math.min(5,  parseInt(stake_dukats) || 0));
   const points = Math.max(0, Math.min(100, parseInt(stake_points) || 0));
@@ -254,10 +255,10 @@ router.post('/challenge', requireAuth, (req, res) => {
 
   const expiresAt = nowSec() + 600;
   const result = db.prepare(
-    'INSERT INTO pvp_challenges (challenger_id, level, stake_dukats, stake_points, expires_at) VALUES (?,?,?,?,?)'
-  ).run(userId, level, dukats, points, expiresAt);
+    'INSERT INTO pvp_challenges (challenger_id, level, stake_dukats, stake_points, expires_at, topic) VALUES (?,?,?,?,?,?)'
+  ).run(userId, level, dukats, points, expiresAt, topic);
 
-  res.json({ challenge: { id: result.lastInsertRowid, level, stake_dukats: dukats, stake_points: points, expires_at: expiresAt } });
+  res.json({ challenge: { id: result.lastInsertRowid, level, stake_dukats: dukats, stake_points: points, expires_at: expiresAt, topic } });
 });
 
 // ── DELETE /api/pvp/my-challenge ──────────────────────────────
@@ -275,7 +276,7 @@ router.get('/challenges', requireAuth, (req, res) => {
   db.prepare('DELETE FROM pvp_challenges WHERE expires_at < ?').run(now);
 
   const rows = db.prepare(`
-    SELECT c.id, c.level, c.stake_dukats, c.stake_points, c.expires_at, u.name AS challenger_name
+    SELECT c.id, c.level, c.stake_dukats, c.stake_points, c.expires_at, c.topic, u.name AS challenger_name
     FROM pvp_challenges c
     JOIN users u ON u.id = c.challenger_id
     WHERE c.challenger_id != ?
@@ -324,8 +325,16 @@ router.post('/accept/:id', requireAuth, (req, res) => {
   `).run(challenge.challenger_id, userId, challenge.level, actualDukats, actualPoints);
   const matchId = matchResult.lastInsertRowid;
 
-  // Utwórz 6 tur: dla każdej rundy p2 gra przed p1
-  for (let r = 1; r <= 3; r++) {
+  // Utwórz 6 tur; runda 1 ma temat z wyzwania i p1 startuje od razu
+  const r1Topic = challenge.topic || '';
+  const r1Start = nowSec();
+  // Runda 1: p1 (challenger) startuje aktywnie, p2 czeka na temat
+  db.prepare("INSERT INTO pvp_turns (match_id, round_num, player_id, topic, status, started_at) VALUES (?,?,?,?,'waiting',NULL)")
+    .run(matchId, 1, userId, r1Topic);                         // p2 runda 1
+  db.prepare("INSERT INTO pvp_turns (match_id, round_num, player_id, topic, status, started_at) VALUES (?,?,?,?,'active',?)")
+    .run(matchId, 1, challenge.challenger_id, r1Topic, r1Start); // p1 runda 1
+  // Rundy 2-3: normalnie (bez tematu)
+  for (let r = 2; r <= 3; r++) {
     db.prepare('INSERT INTO pvp_turns (match_id, round_num, player_id) VALUES (?,?,?)')
       .run(matchId, r, userId);                      // p2
     db.prepare('INSERT INTO pvp_turns (match_id, round_num, player_id) VALUES (?,?,?)')
