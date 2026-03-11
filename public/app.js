@@ -1058,9 +1058,51 @@ function apShowTab(tab) {
   document.getElementById('apTabUsers').classList.toggle('active',   tab === 'users');
   document.getElementById('apTabSchools').classList.toggle('active', tab === 'schools');
   document.getElementById('apTabStats').classList.toggle('active',   tab === 'stats');
+  document.getElementById('apTabPvp').classList.toggle('active',     tab === 'pvp');
   if (tab === 'users')        apLoadUsers();
   else if (tab === 'schools') apLoadSchools();
+  else if (tab === 'pvp')     apLoadPvp();
   else                        apLoadStats();
+}
+
+async function apLoadPvp() {
+  const body = document.getElementById('apBody');
+  body.innerHTML = '<div style="color:var(--text3)">Ładowanie…</div>';
+  const data = await api('GET', '/api/admin/pvp-matches').catch(() => null);
+  if (!data) { body.innerHTML = '<div style="color:red">Błąd ładowania</div>'; return; }
+
+  const { matches } = data;
+  if (!matches.length) {
+    body.innerHTML = '<div style="color:var(--text3);padding:16px 0">Brak meczy PvP do wyświetlenia.</div>';
+    return;
+  }
+
+  const STATUS_LABELS = { active: 'aktywny', finished: 'zakończony', seen: 'zamknięty' };
+  const rows = matches.map(m => {
+    const ts = new Date(m.created_at * 1000).toLocaleString('pl-PL');
+    const status = STATUS_LABELS[m.status] || m.status;
+    const winner = m.winner_id ? (m.winner_id === m.p1_id ? m.p1_name : m.p2_name) : '—';
+    return `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.07);flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <strong>${m.p1_name}</strong> vs <strong>${m.p2_name}</strong>
+          <div style="font-size:11px;opacity:0.5">${ts} | ${m.level} | ${status}</div>
+        </div>
+        <div style="font-size:13px;opacity:0.7">${m.p1_rounds_won} : ${m.p2_rounds_won} | zwycięzca: ${winner}</div>
+        <button class="pvp-submit-btn" style="padding:4px 14px;font-size:12px;background:rgba(220,60,60,0.25);border-color:rgba(220,60,60,0.5)"
+          onclick="apDeletePvpMatch(${m.id})">Usuń</button>
+      </div>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div style="font-size:13px;opacity:0.55;margin-bottom:12px">Mecze PvP (ostatnie 20, bez zamkniętych)</div>
+    ${rows}`;
+}
+
+async function apDeletePvpMatch(id) {
+  const data = await api('DELETE', `/api/admin/pvp-match/${id}`).catch(() => null);
+  if (data?.ok) apLoadPvp();
+  else showToast('Błąd usunięcia meczu', 'wrong');
 }
 
 async function apLoadSchools() {
