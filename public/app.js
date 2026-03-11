@@ -9027,14 +9027,16 @@ async function renderLeaderboards() {
     }
     renderLb('lb-weekly', weekly);
   } else {
-    const [seasonal, global, weekly] = await Promise.all([
+    const [seasonal, global, weekly, pvp] = await Promise.all([
       api('GET', '/api/leaderboard/seasonal').catch(() => []),
       api('GET', '/api/leaderboard/global').catch(() => []),
-      api('GET', '/api/leaderboard/weekly').catch(() => [])
+      api('GET', '/api/leaderboard/weekly').catch(() => []),
+      api('GET', '/api/leaderboard/pvp').catch(() => [])
     ]);
     renderLb('lb-seasonal', seasonal);
     renderLb('lb-global', global);
     renderLb('lb-weekly', weekly);
+    renderPvpLb(pvp);
   }
 
   const rangeEl = document.getElementById('lbWeekRange');
@@ -9055,6 +9057,29 @@ function renderLb(containerId, users) {
       <div class="lb-rank ${rankClasses[i]||''}">${medals[i] || `${i+1}`}</div>
       ${avatarHtml}<div class="lb-name">${u.name}${isMe ? ' 👤' : ''}${titleHtml}</div>
       <div class="lb-pts">${(u.points||0).toLocaleString()}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderPvpLb(users) {
+  const c = document.getElementById('lb-pvp');
+  if (!c) return;
+  if (!users || users.length === 0) {
+    c.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">Brak rozegranych meczy PvP.</div>';
+    return;
+  }
+  const medals = ['🥇','🥈','🥉'];
+  const rankClasses = ['rank-1','rank-2','rank-3'];
+  c.innerHTML = users.map((u, i) => {
+    const isMe = state.currentUser && u.name === state.currentUser.name;
+    const titleObj = u.active_title ? TITLES_MAP.get(u.active_title) : null;
+    const titleHtml = titleObj ? `<span class="lb-title">${titleObj.name}</span>` : '';
+    const avatarHtml = u.avatar_emoji ? `<span class="lb-avatar">${u.avatar_emoji}</span>` : '';
+    const winsHtml = `<span style="font-size:10px;color:var(--text3);margin-left:4px">(${u.pvp_wins||0}W)</span>`;
+    return `<div class="lb-entry ${isMe ? 'me' : ''}">
+      <div class="lb-rank ${rankClasses[i]||''}">${medals[i] || `${i+1}`}</div>
+      ${avatarHtml}<div class="lb-name">${u.name}${isMe ? ' 👤' : ''}${titleHtml}${winsHtml}</div>
+      <div class="lb-pts">${u.points||0} <span style="font-size:10px;font-weight:400;color:var(--text3)">pkt</span></div>
     </div>`;
   }).join('');
 }

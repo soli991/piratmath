@@ -53,6 +53,9 @@ try { db.exec('ALTER TABLE users ADD COLUMN pvp_wins INTEGER DEFAULT 0'); } catc
 try { db.exec("ALTER TABLE users ADD COLUMN owned_galeon_items TEXT DEFAULT '[]'"); } catch(e) {}
 try { db.exec("ALTER TABLE users ADD COLUMN active_frame TEXT DEFAULT ''"); } catch(e) {}
 
+// Kolumny dodane w v8 – ranking PvP (+2 wygrana, -1 porażka, floor 0)
+try { db.exec('ALTER TABLE users ADD COLUMN pvp_rating INTEGER DEFAULT 0'); } catch(e) {}
+
 // Tabela osiągnięć użytkownika
 db.exec(`
   CREATE TABLE IF NOT EXISTS user_achievements (

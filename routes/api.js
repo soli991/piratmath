@@ -403,6 +403,14 @@ router.get('/leaderboard/global/full', (req, res) => {
   res.json(rows);
 });
 
+// GET /api/leaderboard/pvp – ranking PvP (pvp_rating)
+router.get('/leaderboard/pvp', (req, res) => {
+  const rows = db.prepare(
+    'SELECT name, pvp_rating AS points, pvp_wins, active_title, avatar_emoji, active_frame FROM users WHERE pvp_rating > 0 ORDER BY pvp_rating DESC LIMIT 10'
+  ).all();
+  res.json(rows);
+});
+
 // GET /api/achievements – lista odblokowanych + bonus
 router.get('/achievements', requireAuth, (req, res) => {
   const userId = req.session.userId;

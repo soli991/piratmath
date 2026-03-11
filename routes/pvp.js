@@ -171,11 +171,15 @@ function finishMatch(match) {
       .run(match.stake_dukats * 2, match.stake_points * 2, winnerId);
     // Przegrany już stracił stawkę przy accept — nic nie robi
 
-    // Zwiększ licznik wygranych, co 3 wygrane daj 1 galon
-    const winnerRow = db.prepare('SELECT pvp_wins FROM users WHERE id = ?').get(winnerId);
+    // Ranking PvP: +2 zwycięzca, -1 przegrany (floor 0), + galeony co 3 wygrane
+    const winnerRow = db.prepare('SELECT pvp_wins, pvp_rating FROM users WHERE id = ?').get(winnerId);
+    const loserRow  = db.prepare('SELECT pvp_rating FROM users WHERE id = ?').get(loserId);
     const newWins = (winnerRow.pvp_wins || 0) + 1;
-    const galonBonus = Math.floor(newWins / 3) - Math.floor((newWins - 1) / 3); // 1 jeśli właśnie osiągnął wielokrotność 3
-    db.prepare('UPDATE users SET pvp_wins = ?, galeony = galeony + ? WHERE id = ?').run(newWins, galonBonus, winnerId);
+    const galonBonus = Math.floor(newWins / 3) - Math.floor((newWins - 1) / 3);
+    db.prepare('UPDATE users SET pvp_wins = ?, galeony = galeony + ?, pvp_rating = pvp_rating + 2 WHERE id = ?')
+      .run(newWins, galonBonus, winnerId);
+    const newLoserRating = Math.max(0, (loserRow.pvp_rating || 0) - 1);
+    db.prepare('UPDATE users SET pvp_rating = ? WHERE id = ?').run(newLoserRating, loserId);
   } else {
     // Pełny remis: zwróć obu graczom
     db.prepare('UPDATE users SET dukaty = dukaty + ?, season_points = season_points + ? WHERE id = ?')
