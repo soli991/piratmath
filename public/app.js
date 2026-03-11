@@ -9508,12 +9508,12 @@ async function pollPvpNow() {
     state.pvp.topic = data.topic;
   }
 
-  // Jeśli weszliśmy w aktywną turę (po stronie klienta – zostało wybrane topic)
+  // Jeśli weszliśmy w aktywną turę przez poll (np. runda 1 challenger lub po odświeżeniu strony)
   if (data.state === 'my_turn_playing' && prev !== 'my_turn_playing') {
     state.pvp.topic     = data.topic;
     state.pvp.startedAt = data.started_at;
     state.pvp.pvpScore  = data.match?.score || 0;
-    startPvpTimer();
+    launchPvpTurn(data.topic, data.started_at);
   }
 
   updatePvpBadge();
@@ -9713,41 +9713,10 @@ async function startMyTurn() {
   const data = await api('POST', '/api/pvp/start-turn').catch(() => null);
   if (!data?.ok) { showToast('Błąd startu tury', 'wrong'); return; }
 
-  const topic = data.topic;
-  state.pvp.topic     = topic;
-  state.pvp.startedAt = data.started_at;
-  state.pvp.pvpScore  = 0;
-  state.pvp.state     = 'my_turn_playing';
-
-  state.currentTopic      = topic;
-  state.currentDifficulty = 'medium';
-  state.mistakes          = 0;
-  state.questionIndex     = 0;
-  state.isFirstAttempt    = true;
-  state.answerLocked      = false;
-  state.solutionShown     = false;
-
-  document.getElementById('welcomeScreen').style.display = 'none';
-  document.getElementById('exerciseArea').classList.add('visible');
-  const titleEl = document.getElementById('topicTitle');
-  if (titleEl) titleEl.textContent = `⚔️ PvP – ${topic}`;
-
-  const multPanel = document.getElementById('multTablePanel');
-  if (multPanel) multPanel.style.display = topic === 'Tabliczka mnożenia' ? 'block' : 'none';
-
-  const diffTabs = document.getElementById('difficultyTabs');
-  const nextBtn  = document.getElementById('nextExampleBtn');
-  if (diffTabs) diffTabs.style.display = 'none';
-  if (nextBtn)  nextBtn.style.display  = 'none';
-
-  const banner = document.getElementById('pvpExerciseBanner');
-  if (banner) banner.style.display = '';
-
-  closePvp();
-  hideChallengeSetup();
-  showExerciseCard();
-  loadQuestion();
-  startPvpTimer();
+  state.pvp.topic   = data.topic;
+  state.pvp.pvpScore = 0;
+  state.pvp.state   = 'my_turn_playing';
+  launchPvpTurn(data.topic, data.started_at);
 }
 
 /* ── Ekran: czekam na przeciwnika ── */
@@ -9896,16 +9865,8 @@ async function acceptChallenge(id) {
   renderPvpContent();
 }
 
-async function chooseTopic(topic) {
-  const data = await api('POST', '/api/pvp/choose-topic', { topic });
-  if (data.error) { showToast(data.error, 'wrong'); return; }
-
-  state.pvp.state     = 'my_turn_playing';
-  state.pvp.topic     = topic;
-  state.pvp.startedAt = data.started_at;
-  state.pvp.pvpScore  = 0;
-
-  // Ustaw temat i trudność dla pytań (nie wywołujemy selectTopic — nie ma przycisku)
+// Wspólna funkcja: uruchamia ćwiczenia PvP dla danego tematu i timera
+function launchPvpTurn(topic, startedAt) {
   state.currentTopic      = topic;
   state.currentDifficulty = 'medium';
   state.mistakes          = 0;
@@ -9922,13 +9883,11 @@ async function chooseTopic(topic) {
   const multPanel = document.getElementById('multTablePanel');
   if (multPanel) multPanel.style.display = topic === 'Tabliczka mnożenia' ? 'block' : 'none';
 
-  // Ukryj zakładki trudności i "Inny przykład" — w PvP ich nie ma
   const diffTabs = document.getElementById('difficultyTabs');
   const nextBtn  = document.getElementById('nextExampleBtn');
   if (diffTabs) diffTabs.style.display = 'none';
   if (nextBtn)  nextBtn.style.display  = 'none';
 
-  // Pokaż banner z timerem PvP
   const banner = document.getElementById('pvpExerciseBanner');
   if (banner) banner.style.display = '';
 
@@ -9936,7 +9895,20 @@ async function chooseTopic(topic) {
   hideChallengeSetup();
   showExerciseCard();
   loadQuestion();
+  state.pvp.startedAt = startedAt;
   startPvpTimer();
+}
+
+async function chooseTopic(topic) {
+  const data = await api('POST', '/api/pvp/choose-topic', { topic });
+  if (data.error) { showToast(data.error, 'wrong'); return; }
+
+  state.pvp.state     = 'my_turn_playing';
+  state.pvp.topic     = topic;
+  state.pvp.startedAt = data.started_at;
+  state.pvp.pvpScore  = 0;
+
+  launchPvpTurn(topic, data.started_at);
 }
 
 function startPvpTimer() {
