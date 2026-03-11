@@ -369,7 +369,7 @@ let state = {
   classInfo: null,          // { className, grade, schoolName }
   teacherClassId: null,     // aktualnie wybrana klasa w panelu nauczyciela / server select
   pvp: {
-    state: 'idle',          // idle | challenge_pending | my_turn_choose | my_turn_playing | waiting_opponent | match_finished
+    state: 'idle',          // idle | challenge_pending | my_turn_choose | my_turn_ready | my_turn_playing | waiting_opponent | match_finished
     pollInterval: null,
     match: null,
     challenge: null,
@@ -9445,6 +9445,11 @@ async function pollPvpNow() {
   state.pvp.currentTopic  = data.current_topic || null;
   state.pvp.iWon          = data.i_won ?? null;
 
+  // Zapamiętaj temat dla ekranu "Gotowy?"
+  if (data.state === 'my_turn_ready') {
+    state.pvp.topic = data.topic;
+  }
+
   // Jeśli weszliśmy w aktywną turę (po stronie klienta – zostało wybrane topic)
   if (data.state === 'my_turn_playing' && prev !== 'my_turn_playing') {
     state.pvp.topic     = data.topic;
@@ -9467,7 +9472,7 @@ function updatePvpBadge() {
   const badge = document.getElementById('pvpBadge');
   if (!btn) return;
   const s = state.pvp.state;
-  if (s === 'my_turn_choose' || s === 'my_turn_playing') {
+  if (s === 'my_turn_choose' || s === 'my_turn_ready' || s === 'my_turn_playing') {
     badge.textContent = '!';
     badge.style.display = '';
     btn.classList.add('pvp-attention');
@@ -9497,6 +9502,7 @@ function renderPvpContent() {
     startPendingCountdown();
   }
   else if (s === 'my_turn_choose') { el.innerHTML = renderPvpChooseTopic(); }
+  else if (s === 'my_turn_ready')  { el.innerHTML = renderPvpReady(); }
   else if (s === 'my_turn_playing') { el.innerHTML = renderPvpPlaying(); }
   else if (s === 'waiting_opponent') { el.innerHTML = renderPvpWaiting(); }
   else if (s === 'match_finished') { el.innerHTML = renderPvpResult(); }
@@ -9603,6 +9609,41 @@ function renderPvpPlaying() {
 
 function renderPvpTimerUI() {
   // Nie startujemy kolejnego timera jeśli już działa
+}
+
+/* ── Ekran: gotowy? (non-selector, temat wybrany przez przeciwnika) ── */
+function renderPvpReady() {
+  const m = state.pvp.match;
+  return `
+    ${renderScoreboard()}
+    <div style="text-align:center;padding:20px 0">
+      <div style="font-size:38px">⚔️</div>
+      <div style="font-size:16px;font-weight:700;margin:10px 0 4px">Runda ${m.round} — Twoja tura!</div>
+      <div style="font-size:14px;opacity:0.7;margin-bottom:4px">Temat: <strong>${state.pvp.topic}</strong></div>
+      <div style="font-size:12px;opacity:0.45;margin-bottom:20px">Masz 60 sekund — timer startuje po kliknięciu</div>
+      <button class="pvp-submit-btn" onclick="startMyTurn()">Zacznij!</button>
+    </div>
+  `;
+}
+
+async function startMyTurn() {
+  const data = await api('POST', '/api/pvp/start-turn').catch(() => null);
+  if (!data?.ok) { showToast('Błąd startu tury', 'wrong'); return; }
+  state.pvp.topic     = data.topic;
+  state.pvp.startedAt = data.started_at;
+  state.pvp.pvpScore  = 0;
+  state.pvp.state     = 'my_turn_playing';
+  startPvpTimer();
+  renderPvpContent();
+  // Zamknij overlay i zacznij grać
+  setTimeout(() => {
+    closePvp();
+    hideChallengeSetup();
+    showExerciseCard();
+    loadQuestion();
+    const banner = document.getElementById('pvpExerciseBanner');
+    if (banner) banner.style.display = '';
+  }, 100);
 }
 
 /* ── Ekran: czekam na przeciwnika ── */

@@ -389,22 +389,24 @@ router.get('/status', requireAuth, (req, res) => {
         my_rounds_won: myRounds, opp_rounds_won: oppRounds,
       };
 
-      // Non-selector z już przypisanym tematem: auto-aktywuj turę
-      const selectorIdCur = getSelectorId(myTurn.round_num, resolved);
-      if (userId !== selectorIdCur && myTurn.status === 'waiting' && myTurn.topic) {
-        const startedAt = nowSec();
-        db.prepare("UPDATE pvp_turns SET status = 'active', started_at = ? WHERE id = ?")
-          .run(startedAt, myTurn.id);
-        myTurn.status = 'active';
-        myTurn.started_at = startedAt;
-      }
-
       if (myTurn.status === 'active') {
         return res.json({
           state: 'my_turn_playing',
           match: { ...baseInfo, score: myTurn.score },
           topic: myTurn.topic,
           started_at: myTurn.started_at,
+          opponent_name: oppMy?.name || '?',
+        });
+      }
+
+      // Tura 'waiting'
+      const selectorIdCur = getSelectorId(myTurn.round_num, resolved);
+      if (userId !== selectorIdCur && myTurn.topic) {
+        // Non-selector: temat już wybrany przez selectora — czeka na kliknięcie "Zacznij"
+        return res.json({
+          state: 'my_turn_ready',
+          match: baseInfo,
+          topic: myTurn.topic,
           opponent_name: oppMy?.name || '?',
         });
       } else {
@@ -577,6 +579,31 @@ router.post('/answer', requireAuth, (req, res) => {
 
   const updatedTurn = db.prepare('SELECT score FROM pvp_turns WHERE id = ?').get(myTurn.id);
   res.json({ pvp_score: updatedTurn.score, pts, done: currentDone + 1, newAchs });
+});
+
+// ── POST /api/pvp/start-turn ──────────────────────────────────
+// Non-selector klika "Zacznij" — aktywuje turę i startuje timer
+router.post('/start-turn', requireAuth, (req, res) => {
+  const userId = req.session.userId;
+
+  const match = db.prepare(`
+    SELECT * FROM pvp_matches WHERE (p1_id = ? OR p2_id = ?) AND status = 'active'
+  `).get(userId, userId);
+  if (!match) return res.status(400).json({ error: 'Brak aktywnego meczu' });
+
+  const myTurn = isMyTurn(match.id, userId, match);
+  if (!myTurn || myTurn.status !== 'waiting' || !myTurn.topic)
+    return res.status(400).json({ error: 'Nie możesz teraz zacząć tury' });
+
+  const selectorId = getSelectorId(myTurn.round_num, match);
+  if (userId === selectorId)
+    return res.status(400).json({ error: 'Selector startuje turę przez choose-topic' });
+
+  const startedAt = nowSec();
+  db.prepare("UPDATE pvp_turns SET status = 'active', started_at = ? WHERE id = ?")
+    .run(startedAt, myTurn.id);
+
+  res.json({ ok: true, started_at: startedAt, topic: myTurn.topic });
 });
 
 // ── POST /api/pvp/end-turn ────────────────────────────────────
