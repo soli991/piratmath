@@ -9441,8 +9441,9 @@ async function pollPvpNow() {
   } else if (data.state !== 'my_turn_choose') {
     state.pvp.topics = [];
   }
-  state.pvp.opponentName = data.opponent_name || '';
-  state.pvp.iWon        = data.i_won ?? null;
+  state.pvp.opponentName  = data.opponent_name || '';
+  state.pvp.currentTopic  = data.current_topic || null;
+  state.pvp.iWon          = data.i_won ?? null;
 
   // Jeśli weszliśmy w aktywną turę (po stronie klienta – zostało wybrane topic)
   if (data.state === 'my_turn_playing' && prev !== 'my_turn_playing') {
@@ -9578,7 +9579,8 @@ function renderPvpChooseTopic() {
   ).join('');
   return `
     ${renderScoreboard()}
-    <div style="font-size:14px;font-weight:700;margin-bottom:6px;text-align:center">Runda ${m.round} — wybierz temat:</div>
+    <div style="font-size:14px;font-weight:700;margin-bottom:6px;text-align:center">Runda ${m.round} — wybierz temat dla obu graczy:</div>
+    <div style="font-size:12px;opacity:0.55;text-align:center;margin-bottom:10px">Ty grasz pierwszy, potem gra ${state.pvp.opponentName}</div>
     <div class="pvp-topic-grid">${btns}</div>
   `;
 }
@@ -9606,12 +9608,17 @@ function renderPvpTimerUI() {
 /* ── Ekran: czekam na przeciwnika ── */
 function renderPvpWaiting() {
   const m = state.pvp.match;
+  const topic = state.pvp.currentTopic;
+  const topicLine = topic
+    ? `<div style="font-size:13px;opacity:0.7;margin-top:6px">Temat: <strong>${topic}</strong></div>`
+    : `<div style="font-size:13px;opacity:0.55;margin-top:6px">${state.pvp.opponentName} wybiera temat…</div>`;
   return `
     ${renderScoreboard()}
     <div style="text-align:center;padding:16px 0">
       <div style="font-size:38px">⏳</div>
-      <div style="font-size:16px;font-weight:700;margin:10px 0 4px">Runda ${m.round} — tura przeciwnika</div>
-      <div style="font-size:13px;opacity:0.55">Czekaj, aż skończy…</div>
+      <div style="font-size:16px;font-weight:700;margin:10px 0 4px">Runda ${m.round} — tura ${state.pvp.opponentName}</div>
+      ${topicLine}
+      <div style="font-size:12px;opacity:0.4;margin-top:8px">Czekaj, aż skończy — potem Twoja kolej</div>
     </div>
   `;
 }

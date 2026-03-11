@@ -189,17 +189,15 @@ function finishMatch(match) {
   }
 }
 
-// Zwraca aktualną turę gracza w aktywnym meczu (lub null)
-function getMyActiveTurn(matchId, userId) {
-  return db.prepare(
-    "SELECT * FROM pvp_turns WHERE match_id = ? AND player_id = ? AND status != 'done' ORDER BY round_num ASC LIMIT 1"
-  ).get(matchId, userId);
+// Kto wybiera temat w danej rundzie: rundy 1,3 → p1 (challenger); runda 2 → p2
+function getSelectorId(round, match) {
+  return round % 2 === 1 ? match.p1_id : match.p2_id;
 }
 
-// Sprawdza czy to kolej gracza (p2 gra przed p1 w każdej rundzie)
+// Sprawdza czy to kolej gracza.
+// Kolejność w rundzie: selector gra pierwszy, non-selector gra po nim.
 function isMyTurn(matchId, userId, match) {
   const oppId = userId === match.p1_id ? match.p2_id : match.p1_id;
-  const isP2  = userId === match.p2_id;
 
   for (let r = 1; r <= 3; r++) {
     const myTurn = db.prepare(
@@ -208,23 +206,27 @@ function isMyTurn(matchId, userId, match) {
 
     if (!myTurn || myTurn.status === 'done') continue;
 
-    const oppTurn = db.prepare(
-      'SELECT * FROM pvp_turns WHERE match_id = ? AND round_num = ? AND player_id = ?'
-    ).get(matchId, r, oppId);
-
-    if (isP2) {
-      // P2 idzie pierwszy w rundzie, ale dopiero gdy poprzednia runda jest w pełni rozstrzygnięta
-      if (r === 1) return myTurn;
+    // Poprzednia runda musi być w pełni zakończona
+    if (r > 1) {
       const myPrev  = db.prepare(
         'SELECT status FROM pvp_turns WHERE match_id = ? AND round_num = ? AND player_id = ?'
       ).get(matchId, r - 1, userId);
       const oppPrev = db.prepare(
         'SELECT status FROM pvp_turns WHERE match_id = ? AND round_num = ? AND player_id = ?'
       ).get(matchId, r - 1, oppId);
-      if (myPrev?.status === 'done' && oppPrev?.status === 'done') return myTurn;
+      if (myPrev?.status !== 'done' || oppPrev?.status !== 'done') break;
+    }
+
+    const selectorId = getSelectorId(r, match);
+    if (userId === selectorId) {
+      // Jestem selectorem — mogę wybrać temat i grać od razu
+      return myTurn;
     } else {
-      // P1 może grać rundę r dopiero gdy P2 skończył rundę r
-      if (oppTurn?.status === 'done') return myTurn;
+      // Non-selector — czekam aż selector skończy swoją turę
+      const selTurn = db.prepare(
+        'SELECT status FROM pvp_turns WHERE match_id = ? AND round_num = ? AND player_id = ?'
+      ).get(matchId, r, selectorId);
+      if (selTurn?.status === 'done') return myTurn;
     }
     break;
   }
@@ -387,6 +389,16 @@ router.get('/status', requireAuth, (req, res) => {
         my_rounds_won: myRounds, opp_rounds_won: oppRounds,
       };
 
+      // Non-selector z już przypisanym tematem: auto-aktywuj turę
+      const selectorIdCur = getSelectorId(myTurn.round_num, resolved);
+      if (userId !== selectorIdCur && myTurn.status === 'waiting' && myTurn.topic) {
+        const startedAt = nowSec();
+        db.prepare("UPDATE pvp_turns SET status = 'active', started_at = ? WHERE id = ?")
+          .run(startedAt, myTurn.id);
+        myTurn.status = 'active';
+        myTurn.started_at = startedAt;
+      }
+
       if (myTurn.status === 'active') {
         return res.json({
           state: 'my_turn_playing',
@@ -396,6 +408,7 @@ router.get('/status', requireAuth, (req, res) => {
           opponent_name: oppMy?.name || '?',
         });
       } else {
+        // Selector wybiera temat
         const topics = pickRandom(TOPICS[resolved.level] || [], 4);
         return res.json({ state: 'my_turn_choose', match: baseInfo, topics, opponent_name: oppMy?.name || '?' });
       }
@@ -406,14 +419,30 @@ router.get('/status', requireAuth, (req, res) => {
     const oppRounds = resolved.p1_id === userId ? resolved.p2_rounds_won : resolved.p1_rounds_won;
     const oppIdW    = resolved.p1_id === userId ? resolved.p2_id : resolved.p1_id;
     const oppW      = db.prepare('SELECT name FROM users WHERE id = ?').get(oppIdW);
+
+    // Ustal bieżącą rundę i temat (jeśli selector już wybrał)
+    let currentRound = 1;
+    let currentTopic = null;
+    for (let r = 1; r <= 3; r++) {
+      const myT = db.prepare('SELECT status FROM pvp_turns WHERE match_id = ? AND round_num = ? AND player_id = ?')
+        .get(resolved.id, r, userId);
+      if (!myT || myT.status === 'done') continue;
+      currentRound = r;
+      const selT = db.prepare('SELECT topic FROM pvp_turns WHERE match_id = ? AND round_num = ? AND player_id = ?')
+        .get(resolved.id, r, getSelectorId(r, resolved));
+      currentTopic = selT?.topic || null;
+      break;
+    }
+
     return res.json({
       state: 'waiting_opponent',
       match: {
         id: resolved.id, level: resolved.level,
-        round: resolved.p1_rounds_won + resolved.p2_rounds_won + 1,
+        round: currentRound,
         my_rounds_won: myRounds, opp_rounds_won: oppRounds,
       },
       opponent_name: oppW?.name || '?',
+      current_topic: currentTopic,
     });
   }
 
@@ -480,9 +509,20 @@ router.post('/choose-topic', requireAuth, (req, res) => {
   if (!myTurn || myTurn.status !== 'waiting')
     return res.status(400).json({ error: 'Nie twoja tura lub już wybrałeś temat' });
 
+  // Tylko selector rundy może wybrać temat
+  const selectorId = getSelectorId(myTurn.round_num, match);
+  if (userId !== selectorId)
+    return res.status(400).json({ error: 'Nie jesteś selectorem tej rundy' });
+
   const startedAt = nowSec();
+  // Uruchom własną turę selektora
   db.prepare("UPDATE pvp_turns SET topic = ?, started_at = ?, status = 'active' WHERE id = ?")
     .run(topic, startedAt, myTurn.id);
+
+  // Ustaw temat na turze przeciwnika w tej samej rundzie (zostaje 'waiting' — zagra po selektorze)
+  const oppId = userId === match.p1_id ? match.p2_id : match.p1_id;
+  db.prepare("UPDATE pvp_turns SET topic = ? WHERE match_id = ? AND round_num = ? AND player_id = ?")
+    .run(topic, match.id, myTurn.round_num, oppId);
 
   res.json({ ok: true, started_at: startedAt });
 });
