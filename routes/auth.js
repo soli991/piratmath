@@ -148,7 +148,7 @@ router.get('/me', (req, res) => {
 
 function getUserFull(userId) {
   const u = db.prepare(
-    'SELECT id, name, season_points, total_points, class_season_points, class_total_points, week_points, class_week_points, dukaty, owned_avatars, owned_titles, active_title, class_id, role FROM users WHERE id = ?'
+    'SELECT id, name, season_points, total_points, class_season_points, class_total_points, week_points, class_week_points, dukaty, owned_avatars, owned_titles, active_title, avatar_emoji, galeony, pvp_wins, owned_galeon_items, active_frame, class_id, role FROM users WHERE id = ?'
   ).get(userId);
   if (!u) return null;
   const teacherClasses = db.prepare(`

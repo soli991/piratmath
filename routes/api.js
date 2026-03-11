@@ -44,6 +44,39 @@ const TITLES_LIST = [
 ];
 const TITLES_MAP = new Map(TITLES_LIST.map(t => [t.id, t]));
 
+const GALEON_AVATARS = [
+  { id: 'ga_skull',    emoji: '💀', name: 'Trup',           price: 3  },
+  { id: 'ga_parrot',  emoji: '🦜', name: 'Papuga',         price: 3  },
+  { id: 'ga_anchor',  emoji: '⚓', name: 'Kotwica',        price: 5  },
+  { id: 'ga_ship',    emoji: '⛵', name: 'Statek',         price: 5  },
+  { id: 'ga_treasure',emoji: '🗝️', name: 'Klucz do skarbu',price: 5  },
+  { id: 'ga_cannon',  emoji: '💣', name: 'Bomba',          price: 8  },
+  { id: 'ga_kraken',  emoji: '🦑', name: 'Kraken',         price: 8  },
+  { id: 'ga_mermaid', emoji: '🧜', name: 'Syrena',         price: 10 },
+  { id: 'ga_dragon',  emoji: '🐉', name: 'Smok',           price: 10 },
+  { id: 'ga_crown',   emoji: '👑', name: 'Korona',         price: 15 },
+];
+const GALEON_AVATARS_MAP = new Map(GALEON_AVATARS.map(a => [a.id, a]));
+
+const GALEON_TITLES = [
+  { id: 'gt_captain',  name: 'Kapitan',          price: 5  },
+  { id: 'gt_corsair',  name: 'Korsarz',           price: 5  },
+  { id: 'gt_buccaneer',name: 'Kaper',             price: 8  },
+  { id: 'gt_admiral',  name: 'Admirał',           price: 10 },
+  { id: 'gt_legend',   name: 'Legenda Mórz',      price: 15 },
+  { id: 'gt_kraken',   name: 'Pogromca Krakena',  price: 20 },
+];
+const GALEON_TITLES_MAP = new Map(GALEON_TITLES.map(t => [t.id, t]));
+
+const GALEON_FRAMES = [
+  { id: 'fr_gold',    name: 'Złota Ramka',  css: '3px solid #ffd700',       price: 5  },
+  { id: 'fr_fire',    name: 'Płomienie',    css: '3px solid #ff6b35',       price: 8  },
+  { id: 'fr_ocean',   name: 'Ocean',        css: '3px solid #06b6d4',       price: 8  },
+  { id: 'fr_skull',   name: 'Czaszki',      css: '3px dashed #e2e8f0',      price: 10 },
+  { id: 'fr_rainbow', name: 'Tęcza',        css: '3px solid transparent',   price: 15 },
+];
+const GALEON_FRAMES_MAP = new Map(GALEON_FRAMES.map(f => [f.id, f]));
+
 // Middleware – wymaga zalogowania
 function requireAuth(req, res, next) {
   if (!req.session.userId) {
@@ -377,6 +410,136 @@ router.get('/achievements', requireAuth, (req, res) => {
   const unlocked = rows.map(r => r.ach_id);
   const bonus    = Math.floor(unlocked.length / 15);
   res.json({ unlocked, bonus });
+});
+
+// GET /api/galeon/shop – katalog przedmiotów za galeony
+router.get('/galeon/shop', (req, res) => {
+  res.json({ avatars: GALEON_AVATARS, titles: GALEON_TITLES, frames: GALEON_FRAMES });
+});
+
+// POST /api/galeon/buy-avatar
+router.post('/galeon/buy-avatar', requireAuth, (req, res) => {
+  const { itemId } = req.body;
+  const item = GALEON_AVATARS_MAP.get(itemId);
+  if (!item) return res.status(400).json({ error: 'Nieznany przedmiot' });
+
+  const userId = req.session.userId;
+  const user = db.prepare('SELECT galeony, owned_galeon_items FROM users WHERE id = ?').get(userId);
+  if (!user) return res.status(401).json({ error: 'Nie znaleziono użytkownika' });
+
+  const owned = JSON.parse(user.owned_galeon_items || '[]');
+  if (owned.includes(itemId))
+    return res.status(400).json({ error: 'Już posiadasz ten przedmiot!' });
+
+  if ((user.galeony || 0) < item.price)
+    return res.status(400).json({ error: `Za mało galonów! Potrzebujesz ${item.price} ⚓` });
+
+  owned.push(itemId);
+  db.prepare('UPDATE users SET galeony = galeony - ?, owned_galeon_items = ? WHERE id = ?')
+    .run(item.price, JSON.stringify(owned), userId);
+
+  const updated = db.prepare('SELECT galeony, owned_galeon_items FROM users WHERE id = ?').get(userId);
+  res.json({ ok: true, galeony: updated.galeony, owned_galeon_items: updated.owned_galeon_items });
+});
+
+// POST /api/galeon/buy-title
+router.post('/galeon/buy-title', requireAuth, (req, res) => {
+  const { itemId } = req.body;
+  const item = GALEON_TITLES_MAP.get(itemId);
+  if (!item) return res.status(400).json({ error: 'Nieznany tytuł' });
+
+  const userId = req.session.userId;
+  const user = db.prepare('SELECT galeony, owned_galeon_items FROM users WHERE id = ?').get(userId);
+  if (!user) return res.status(401).json({ error: 'Nie znaleziono użytkownika' });
+
+  const owned = JSON.parse(user.owned_galeon_items || '[]');
+  if (owned.includes(itemId))
+    return res.status(400).json({ error: 'Już posiadasz ten tytuł!' });
+
+  if ((user.galeony || 0) < item.price)
+    return res.status(400).json({ error: `Za mało galonów! Potrzebujesz ${item.price} ⚓` });
+
+  owned.push(itemId);
+  db.prepare('UPDATE users SET galeony = galeony - ?, owned_galeon_items = ? WHERE id = ?')
+    .run(item.price, JSON.stringify(owned), userId);
+
+  const updated = db.prepare('SELECT galeony, owned_galeon_items FROM users WHERE id = ?').get(userId);
+  res.json({ ok: true, galeony: updated.galeony, owned_galeon_items: updated.owned_galeon_items });
+});
+
+// POST /api/galeon/buy-frame
+router.post('/galeon/buy-frame', requireAuth, (req, res) => {
+  const { itemId } = req.body;
+  const item = GALEON_FRAMES_MAP.get(itemId);
+  if (!item) return res.status(400).json({ error: 'Nieznana ramka' });
+
+  const userId = req.session.userId;
+  const user = db.prepare('SELECT galeony, owned_galeon_items FROM users WHERE id = ?').get(userId);
+  if (!user) return res.status(401).json({ error: 'Nie znaleziono użytkownika' });
+
+  const owned = JSON.parse(user.owned_galeon_items || '[]');
+  if (owned.includes(itemId))
+    return res.status(400).json({ error: 'Już posiadasz tę ramkę!' });
+
+  if ((user.galeony || 0) < item.price)
+    return res.status(400).json({ error: `Za mało galonów! Potrzebujesz ${item.price} ⚓` });
+
+  owned.push(itemId);
+  db.prepare('UPDATE users SET galeony = galeony - ?, owned_galeon_items = ? WHERE id = ?')
+    .run(item.price, JSON.stringify(owned), userId);
+
+  const updated = db.prepare('SELECT galeony, owned_galeon_items FROM users WHERE id = ?').get(userId);
+  res.json({ ok: true, galeony: updated.galeony, owned_galeon_items: updated.owned_galeon_items });
+});
+
+// POST /api/galeon/set-frame
+router.post('/galeon/set-frame', requireAuth, (req, res) => {
+  const { frameId } = req.body;
+  const userId = req.session.userId;
+
+  if (frameId) {
+    const frame = GALEON_FRAMES_MAP.get(frameId);
+    if (!frame) return res.status(400).json({ error: 'Nieznana ramka' });
+    const user = db.prepare('SELECT owned_galeon_items FROM users WHERE id = ?').get(userId);
+    const owned = JSON.parse(user?.owned_galeon_items || '[]');
+    if (!owned.includes(frameId)) return res.status(400).json({ error: 'Nie posiadasz tej ramki' });
+  }
+
+  db.prepare('UPDATE users SET active_frame = ? WHERE id = ?').run(frameId || '', userId);
+  res.json({ ok: true, active_frame: frameId || '' });
+});
+
+// POST /api/galeon/set-avatar
+router.post('/galeon/set-avatar', requireAuth, (req, res) => {
+  const { itemId } = req.body;
+  const userId = req.session.userId;
+
+  const item = GALEON_AVATARS_MAP.get(itemId);
+  if (!item) return res.status(400).json({ error: 'Nieznany awatar' });
+
+  const user = db.prepare('SELECT owned_galeon_items FROM users WHERE id = ?').get(userId);
+  const owned = JSON.parse(user?.owned_galeon_items || '[]');
+  if (!owned.includes(itemId)) return res.status(400).json({ error: 'Nie posiadasz tego awatara' });
+
+  db.prepare('UPDATE users SET avatar_emoji = ? WHERE id = ?').run(item.emoji, userId);
+  res.json({ ok: true });
+});
+
+// POST /api/galeon/set-title
+router.post('/galeon/set-title', requireAuth, (req, res) => {
+  const { titleId } = req.body;
+  const userId = req.session.userId;
+
+  if (titleId) {
+    const title = GALEON_TITLES_MAP.get(titleId);
+    if (!title) return res.status(400).json({ error: 'Nieznany tytuł' });
+    const user = db.prepare('SELECT owned_galeon_items FROM users WHERE id = ?').get(userId);
+    const owned = JSON.parse(user?.owned_galeon_items || '[]');
+    if (!owned.includes(titleId)) return res.status(400).json({ error: 'Nie posiadasz tego tytułu' });
+  }
+
+  db.prepare('UPDATE users SET active_title = ? WHERE id = ?').run(titleId || '', userId);
+  res.json({ ok: true, active_title: titleId || '' });
 });
 
 module.exports = router;

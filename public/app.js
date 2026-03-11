@@ -298,6 +298,40 @@ const TITLES_LIST = [
 ];
 const TITLES_MAP = new Map(TITLES_LIST.map(t => [t.id, t]));
 
+// ============================================================
+// GALEON SHOP DATA (waluta PvP)
+// ============================================================
+
+const GALEON_AVATARS = [
+  { id: 'ga_skull',    emoji: '💀', name: 'Trup',           price: 3  },
+  { id: 'ga_parrot',  emoji: '🦜', name: 'Papuga',         price: 3  },
+  { id: 'ga_anchor',  emoji: '⚓', name: 'Kotwica',        price: 5  },
+  { id: 'ga_ship',    emoji: '⛵', name: 'Statek',         price: 5  },
+  { id: 'ga_treasure',emoji: '🗝️', name: 'Klucz do skarbu',price: 5  },
+  { id: 'ga_cannon',  emoji: '💣', name: 'Bomba',          price: 8  },
+  { id: 'ga_kraken',  emoji: '🦑', name: 'Kraken',         price: 8  },
+  { id: 'ga_mermaid', emoji: '🧜', name: 'Syrena',         price: 10 },
+  { id: 'ga_dragon',  emoji: '🐉', name: 'Smok',           price: 10 },
+  { id: 'ga_crown',   emoji: '👑', name: 'Korona',         price: 15 },
+];
+
+const GALEON_TITLES = [
+  { id: 'gt_captain',  name: 'Kapitan',          price: 5  },
+  { id: 'gt_corsair',  name: 'Korsarz',           price: 5  },
+  { id: 'gt_buccaneer',name: 'Kaper',             price: 8  },
+  { id: 'gt_admiral',  name: 'Admirał',           price: 10 },
+  { id: 'gt_legend',   name: 'Legenda Mórz',      price: 15 },
+  { id: 'gt_kraken',   name: 'Pogromca Krakena',  price: 20 },
+];
+
+const GALEON_FRAMES = [
+  { id: 'fr_gold',    name: 'Złota Ramka',  css: '3px solid #ffd700',       price: 5  },
+  { id: 'fr_fire',    name: 'Płomienie',    css: '3px solid #ff6b35',       price: 8  },
+  { id: 'fr_ocean',   name: 'Ocean',        css: '3px solid #06b6d4',       price: 8  },
+  { id: 'fr_skull',   name: 'Czaszki',      css: '3px dashed #e2e8f0',      price: 10 },
+  { id: 'fr_rainbow', name: 'Tęcza',        css: '3px solid transparent',   price: 15 },
+];
+
 let state = {
   currentUser: null,
   currentTopic: null,
@@ -326,6 +360,10 @@ let state = {
   bonusPts: 0,
   ownedTitles: [],
   activeTitle: '',
+  galeony: 0,
+  pvpWins: 0,
+  ownedGaleonItems: [],
+  activeFrame: '',
   server: localStorage.getItem('mq_server') || 'global', // 'global' | 'class'
   classTopics: null,        // null = brak klasy, Set<string> = odblokowane tematy
   classInfo: null,          // { className, grade, schoolName }
@@ -1301,6 +1339,10 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   state.ownedAvatars = JSON.parse(data.user.owned_avatars || '[]');
   state.ownedTitles  = JSON.parse(data.user.owned_titles  || '[]');
   state.activeTitle  = data.user.active_title || '';
+  state.galeony = data.user.galeony || 0;
+  state.pvpWins = data.user.pvp_wins || 0;
+  state.ownedGaleonItems = data.user.owned_galeon_items ? JSON.parse(data.user.owned_galeon_items) : [];
+  state.activeFrame = data.user.active_frame || '';
   loadAchievementsState(data.user);
   document.getElementById('loginModal').style.display = 'none';
   updateUserPanel();
@@ -1338,6 +1380,10 @@ async function initApp() {
     state.ownedAvatars = JSON.parse(data.user.owned_avatars || '[]');
     state.ownedTitles  = JSON.parse(data.user.owned_titles  || '[]');
     state.activeTitle  = data.user.active_title || '';
+    state.galeony = data.user.galeony || 0;
+    state.pvpWins = data.user.pvp_wins || 0;
+    state.ownedGaleonItems = data.user.owned_galeon_items ? JSON.parse(data.user.owned_galeon_items) : [];
+    state.activeFrame = data.user.active_frame || '';
     loadAchievementsState(data.user);
     document.getElementById('loginModal').style.display = 'none';
     updateUserPanel();
@@ -8451,11 +8497,14 @@ function updateUserPanel() {
     avatarEl.textContent  = u.name.slice(0, 2).toUpperCase();
     avatarEl.style.fontSize = '';
   }
+  // Ramka galeonowa
+  const activeFrameDef = GALEON_FRAMES.find(f => f.id === state.activeFrame);
+  avatarEl.style.outline = activeFrameDef ? activeFrameDef.css : '';
 
   document.getElementById('userNameEl').textContent = u.name;
   const titleEl = document.getElementById('userTitleEl');
   if (titleEl) {
-    const t = TITLES_MAP.get(state.activeTitle);
+    const t = TITLES_MAP.get(state.activeTitle) || GALEON_TITLES.find(gt => gt.id === state.activeTitle);
     if (t) { titleEl.textContent = t.name; titleEl.style.display = ''; }
     else      titleEl.style.display = 'none';
   }
@@ -8602,22 +8651,30 @@ function showStreakBanner(streak, pts, dukat) {
 // ============================================================
 
 function showShopTab(tab) {
-  const isAvatars = tab === 'avatars';
+  const isAvatars  = tab === 'avatars';
+  const isTitles   = tab === 'titles';
+  const isGaleons  = tab === 'galeons';
   document.getElementById('shopSectionAvatars').style.display = isAvatars ? '' : 'none';
-  document.getElementById('shopSectionTitles').style.display  = isAvatars ? 'none' : '';
+  document.getElementById('shopSectionTitles').style.display  = isTitles  ? '' : 'none';
+  document.getElementById('shopSectionGaleons').style.display = isGaleons ? '' : 'none';
   document.getElementById('shopTabBtnAvatars').classList.toggle('active', isAvatars);
-  document.getElementById('shopTabBtnTitles').classList.toggle('active', !isAvatars);
-  if (!isAvatars) renderTitlesGrid();
+  document.getElementById('shopTabBtnTitles').classList.toggle('active',  isTitles);
+  document.getElementById('shopTabBtnGaleons').classList.toggle('active', isGaleons);
+  if (isTitles)  renderTitlesGrid();
+  if (isGaleons) renderGaleonShop();
 }
 
 function openAvatarPicker() {
   if (!state.currentUser) return;
   document.getElementById('avatarShopBalance').textContent = `🪙 ${state.dukaty} dukatów`;
+  updateGaleonBalance();
   // reset do zakładki awatarów
   document.getElementById('shopSectionAvatars').style.display = '';
   document.getElementById('shopSectionTitles').style.display  = 'none';
+  document.getElementById('shopSectionGaleons').style.display = 'none';
   document.getElementById('shopTabBtnAvatars').classList.add('active');
   document.getElementById('shopTabBtnTitles').classList.remove('active');
+  document.getElementById('shopTabBtnGaleons').classList.remove('active');
   const grid = document.getElementById('avatarPickerGrid');
   grid.innerHTML = '';
 
@@ -8752,6 +8809,172 @@ async function setTitle(id) {
   state.activeTitle = data.active_title;
   updateUserPanel();
   renderTitlesGrid();
+}
+
+// ============================================================
+// GALEON SHOP
+// ============================================================
+
+function updateGaleonBalance() {
+  const el = document.getElementById('galeonBalance');
+  if (!el) return;
+  const g = state.galeony;
+  el.textContent = `⚓ ${g} ${g === 1 ? 'galon' : g < 5 ? 'galeony' : 'galonów'}`;
+}
+
+function renderGaleonShop() {
+  updateGaleonBalance();
+
+  // Awatary
+  const avatarGrid = document.getElementById('galeonAvatarGrid');
+  if (avatarGrid) {
+    avatarGrid.innerHTML = '';
+    GALEON_AVATARS.forEach(item => {
+      const owned  = state.ownedGaleonItems.includes(item.id);
+      const active = state.avatarEmoji === item.emoji && owned;
+      const canBuy = !owned && state.galeony >= item.price;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'avatar-shop-item';
+
+      const el = document.createElement('div');
+      if (active)       el.className = 'avatar-option chosen';
+      else if (owned)   el.className = 'avatar-option';
+      else if (canBuy)  el.className = 'avatar-option buyable';
+      else              el.className = 'avatar-option locked';
+      el.textContent = item.emoji;
+      el.title = owned ? item.name : `${item.name} – ${item.price} ⚓`;
+
+      if (active)      el.onclick = () => setGaleonAvatar(item.id, '');
+      else if (owned)  el.onclick = () => setGaleonAvatar(item.id, item.emoji);
+      else if (canBuy) el.onclick = () => buyGaleonItem('avatar', item.id, item.name, item.price);
+
+      const priceEl = document.createElement('div');
+      priceEl.className = 'avatar-price';
+      if (active)      priceEl.textContent = '✓ Aktywny';
+      else if (owned)  priceEl.textContent = 'Aktywuj';
+      else             priceEl.textContent = `${item.price} ⚓`;
+
+      wrap.appendChild(el);
+      wrap.appendChild(priceEl);
+      avatarGrid.appendChild(wrap);
+    });
+  }
+
+  // Tytuły
+  const titleGrid = document.getElementById('galeonTitleGrid');
+  if (titleGrid) {
+    titleGrid.innerHTML = '';
+    GALEON_TITLES.forEach(item => {
+      const owned  = state.ownedGaleonItems.includes(item.id);
+      const active = state.activeTitle === item.id;
+      const canBuy = !owned && state.galeony >= item.price;
+
+      const div = document.createElement('div');
+      div.className = 'title-item' + (active ? ' active-title' : owned ? ' owned' : !canBuy ? ' locked' : '');
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'title-item-name';
+      nameEl.textContent = item.name;
+
+      const priceEl = document.createElement('span');
+      priceEl.className = 'title-item-price';
+      if (active)      priceEl.textContent = 'Aktywny';
+      else if (owned)  priceEl.textContent = 'Kliknij by założyć';
+      else             priceEl.textContent = `${item.price} ⚓`;
+
+      div.appendChild(nameEl);
+      div.appendChild(priceEl);
+
+      if (active)      div.onclick = () => setGaleonTitle('');
+      else if (owned)  div.onclick = () => setGaleonTitle(item.id);
+      else if (canBuy) div.onclick = () => buyGaleonItem('title', item.id, item.name, item.price);
+
+      titleGrid.appendChild(div);
+    });
+  }
+
+  // Ramki
+  const frameGrid = document.getElementById('galeonFrameGrid');
+  if (frameGrid) {
+    frameGrid.innerHTML = '';
+    GALEON_FRAMES.forEach(item => {
+      const owned  = state.ownedGaleonItems.includes(item.id);
+      const active = state.activeFrame === item.id;
+      const canBuy = !owned && state.galeony >= item.price;
+
+      const div = document.createElement('div');
+      div.className = 'title-item' + (active ? ' active-title' : owned ? ' owned' : !canBuy ? ' locked' : '');
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'title-item-name';
+      nameEl.textContent = item.name;
+
+      const priceEl = document.createElement('span');
+      priceEl.className = 'title-item-price';
+      if (active)      priceEl.textContent = 'Aktywna';
+      else if (owned)  priceEl.textContent = 'Kliknij by założyć';
+      else             priceEl.textContent = `${item.price} ⚓`;
+
+      div.appendChild(nameEl);
+      div.appendChild(priceEl);
+
+      if (active)      div.onclick = () => setGaleonFrame('');
+      else if (owned)  div.onclick = () => setGaleonFrame(item.id);
+      else if (canBuy) div.onclick = () => buyGaleonItem('frame', item.id, item.name, item.price);
+
+      frameGrid.appendChild(div);
+    });
+  }
+}
+
+async function buyGaleonItem(type, id, name, price) {
+  if (!confirm(`Kupić "${name}" za ${price} ⚓?`)) return;
+  const endpoint = type === 'avatar' ? '/api/galeon/buy-avatar'
+                 : type === 'title'  ? '/api/galeon/buy-title'
+                 :                     '/api/galeon/buy-frame';
+  const data = await api('POST', endpoint, { itemId: id });
+  if (data.error) { showToast(data.error, 'wrong'); return; }
+  state.galeony = data.galeony;
+  state.ownedGaleonItems = data.owned_galeon_items ? JSON.parse(data.owned_galeon_items) : [];
+  if (state.currentUser) state.currentUser.galeony = state.galeony;
+  playSound('correct');
+  showToast(`🎉 "${name}" odblokowane!`, 'correct');
+  renderGaleonShop();
+}
+
+async function setGaleonAvatar(itemId, emoji) {
+  if (!emoji) {
+    // Dezaktywuj – wróć do inicjałów
+    await api('POST', '/api/avatar/set', { emoji: '' });
+    state.avatarEmoji = '';
+    localStorage.setItem('mq_avatar', '');
+    updateUserPanel();
+    renderGaleonShop();
+    return;
+  }
+  const data = await api('POST', '/api/galeon/set-avatar', { itemId });
+  if (data.error) { showToast(data.error, 'wrong'); return; }
+  state.avatarEmoji = emoji;
+  localStorage.setItem('mq_avatar', emoji);
+  updateUserPanel();
+  renderGaleonShop();
+}
+
+async function setGaleonTitle(id) {
+  const data = await api('POST', '/api/galeon/set-title', { titleId: id });
+  if (data.error) { showToast(data.error, 'wrong'); return; }
+  state.activeTitle = data.active_title;
+  updateUserPanel();
+  renderGaleonShop();
+}
+
+async function setGaleonFrame(id) {
+  const data = await api('POST', '/api/galeon/set-frame', { frameId: id });
+  if (data.error) { showToast(data.error, 'wrong'); return; }
+  state.activeFrame = data.active_frame;
+  updateUserPanel();
+  renderGaleonShop();
 }
 
 // ============================================================
@@ -9643,13 +9866,16 @@ async function dismissPvpResult() {
   state.pvp.state = 'idle';
   state.pvp.match = null;
   state.pvp.iWon  = null;
-  // Odświeżaj punkty/dukaty po meczu
+  // Odświeżaj punkty/dukaty/galeony po meczu
   const fresh = await api('GET', '/api/me').catch(() => null);
   if (fresh?.user) {
     state.currentUser.dukaty        = fresh.user.dukaty;
     state.currentUser.season_points = fresh.user.season_points;
     state.currentUser.total_points  = fresh.user.total_points;
     state.dukaty = fresh.user.dukaty;
+    state.galeony = fresh.user.galeony || 0;
+    state.pvpWins = fresh.user.pvp_wins || 0;
+    state.currentUser.galeony = state.galeony;
     updateUserPanel();
   }
   renderPvpContent();

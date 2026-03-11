@@ -2695,10 +2695,14 @@ details[open] .tp-level-summary::after { content: '▴'; }
 <div class="modal-overlay" id="avatarPickerModal" style="display:none" onclick="if(event.target===this)closeAvatarPicker()">
   <div class="modal" style="max-width:420px">
     <div style="font-family:var(--font-head);font-size:20px;font-weight:800;margin-bottom:8px">🏪 Sklep</div>
-    <div class="avatar-shop-balance" id="avatarShopBalance">🪙 0 dukatów</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="avatar-shop-balance" id="avatarShopBalance">🪙 0 dukatów</div>
+      <div class="avatar-shop-balance" id="galeonBalance">⚓ 0 galonów</div>
+    </div>
     <div class="shop-tabs">
-      <button class="shop-tab active" id="shopTabBtnAvatars" onclick="showShopTab('avatars')">🎨 Awatary</button>
-      <button class="shop-tab"        id="shopTabBtnTitles"  onclick="showShopTab('titles')">📜 Tytuły</button>
+      <button class="shop-tab active" id="shopTabBtnAvatars"  onclick="showShopTab('avatars')">🎨 Awatary</button>
+      <button class="shop-tab"        id="shopTabBtnTitles"   onclick="showShopTab('titles')">📜 Tytuły</button>
+      <button class="shop-tab"        id="shopTabBtnGaleons"  onclick="showShopTab('galeons')">⚓ Galeony</button>
     </div>
     <div id="shopSectionAvatars">
       <div class="avatar-shop-info">Awatary w cenach <strong>3–10 🪙</strong>. Dukaty zdobywasz za 10 odpowiedzi z rzędu na poziomie <strong>średnim lub wyższym</strong> (max 3 za temat).</div>
@@ -2707,6 +2711,15 @@ details[open] .tp-level-summary::after { content: '▴'; }
     <div id="shopSectionTitles" style="display:none">
       <div class="avatar-shop-info">Tytuł wyświetla się pod Twoją nazwą. Kliknij posiadany tytuł, by go aktywować lub zdjąć.</div>
       <div class="titles-list" id="titlesGrid"></div>
+    </div>
+    <div id="shopSectionGaleons" style="display:none">
+      <div class="avatar-shop-info">Przedmioty za <strong>⚓ galeony</strong> — zdobywasz je w PvP (3 wygrane = 1 galon).</div>
+      <div style="font-weight:600;margin:8px 0 4px;font-size:13px;color:#94a3b8">AWATARY</div>
+      <div id="galeonAvatarGrid" class="avatar-picker-grid"></div>
+      <div style="font-weight:600;margin:12px 0 4px;font-size:13px;color:#94a3b8">TYTUŁY</div>
+      <div id="galeonTitleGrid" class="titles-grid"></div>
+      <div style="font-weight:600;margin:12px 0 4px;font-size:13px;color:#94a3b8">RAMKI</div>
+      <div id="galeonFrameGrid" class="titles-grid"></div>
     </div>
     <button class="btn btn-secondary" style="margin-top:16px;width:100%;justify-content:center" onclick="closeAvatarPicker()">Zamknij</button>
   </div>

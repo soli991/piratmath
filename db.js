@@ -47,6 +47,12 @@ try { db.exec("ALTER TABLE users ADD COLUMN active_title TEXT DEFAULT ''");   } 
 // Kolumny dodane w v6 – awatar w bazie
 try { db.exec("ALTER TABLE users ADD COLUMN avatar_emoji TEXT DEFAULT ''"); } catch(e) {}
 
+// Kolumny dodane w v7 – galeony (waluta PvP)
+try { db.exec('ALTER TABLE users ADD COLUMN galeony INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec('ALTER TABLE users ADD COLUMN pvp_wins INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec("ALTER TABLE users ADD COLUMN owned_galeon_items TEXT DEFAULT '[]'"); } catch(e) {}
+try { db.exec("ALTER TABLE users ADD COLUMN active_frame TEXT DEFAULT ''"); } catch(e) {}
+
 // Tabela osiągnięć użytkownika
 db.exec(`
   CREATE TABLE IF NOT EXISTS user_achievements (

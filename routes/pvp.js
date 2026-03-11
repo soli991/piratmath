@@ -170,6 +170,12 @@ function finishMatch(match) {
     db.prepare('UPDATE users SET dukaty = dukaty + ?, season_points = season_points + ? WHERE id = ?')
       .run(match.stake_dukats * 2, match.stake_points * 2, winnerId);
     // Przegrany już stracił stawkę przy accept — nic nie robi
+
+    // Zwiększ licznik wygranych, co 3 wygrane daj 1 galon
+    const winnerRow = db.prepare('SELECT pvp_wins FROM users WHERE id = ?').get(winnerId);
+    const newWins = (winnerRow.pvp_wins || 0) + 1;
+    const galonBonus = Math.floor(newWins / 3) - Math.floor((newWins - 1) / 3); // 1 jeśli właśnie osiągnął wielokrotność 3
+    db.prepare('UPDATE users SET pvp_wins = ?, galeony = galeony + ? WHERE id = ?').run(newWins, galonBonus, winnerId);
   } else {
     // Pełny remis: zwróć obu graczom
     db.prepare('UPDATE users SET dukaty = dukaty + ?, season_points = season_points + ? WHERE id = ?')
