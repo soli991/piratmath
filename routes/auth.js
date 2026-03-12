@@ -161,7 +161,7 @@ function getUserFull(userId) {
 
 function buildTopicsMap(userId) {
   const rows = db.prepare(
-    'SELECT topic, done, points FROM topic_progress WHERE user_id = ?'
+    'SELECT topic, done, points, week_done, week_start FROM topic_progress WHERE user_id = ?'
   ).all(userId);
   const dukatRows = db.prepare(
     'SELECT topic, SUM(earned) AS earned FROM dukat_progress WHERE user_id = ? GROUP BY topic'
@@ -171,7 +171,7 @@ function buildTopicsMap(userId) {
 
   const topics = {};
   for (const row of rows) {
-    topics[row.topic] = { done: row.done, points: row.points, dukats: dukatMap[row.topic] || 0 };
+    topics[row.topic] = { done: row.done, points: row.points, dukats: dukatMap[row.topic] || 0, week_done: row.week_done || 0, week_start: row.week_start || '' };
   }
   return topics;
 }

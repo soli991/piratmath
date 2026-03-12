@@ -1299,6 +1299,16 @@ function calcPoints(done) {
   return 1;
 }
 
+function getWeekStart() {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const mon = new Date(now);
+  mon.setHours(0, 0, 0, 0);
+  mon.setDate(now.getDate() + diff);
+  return `${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
+}
+
 function getTopicProgress(topic) {
   return state.currentUser?.topics?.[topic] || { done: 0, points: 0 };
 }
@@ -8501,9 +8511,13 @@ async function recordCorrect(topic) {
       state.currentUser.total_points  = (state.currentUser.total_points  || 0) + data.pts;
     }
     if (!state.currentUser.topics) state.currentUser.topics = {};
-    if (!state.currentUser.topics[topic]) state.currentUser.topics[topic] = { done: 0, points: 0 };
+    if (!state.currentUser.topics[topic]) state.currentUser.topics[topic] = { done: 0, points: 0, week_done: 0, week_start: '' };
+    const ws = getWeekStart();
+    const t = state.currentUser.topics[topic];
     state.currentUser.topics[topic].done   = data.done;
     state.currentUser.topics[topic].points += data.pts;
+    if (t.week_start !== ws) { t.week_done = 1; t.week_start = ws; }
+    else { t.week_done = (t.week_done || 0) + 1; }
   }
 
   // Osiągnięcia
@@ -8649,7 +8663,8 @@ async function logout() {
 function updateStatsRow() {
   if (!state.currentUser || !state.currentTopic) return;
   const p = getTopicProgress(state.currentTopic);
-  const pts = calcPoints(p.done);
+  const weekDone = (p.week_start === getWeekStart()) ? (p.week_done || 0) : 0;
+  const pts = calcPoints(weekDone);
   const total = pts + state.bonusPts;
   const bonusSuffix = state.bonusPts > 0 ? ` <span style="color:var(--accent);font-size:11px">(+${state.bonusPts} bonus)</span>` : '';
   const dukatChip = (p.dukats > 0)
@@ -10003,9 +10018,13 @@ async function pvpRecordCorrect(topic) {
     state.currentUser.season_points = (state.currentUser.season_points || 0) + data.pts;
     state.currentUser.total_points  = (state.currentUser.total_points  || 0) + data.pts;
     if (!state.currentUser.topics) state.currentUser.topics = {};
-    if (!state.currentUser.topics[topic]) state.currentUser.topics[topic] = { done: 0, points: 0 };
+    if (!state.currentUser.topics[topic]) state.currentUser.topics[topic] = { done: 0, points: 0, week_done: 0, week_start: '' };
+    const ws2 = getWeekStart();
+    const t2 = state.currentUser.topics[topic];
     state.currentUser.topics[topic].done   = data.done;
     state.currentUser.topics[topic].points += data.pts;
+    if (t2.week_start !== ws2) { t2.week_done = 1; t2.week_start = ws2; }
+    else { t2.week_done = (t2.week_done || 0) + 1; }
   }
 
   if (data.newAchs?.length) {
