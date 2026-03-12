@@ -8665,8 +8665,12 @@ function updateStatsRow() {
   const p = getTopicProgress(state.currentTopic);
   const weekDone = (p.week_start === getWeekStart()) ? (p.week_done || 0) : 0;
   const pts = calcPoints(weekDone);
-  const total = pts + state.bonusPts;
-  const bonusSuffix = state.bonusPts > 0 ? ` <span style="color:var(--accent);font-size:11px">(+${state.bonusPts} bonus)</span>` : '';
+  const diffBonus = (state.currentDifficulty === 'medium' || state.currentDifficulty === 'challenge') ? 5 : 0;
+  const total = pts + state.bonusPts + diffBonus;
+  const bonusParts = [];
+  if (state.bonusPts > 0) bonusParts.push(`+${state.bonusPts} osiąg.`);
+  if (diffBonus > 0) bonusParts.push(`+${diffBonus} poziom`);
+  const bonusSuffix = bonusParts.length > 0 ? ` <span style="color:var(--accent);font-size:11px">(${bonusParts.join(', ')})</span>` : '';
   const dukatChip = (p.dukats > 0)
     ? `<div class="stat-chip">🪙 Dukaty z tematu: <span class="val">${p.dukats}/6</span></div>`
     : '';
