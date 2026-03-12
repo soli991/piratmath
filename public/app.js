@@ -59,6 +59,7 @@ function ratSqueak() {
 // ============================================================
 
 async function api(method, path, body) {
+  if (state.guest && method !== 'GET') return {};
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
   const opts = { method, headers: { 'Content-Type': 'application/json' }, signal: controller.signal };
@@ -364,6 +365,7 @@ let state = {
   pvpWins: 0,
   ownedGaleonItems: [],
   activeFrame: '',
+  guest: false,
   server: localStorage.getItem('mq_server') || 'global', // 'global' | 'class'
   classTopics: null,        // null = brak klasy, Set<string> = odblokowane tematy
   classInfo: null,          // { className, grade, schoolName }
@@ -1328,6 +1330,7 @@ function switchToLogin() {
   document.getElementById('usernameInput').style.display = '';
   document.getElementById('passwordInput').style.display = '';
   document.getElementById('resetSwitch').style.display   = '';
+  document.getElementById('guestLink').style.display     = '';
   document.getElementById('loginError').textContent = '';
 }
 
@@ -1338,6 +1341,7 @@ function switchToReset() {
   document.getElementById('passwordInput').style.display = 'none';
   document.getElementById('loginSwitch').style.display   = 'none';
   document.getElementById('resetSwitch').style.display   = 'none';
+  document.getElementById('guestLink').style.display     = 'none';
   document.getElementById('loginTitle').textContent = 'Reset hasła';
   document.getElementById('loginSub').textContent   = '';
   document.getElementById('loginDeco').textContent  = '🔑';
@@ -1438,6 +1442,13 @@ async function initApp() {
     // Przy odświeżeniu strony nie pokazujemy ponownie server select — pamiętamy wybór
   }
 
+  renderLeaderboards();
+}
+
+function playAsGuest() {
+  state.guest = true;
+  document.getElementById('loginModal').style.display = 'none';
+  document.getElementById('guestBanner').style.display = 'flex';
   renderLeaderboards();
 }
 
@@ -9461,9 +9472,16 @@ const PVP_TOPICS = {
 };
 
 function openPvp() {
+  if (state.guest) { showLoginRequired(); return; }
   document.getElementById('pvpOverlay').style.display = 'flex';
   renderPvpContent();  // natychmiastowy render z aktualnego stanu
   pollPvpNow();        // odświeżenie danych z serwera
+}
+
+function showLoginRequired() {
+  switchToLogin();
+  document.getElementById('loginModal').style.display = 'flex';
+  document.getElementById('loginError').textContent = '⚠️ Ta funkcja wymaga konta. Zaloguj się lub zarejestruj!';
 }
 
 function closePvp() {

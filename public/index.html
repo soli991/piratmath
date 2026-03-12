@@ -2584,6 +2584,14 @@ details[open] .tp-level-summary::after { content: '▴'; }
 </head>
 <body>
 
+<!-- BANER GOŚCIA -->
+<div id="guestBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(255,180,0,0.15);border-bottom:1px solid rgba(255,180,0,0.4);padding:8px 16px;align-items:center;justify-content:center;gap:12px;backdrop-filter:blur(6px)">
+  <span style="font-size:14px;color:#ffd966">⚠️ Grasz jako gość — postępy nie są zapisywane.</span>
+  <a onclick="document.getElementById('guestBanner').style.display='none';document.getElementById('loginModal').style.display='flex';switchToLogin()" style="cursor:pointer;font-size:13px;color:#4f8ef7;text-decoration:underline">Zaloguj się</a>
+  <span style="font-size:13px;color:rgba(255,255,255,0.4)">lub</span>
+  <a onclick="document.getElementById('guestBanner').style.display='none';document.getElementById('loginModal').style.display='flex';switchToRegister()" style="cursor:pointer;font-size:13px;color:#4f8ef7;text-decoration:underline">Utwórz konto</a>
+</div>
+
 <!-- Background elements (za UI) -->
 <div class="stars-bg" id="starsContainer"></div>
 <div class="orb orb1"></div>
@@ -2663,6 +2671,9 @@ details[open] .tp-level-summary::after { content: '▴'; }
     </div>
     <div class="modal-switch" id="resetSwitch">
       <a onclick="switchToReset()">Zapomniałem hasła</a>
+    </div>
+    <div id="guestLink" style="margin-top:8px;text-align:center">
+      <a onclick="playAsGuest()" style="cursor:pointer;font-size:13px;color:rgba(255,255,255,0.45);text-decoration:underline">Graj jako gość (bez konta)</a>
     </div>
 
     <!-- Formularz resetu hasła (domyślnie ukryty) -->
