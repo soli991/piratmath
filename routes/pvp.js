@@ -287,23 +287,24 @@ router.post('/challenge-answer', requireAuth, (req, res) => {
   })();
 
   const existing = db.prepare(
-    'SELECT done, points, week_done, week_start FROM topic_progress WHERE user_id = ? AND topic = ?'
+    'SELECT done, points, week_done_med, week_start_med FROM topic_progress WHERE user_id = ? AND topic = ?'
   ).get(userId, topic);
-  const currentDone = existing ? existing.done : 0;
-  const weekDone    = existing && existing.week_start === weekStart ? (existing.week_done || 0) : 0;
-  const bonusPts    = getBonusPts(userId);
-  const pts         = calcPoints(weekDone) + bonusPts;
+  const currentDone      = existing ? existing.done : 0;
+  const currentWeekStart = existing ? (existing.week_start_med || '') : '';
+  const weekDone         = currentWeekStart === weekStart ? (existing.week_done_med || 0) : 0;
+  const bonusPts         = getBonusPts(userId);
+  const pts              = calcPoints(weekDone) + bonusPts + 5; // PvP jest zawsze medium (+5)
 
   if (existing) {
-    if (existing.week_start !== weekStart) {
-      db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ?, week_done = 1, week_start = ? WHERE user_id = ? AND topic = ?')
+    if (currentWeekStart !== weekStart) {
+      db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ?, week_done_med = 1, week_start_med = ? WHERE user_id = ? AND topic = ?')
         .run(pts, weekStart, userId, topic);
     } else {
-      db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ?, week_done = week_done + 1 WHERE user_id = ? AND topic = ?')
+      db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ?, week_done_med = week_done_med + 1 WHERE user_id = ? AND topic = ?')
         .run(pts, userId, topic);
     }
   } else {
-    db.prepare('INSERT INTO topic_progress (user_id, topic, done, points, week_done, week_start) VALUES (?, ?, 1, ?, 1, ?)')
+    db.prepare('INSERT INTO topic_progress (user_id, topic, done, points, week_done_med, week_start_med) VALUES (?, ?, 1, ?, 1, ?)')
       .run(userId, topic, pts, weekStart);
   }
 
@@ -638,24 +639,25 @@ router.post('/answer', requireAuth, (req, res) => {
 
   // Aktualizuj normalny postęp (topic_progress, points, achievements) — jak w /api/answer/correct
   const existing = db.prepare(
-    'SELECT done, points, week_done, week_start FROM topic_progress WHERE user_id = ? AND topic = ?'
+    'SELECT done, points, week_done_med, week_start_med FROM topic_progress WHERE user_id = ? AND topic = ?'
   ).get(userId, topic);
 
-  const currentDone = existing ? existing.done : 0;
-  const weekDone    = existing && existing.week_start === weekStart ? (existing.week_done || 0) : 0;
-  const bonusPts    = getBonusPts(userId);
-  const pts         = calcPoints(weekDone) + bonusPts;
+  const currentDone      = existing ? existing.done : 0;
+  const currentWeekStart = existing ? (existing.week_start_med || '') : '';
+  const weekDone         = currentWeekStart === weekStart ? (existing.week_done_med || 0) : 0;
+  const bonusPts         = getBonusPts(userId);
+  const pts              = calcPoints(weekDone) + bonusPts + 5; // PvP jest zawsze medium (+5)
 
   if (existing) {
-    if (existing.week_start !== weekStart) {
-      db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ?, week_done = 1, week_start = ? WHERE user_id = ? AND topic = ?')
+    if (currentWeekStart !== weekStart) {
+      db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ?, week_done_med = 1, week_start_med = ? WHERE user_id = ? AND topic = ?')
         .run(pts, weekStart, userId, topic);
     } else {
-      db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ?, week_done = week_done + 1 WHERE user_id = ? AND topic = ?')
+      db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ?, week_done_med = week_done_med + 1 WHERE user_id = ? AND topic = ?')
         .run(pts, userId, topic);
     }
   } else {
-    db.prepare('INSERT INTO topic_progress (user_id, topic, done, points, week_done, week_start) VALUES (?, ?, 1, ?, 1, ?)')
+    db.prepare('INSERT INTO topic_progress (user_id, topic, done, points, week_done_med, week_start_med) VALUES (?, ?, 1, ?, 1, ?)')
       .run(userId, topic, pts, weekStart);
   }
 

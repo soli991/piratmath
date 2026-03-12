@@ -182,6 +182,16 @@ try { db.exec("ALTER TABLE topic_progress ADD COLUMN week_start TEXT    DEFAULT 
 try { db.exec('ALTER TABLE class_topic_progress ADD COLUMN week_done  INTEGER DEFAULT 0'); } catch(e) {}
 try { db.exec("ALTER TABLE class_topic_progress ADD COLUMN week_start TEXT    DEFAULT ''"); } catch(e) {}
 
+// Tygodniowy licznik per temat i poziom trudności (v12) – easy osobno od medium/challenge
+try { db.exec('ALTER TABLE topic_progress ADD COLUMN week_done_easy  INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec("ALTER TABLE topic_progress ADD COLUMN week_start_easy TEXT    DEFAULT ''"); } catch(e) {}
+try { db.exec('ALTER TABLE topic_progress ADD COLUMN week_done_med   INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec("ALTER TABLE topic_progress ADD COLUMN week_start_med  TEXT    DEFAULT ''"); } catch(e) {}
+try { db.exec('ALTER TABLE class_topic_progress ADD COLUMN week_done_easy  INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec("ALTER TABLE class_topic_progress ADD COLUMN week_start_easy TEXT    DEFAULT ''"); } catch(e) {}
+try { db.exec('ALTER TABLE class_topic_progress ADD COLUMN week_done_med   INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec("ALTER TABLE class_topic_progress ADD COLUMN week_start_med  TEXT    DEFAULT ''"); } catch(e) {}
+
 // Postęp tematów na serwerze klasowym (oddzielny od globalnego)
 db.exec(`
   CREATE TABLE IF NOT EXISTS class_topic_progress (

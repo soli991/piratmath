@@ -8511,13 +8511,19 @@ async function recordCorrect(topic) {
       state.currentUser.total_points  = (state.currentUser.total_points  || 0) + data.pts;
     }
     if (!state.currentUser.topics) state.currentUser.topics = {};
-    if (!state.currentUser.topics[topic]) state.currentUser.topics[topic] = { done: 0, points: 0, week_done: 0, week_start: '' };
+    if (!state.currentUser.topics[topic]) state.currentUser.topics[topic] = { done: 0, points: 0, week_done_easy: 0, week_start_easy: '', week_done_med: 0, week_start_med: '' };
     const ws = getWeekStart();
     const t = state.currentUser.topics[topic];
     state.currentUser.topics[topic].done   = data.done;
     state.currentUser.topics[topic].points += data.pts;
-    if (t.week_start !== ws) { t.week_done = 1; t.week_start = ws; }
-    else { t.week_done = (t.week_done || 0) + 1; }
+    const recDiff = state.challengeActive ? 'challenge' : state.currentDifficulty;
+    if (recDiff === 'easy') {
+      if (t.week_start_easy !== ws) { t.week_done_easy = 1; t.week_start_easy = ws; }
+      else { t.week_done_easy = (t.week_done_easy || 0) + 1; }
+    } else {
+      if (t.week_start_med !== ws) { t.week_done_med = 1; t.week_start_med = ws; }
+      else { t.week_done_med = (t.week_done_med || 0) + 1; }
+    }
   }
 
   // Osiągnięcia
@@ -8663,9 +8669,13 @@ async function logout() {
 function updateStatsRow() {
   if (!state.currentUser || !state.currentTopic) return;
   const p = getTopicProgress(state.currentTopic);
-  const weekDone = (p.week_start === getWeekStart()) ? (p.week_done || 0) : 0;
+  const ws = getWeekStart();
+  const isEasy = state.currentDifficulty === 'easy';
+  const weekDone = isEasy
+    ? ((p.week_start_easy === ws) ? (p.week_done_easy || 0) : 0)
+    : ((p.week_start_med  === ws) ? (p.week_done_med  || 0) : 0);
   const pts = calcPoints(weekDone);
-  const diffBonus = (state.currentDifficulty === 'medium' || state.currentDifficulty === 'challenge') ? 5 : 0;
+  const diffBonus = isEasy ? 0 : 5;
   const total = pts + state.bonusPts + diffBonus;
   const bonusParts = [];
   if (state.bonusPts > 0) bonusParts.push(`+${state.bonusPts} osiąg.`);
@@ -10022,13 +10032,13 @@ async function pvpRecordCorrect(topic) {
     state.currentUser.season_points = (state.currentUser.season_points || 0) + data.pts;
     state.currentUser.total_points  = (state.currentUser.total_points  || 0) + data.pts;
     if (!state.currentUser.topics) state.currentUser.topics = {};
-    if (!state.currentUser.topics[topic]) state.currentUser.topics[topic] = { done: 0, points: 0, week_done: 0, week_start: '' };
+    if (!state.currentUser.topics[topic]) state.currentUser.topics[topic] = { done: 0, points: 0, week_done_easy: 0, week_start_easy: '', week_done_med: 0, week_start_med: '' };
     const ws2 = getWeekStart();
     const t2 = state.currentUser.topics[topic];
     state.currentUser.topics[topic].done   = data.done;
     state.currentUser.topics[topic].points += data.pts;
-    if (t2.week_start !== ws2) { t2.week_done = 1; t2.week_start = ws2; }
-    else { t2.week_done = (t2.week_done || 0) + 1; }
+    if (t2.week_start_med !== ws2) { t2.week_done_med = 1; t2.week_start_med = ws2; }
+    else { t2.week_done_med = (t2.week_done_med || 0) + 1; }
   }
 
   if (data.newAchs?.length) {
