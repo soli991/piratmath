@@ -2251,18 +2251,11 @@ function genFractionChain(d) {
   const pool = d === 'easy' ? [2,3,4,5] : [2,3,4,5,6,7,8];
   const b = pool[rand(0, pool.length - 1)], a = rand(1, b - 1);
   const numSteps = rand(3, 4), usedKs = new Set(), ks = [];
-  while (ks.length < numSteps) { const k = rand(2, d === 'easy' ? 6 : 15); if (!usedKs.has(k)) { ks.push(k); usedKs.add(k); } }
+  while (ks.length < numSteps) { const k = rand(2, d === 'easy' ? 6 : 12); if (!usedKs.has(k)) { ks.push(k); usedKs.add(k); } }
   ks.sort((x, y) => x - y);
-  const blankIdx = rand(0, numSteps - 1), blankK = ks[blankIdx];
-  const numBlank = Math.random() < 0.5;
-  const parts = ks.map((k, i) => i === blankIdx
-    ? (numBlank ? qFrac(qBlank(), b*k) : qFrac(a*k, qBlank()))
-    : qFrac(a*k, b*k));
-  const hint = numBlank
-    ? `Mianownik to ${b}×${blankK}=${b*blankK}, więc licznik = ${a}×${blankK}=${a*blankK}`
-    : `Licznik to ${a}×${blankK}=${a*blankK}, więc mianownik = ${b}×${blankK}=${b*blankK}`;
-  const chainParts = ks.map(k => ({ num: a*k, den: b*k }));
-  return { type: 'fraction_chain', baseFrac: { num: a, den: b }, chainParts, blankIdx, numBlank, a: numBlank ? a*blankK : b*blankK, hint };
+  const chainParts = ks.map(k => ({ num: a*k, den: b*k, numBlank: Math.random() < 0.5 }));
+  const hint = `Mnóż licznik i mianownik przez tę samą liczbę: ${a}/${b} × k/k`;
+  return { type: 'fraction_chain', baseFrac: { num: a, den: b }, chainParts, hint };
 }
 
 function genFractionEqCheck(d) {
@@ -7445,11 +7438,13 @@ async function checkFractionAdd() {
 
 function buildFractionChainHtml(q) {
   const solved = q.solutionShown;
-  const inp = `<input id="fcInput" class="fr-input fc-chain-inp" type="number" min="1"${solved ? ` value="${q.a}" disabled` : ''} onkeydown="if(event.key==='Enter')checkAnswer()">`;
   const fracEl = (top, bot) => `<div class="fc-frac"><span class="fc-top">${top}</span><span class="fc-bar"></span><span class="fc-bot">${bot}</span></div>`;
-  const parts = q.chainParts.map((p, i) => i === q.blankIdx
-    ? fracEl(q.numBlank ? inp : p.num, q.numBlank ? p.den : inp)
-    : fracEl(p.num, p.den));
+  const inpEl = (id, val) => `<input id="${id}" class="fr-input fc-chain-inp" type="number" min="1"${solved ? ` value="${val}" disabled` : ''} onkeydown="if(event.key==='Enter')checkAnswer()">`;
+  const parts = q.chainParts.map((p, i) =>
+    p.numBlank
+      ? fracEl(inpEl(`fc${i}`, p.num), p.den)
+      : fracEl(p.num, inpEl(`fc${i}`, p.den))
+  );
   const all = [fracEl(q.baseFrac.num, q.baseFrac.den), ...parts].join('<span class="fc-sep">=</span>');
   return `<div class="fc-chain-wrap"><div class="fc-chain-row">${all}</div><div id="fcHint" class="ic-hint" style="display:none"></div></div>`;
 }
@@ -7457,12 +7452,14 @@ function buildFractionChainHtml(q) {
 async function checkFractionChain() {
   const q = state.currentQuestion;
   if (!q || q.type !== 'fraction_chain' || state.answerLocked) return;
-  const val = parseInt(document.getElementById('fcInput')?.value);
   const hintEl = document.getElementById('fcHint');
-  if (val === q.a) {
+  const allCorrect = q.chainParts.every((p, i) =>
+    parseInt(document.getElementById(`fc${i}`)?.value) === (p.numBlank ? p.num : p.den)
+  );
+  if (allCorrect) {
     state.answerLocked = true;
     playSound('correct');
-    document.getElementById('fcInput')?.classList.add('correct');
+    q.chainParts.forEach((_, i) => document.getElementById(`fc${i}`)?.classList.add('correct'));
     let pts = 0;
     const wasFirst = state.isFirstAttempt && !state.solutionShown;
     if (wasFirst) {
@@ -7480,12 +7477,15 @@ async function checkFractionChain() {
     reportMistake();
     playSound('wrong');
     if (state.mistakes <= 3) document.getElementById(`dot${state.mistakes - 1}`).classList.add('used');
-    const inp = document.getElementById('fcInput');
-    if (inp) { inp.classList.add('wrong'); setTimeout(() => inp.classList.remove('wrong'), 600); }
+    q.chainParts.forEach((p, i) => {
+      const el = document.getElementById(`fc${i}`);
+      const ok = parseInt(el?.value) === (p.numBlank ? p.num : p.den);
+      if (!ok && el) { el.classList.add('wrong'); setTimeout(() => el.classList.remove('wrong'), 600); }
+    });
     if (state.mistakes >= 3) {
       state.solutionShown = true; state.answerLocked = true;
       document.getElementById('writtenAddArea').innerHTML = buildFractionChainHtml(q);
-      showToast(`✗ Odpowiedź: ${q.a}`, 'wrong');
+      showToast('✗ Zobacz poprawne odpowiedzi', 'wrong');
       setTimeout(() => loadQuestion(), 2500);
     } else if (state.mistakes === 2 && hintEl) {
       hintEl.textContent = `💡 ${q.hint}`; hintEl.style.display = '';
@@ -7496,14 +7496,14 @@ async function checkFractionChain() {
 }
 
 function buildFractionOpHtml(q) {
-  const opSym = q.op === 'extend' ? `×${q.k}` : `÷${q.k}`;
+  const label = q.op === 'extend' ? `Rozszerz przez ${q.k}:` : `Skróć przez ${q.k}:`;
   const solved = q.solutionShown;
   const inp = (id, val) => `<input id="${id}" class="fr-input fop-inp" type="number" min="1" value="${solved ? val : ''}" ${solved ? 'disabled' : ''} onkeydown="if(event.key==='Enter')checkAnswer()">`;
   return `
     <div class="fop-wrap">
+      <div class="fop-label">${label}</div>
       <div class="fop-row">
         <div class="fc-frac"><span class="fc-top">${q.a}</span><span class="fc-bar"></span><span class="fc-bot">${q.b}</span></div>
-        <div class="fop-op">${opSym}</div>
         <span class="fop-eq">=</span>
         <div class="fc-frac">
           ${inp('fopNum', q.ans_a)}
