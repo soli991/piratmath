@@ -8475,7 +8475,7 @@ async function checkStreakBonus() {
 
 async function recordCorrect(topic) {
   // W trakcie tury PvP używamy dedykowanego endpointu
-  if (state.pvp.state === 'my_turn_playing') return pvpRecordCorrect(topic);
+  if (state.pvp.state === 'my_turn_playing' || state.pvp.state === 'challenge_pre_turn') return pvpRecordCorrect(topic);
 
   const comeback = state.mistakes >= 2 && !state.solutionShown;
   const difficulty = state.challengeActive ? 'challenge' : state.currentDifficulty;
