@@ -5320,6 +5320,7 @@ async function checkRounding() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 1000);
@@ -5408,6 +5409,7 @@ async function checkComparison() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 700);
@@ -5511,6 +5513,7 @@ async function checkPower() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 600);
@@ -5604,6 +5607,7 @@ async function checkOrderOps() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 600);
@@ -5702,6 +5706,7 @@ async function checkDivisibility() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 800);
@@ -5818,6 +5823,7 @@ async function checkFunctionQ(userAnswer) {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 700);
@@ -5899,6 +5905,7 @@ async function checkNumWrite() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 800);
@@ -6051,6 +6058,7 @@ async function checkDivRem() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 700);
@@ -6204,6 +6212,7 @@ async function checkFractionRead() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 700);
@@ -6424,6 +6433,7 @@ async function checkSqrtBounds() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 500);
@@ -6520,6 +6530,7 @@ async function checkPrimeFactors() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 600);
@@ -6675,6 +6686,7 @@ async function checkNwd() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 600);
@@ -6804,6 +6816,7 @@ async function checkNww() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 600);
@@ -6911,6 +6924,7 @@ async function checkAbsValue() {
     if (state.challengeActive) {
       state.challengeCorrect++; state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       const approxNote = isApprox ? ` (dokładnie: ${renderK(q.answerLatex, q.answerDisplay)})` : '';
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}${approxNote}`, 'correct');
@@ -7879,6 +7893,7 @@ async function checkWrittenAddition() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 500);
@@ -7993,6 +8008,7 @@ async function checkWrittenMultiplication() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 500);
@@ -8084,6 +8100,7 @@ async function checkWrittenDivision() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => loadQuestion(), 1200);
@@ -8151,6 +8168,7 @@ async function checkPalindromeFill() {
     if (state.challengeActive) {
       state.challengeCorrect++; state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => { input.classList.remove('correct'); loadQuestion(); }, 350);
@@ -8347,6 +8365,7 @@ async function checkAnswer() {
       state.challengeCorrect++;
       state.answerStreak++;
       document.getElementById('challengeScore').textContent = state.challengeCorrect;
+      if (state.currentUser) recordCorrect(state.currentTopic).then(pts => { showPointsPop(pts); updateStatsRow(); });
       checkStreakBonus();
       showToast(`✓ Brawo!${streakSuffix(state.answerStreak)}`, 'correct');
       setTimeout(() => { input.classList.remove('correct'); loadQuestion(); }, 350);
