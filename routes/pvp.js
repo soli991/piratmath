@@ -254,11 +254,70 @@ router.post('/challenge', requireAuth, (req, res) => {
   if (activeMatch) return res.status(400).json({ error: 'Masz już aktywny mecz' });
 
   const expiresAt = nowSec() + 600;
+  const startedAt = nowSec();
   const result = db.prepare(
-    'INSERT INTO pvp_challenges (challenger_id, level, stake_dukats, stake_points, expires_at, topic) VALUES (?,?,?,?,?,?)'
-  ).run(userId, level, dukats, points, expiresAt, topic);
+    'INSERT INTO pvp_challenges (challenger_id, level, stake_dukats, stake_points, expires_at, topic, p1_started_at) VALUES (?,?,?,?,?,?,?)'
+  ).run(userId, level, dukats, points, expiresAt, topic, startedAt);
 
-  res.json({ challenge: { id: result.lastInsertRowid, level, stake_dukats: dukats, stake_points: points, expires_at: expiresAt, topic } });
+  res.json({ challenge: { id: result.lastInsertRowid, level, stake_dukats: dukats, stake_points: points, expires_at: expiresAt, topic, started_at: startedAt } });
+});
+
+// ── POST /api/pvp/challenge-answer ───────────────────────────
+// Gracz A (challenger) zapisuje poprawną odpowiedź podczas fazy challenge_pre_turn
+router.post('/challenge-answer', requireAuth, (req, res) => {
+  const { topic, streak = 0 } = req.body;
+  const userId = req.session.userId;
+  const now = nowSec();
+
+  const challenge = db.prepare('SELECT * FROM pvp_challenges WHERE challenger_id = ?').get(userId);
+  if (!challenge) return res.status(400).json({ error: 'Brak aktywnego wyzwania' });
+  if (challenge.p1_started_at + TURN_DURATION + 5 < now)
+    return res.status(400).json({ error: 'Czas minął' });
+
+  db.prepare('UPDATE pvp_challenges SET p1_score = p1_score + 1 WHERE id = ?').run(challenge.id);
+
+  const existing = db.prepare(
+    'SELECT done, points FROM topic_progress WHERE user_id = ? AND topic = ?'
+  ).get(userId, topic);
+  const currentDone = existing ? existing.done : 0;
+  const bonusPts = getBonusPts(userId);
+  const pts = calcPoints(currentDone) + bonusPts;
+
+  if (existing) {
+    db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ? WHERE user_id = ? AND topic = ?')
+      .run(pts, userId, topic);
+  } else {
+    db.prepare('INSERT INTO topic_progress (user_id, topic, done, points) VALUES (?, ?, 1, ?)')
+      .run(userId, topic, pts);
+  }
+
+  const weekStart = (() => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const mon = new Date(d);
+    mon.setHours(0, 0, 0, 0);
+    mon.setDate(d.getDate() + diff);
+    return `${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
+  })();
+  const wRow = db.prepare('SELECT week_start FROM users WHERE id = ?').get(userId);
+  if (wRow.week_start !== weekStart) {
+    db.prepare('UPDATE users SET week_points = 0, class_week_points = 0, week_start = ? WHERE id = ?').run(weekStart, userId);
+  }
+
+  db.prepare(`
+    UPDATE users SET
+      season_points = season_points + ?,
+      total_points  = total_points  + ?,
+      week_points   = week_points   + ?,
+      total_tasks   = total_tasks   + 1,
+      max_streak    = CASE WHEN max_streak > ? THEN max_streak ELSE ? END
+    WHERE id = ?
+  `).run(pts, pts, pts, streak, streak, userId);
+
+  const newAchs = checkAndUnlock(userId, { topic, topic_done: currentDone + 1 });
+  const updated = db.prepare('SELECT p1_score FROM pvp_challenges WHERE id = ?').get(challenge.id);
+  res.json({ pvp_score: updated.p1_score, pts, done: currentDone + 1, newAchs });
 });
 
 // ── DELETE /api/pvp/my-challenge ──────────────────────────────
@@ -325,13 +384,17 @@ router.post('/accept/:id', requireAuth, (req, res) => {
   `).run(challenge.challenger_id, userId, challenge.level, actualDukats, actualPoints);
   const matchId = matchResult.lastInsertRowid;
 
-  // Utwórz 6 tur; runda 1 ma temat z wyzwania — obaj zaczynają w 'waiting', klikają "Zacznij!" sami
   const r1Topic = challenge.topic || '';
-  // Runda 1: obaj gracze mają temat ustawiony, ale jeszcze nie startują (waiting)
-  db.prepare("INSERT INTO pvp_turns (match_id, round_num, player_id, topic) VALUES (?,?,?,?)")
-    .run(matchId, 1, userId, r1Topic);                         // p2 runda 1
-  db.prepare("INSERT INTO pvp_turns (match_id, round_num, player_id, topic) VALUES (?,?,?,?)")
-    .run(matchId, 1, challenge.challenger_id, r1Topic);        // p1 runda 1
+  const bStartedAt = nowSec();
+
+  // Runda 1: A (challenger) już grał podczas tworzenia wyzwania — tura 'done' z zapisanym wynikiem
+  db.prepare("INSERT INTO pvp_turns (match_id, round_num, player_id, topic, status, score) VALUES (?,?,?,?,'done',?)")
+    .run(matchId, 1, challenge.challenger_id, r1Topic, challenge.p1_score || 0);  // p1 runda 1
+
+  // Runda 1: B (accepter) startuje od razu
+  db.prepare("INSERT INTO pvp_turns (match_id, round_num, player_id, topic, status, started_at) VALUES (?,?,?,?,'active',?)")
+    .run(matchId, 1, userId, r1Topic, bStartedAt);             // p2 runda 1
+
   // Rundy 2-3: normalnie (bez tematu)
   for (let r = 2; r <= 3; r++) {
     db.prepare('INSERT INTO pvp_turns (match_id, round_num, player_id) VALUES (?,?,?)')
@@ -343,7 +406,7 @@ router.post('/accept/:id', requireAuth, (req, res) => {
   // Usuń wyzwanie
   db.prepare('DELETE FROM pvp_challenges WHERE id = ?').run(challengeId);
 
-  res.json({ match_id: matchId, actual_dukats: actualDukats, actual_points: actualPoints });
+  res.json({ match_id: matchId, actual_dukats: actualDukats, actual_points: actualPoints, topic: r1Topic, started_at: bStartedAt });
 });
 
 // ── GET /api/pvp/status ───────────────────────────────────────

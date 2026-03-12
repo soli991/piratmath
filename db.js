@@ -59,6 +59,10 @@ try { db.exec('ALTER TABLE users ADD COLUMN pvp_rating INTEGER DEFAULT 0'); } ca
 // Kolumny dodane w v9 – temat wyzwania PvP (wybierany przy tworzeniu wyzwania)
 try { db.exec("ALTER TABLE pvp_challenges ADD COLUMN topic TEXT DEFAULT ''"); } catch(e) {}
 
+// Kolumny dodane w v10 – A gra od razu przy tworzeniu wyzwania
+try { db.exec('ALTER TABLE pvp_challenges ADD COLUMN p1_started_at INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec('ALTER TABLE pvp_challenges ADD COLUMN p1_score INTEGER DEFAULT 0'); } catch(e) {}
+
 // Tabela osiągnięć użytkownika
 db.exec(`
   CREATE TABLE IF NOT EXISTS user_achievements (

@@ -371,7 +371,7 @@ let state = {
   classInfo: null,          // { className, grade, schoolName }
   teacherClassId: null,     // aktualnie wybrana klasa w panelu nauczyciela / server select
   pvp: {
-    state: 'idle',          // idle | challenge_pending | my_turn_choose | my_turn_ready | my_turn_playing | waiting_opponent | match_finished
+    state: 'idle',          // idle | challenge_pre_turn | challenge_pending | my_turn_choose | my_turn_ready | my_turn_playing | waiting_opponent | match_finished
     pollInterval: null,
     match: null,
     challenge: null,
@@ -9510,6 +9510,10 @@ async function pollPvpNow() {
   if (!data) return;
 
   const prev = state.pvp.state;
+
+  // Nie nadpisuj stanu gdy A gra swoją turę pre-challenge (serwer zwraca 'challenge_pending')
+  if (prev === 'challenge_pre_turn') return;
+
   state.pvp.state       = data.state;
   state.pvp.match       = data.match || null;
   state.pvp.challenge   = data.challenge || null;
@@ -9574,6 +9578,7 @@ function renderPvpContent() {
   const s = state.pvp.state;
 
   if (s === 'idle') { el.innerHTML = renderPvpIdle(); loadAvailableChallenges(); }
+  else if (s === 'challenge_pre_turn') { el.innerHTML = renderPvpPending(); startPendingCountdown(); }
   else if (s === 'challenge_pending') {
     el.innerHTML = renderPvpPending();
     loadAvailableChallenges();
@@ -9829,11 +9834,12 @@ async function createChallenge() {
     const data = await api('POST', '/api/pvp/challenge', { level, stake_dukats: dukats, stake_points: points, topic });
     if (data.error) { showToast(data.error, 'wrong'); return; }
 
-    // Natychmiastowa aktualizacja stanu z odpowiedzi (bez czekania na poll)
-    state.pvp.state = 'challenge_pending';
+    // A gra od razu — bez czekania na przeciwnika
+    state.pvp.state = 'challenge_pre_turn';
     state.pvp.challenge = data.challenge;
-    renderPvpContent();
-    pollPvpNow(); // odświeżenie w tle
+    state.pvp.topic = data.challenge.topic;
+    state.pvp.pvpScore = 0;
+    launchPvpTurn(data.challenge.topic, data.challenge.started_at);
   } catch (e) {
     showToast('Błąd połączenia: ' + e.message, 'wrong');
   }
@@ -9872,17 +9878,17 @@ async function loadAvailableChallenges() {
 async function acceptChallenge(id) {
   const data = await api('POST', `/api/pvp/accept/${id}`);
   if (data.error) { showToast(data.error, 'wrong'); return; }
-  if (data.actual_dukats !== undefined || data.actual_points !== undefined) {
-    // Zaktualizuj dukaty/punkty lokalnie po dedukcji stawki
-    if (state.currentUser) {
-      state.currentUser.dukaty         = Math.max(0, (state.currentUser.dukaty         || 0) - (data.actual_dukats || 0));
-      state.currentUser.season_points  = Math.max(0, (state.currentUser.season_points  || 0) - (data.actual_points || 0));
-      state.dukaty = state.currentUser.dukaty;
-      updateUserPanel();
-    }
+  if (state.currentUser) {
+    state.currentUser.dukaty        = Math.max(0, (state.currentUser.dukaty        || 0) - (data.actual_dukats || 0));
+    state.currentUser.season_points = Math.max(0, (state.currentUser.season_points || 0) - (data.actual_points || 0));
+    state.dukaty = state.currentUser.dukaty;
+    updateUserPanel();
   }
-  await pollPvpNow();
-  renderPvpContent();
+  // B gra od razu — bez ekranu "Zacznij!"
+  state.pvp.state = 'my_turn_playing';
+  state.pvp.topic = data.topic;
+  state.pvp.pvpScore = 0;
+  launchPvpTurn(data.topic, data.started_at);
 }
 
 // Wspólna funkcja: uruchamia ćwiczenia PvP dla danego tematu i timera
@@ -9976,7 +9982,10 @@ function dismissTimeUp() {
 }
 
 async function pvpRecordCorrect(topic) {
-  const data = await api('POST', '/api/pvp/answer', { topic, streak: state.answerStreak });
+  const endpoint = state.pvp.state === 'challenge_pre_turn'
+    ? '/api/pvp/challenge-answer'
+    : '/api/pvp/answer';
+  const data = await api('POST', endpoint, { topic, streak: state.answerStreak });
   if (!data || data.error) return 0;
 
   state.pvp.pvpScore = data.pvp_score;
@@ -10019,6 +10028,15 @@ async function endPvpTurn() {
   if (diffTabs) diffTabs.style.display = '';
   if (nextBtn)  nextBtn.style.display  = state.currentDifficulty === 'easy' ? '' : 'none';
   if (banner)   banner.style.display   = 'none';
+
+  if (state.pvp.state === 'challenge_pre_turn') {
+    // A skończył grać przed przyjęciem — wyzwanie czeka na przeciwnika
+    state.pvp.state = 'challenge_pending';
+    state.pvp.topic = null;
+    updatePvpBadge();
+    showToast(`⚔️ Tura zakończona! Poprawnych: ${state.pvp.pvpScore}`, 'correct');
+    return;
+  }
 
   const data = await api('POST', '/api/pvp/end-turn').catch(() => null);
   state.pvp.state = 'waiting_opponent';
