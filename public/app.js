@@ -1843,6 +1843,7 @@ function setDifficulty(diff, el) {
     loadQuestion();
     document.getElementById('timerBarWrap').classList.remove('visible');
   }
+  updateStatsRow();
 }
 
 function showChallengeSetup() {
