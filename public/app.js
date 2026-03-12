@@ -6856,8 +6856,6 @@ function buildAbsValueHtml(q) {
     <div class="abs-symbols">
       <button class="abs-sym-btn" onclick="absInsert('√')">√</button>
       <button class="abs-sym-btn" onclick="absInsert('π')">π</button>
-      <button class="abs-sym-btn" onclick="absInsert(' - ')">−</button>
-      <button class="abs-sym-btn" onclick="absInsert(' + ')">+</button>
     </div>
     <div class="abs-fmt-note">Możesz pisać: sqrt5, pi, lub klikać przyciski</div>
   </div>`;
