@@ -7822,7 +7822,7 @@ function loadQuestion() {
 
   const progress = getTopicProgress(state.currentTopic);
   const pts = calcPoints(progress.done);
-  document.getElementById('pointsInfo').textContent = `+${pts} pkt za pierwszą próbę`;
+  document.getElementById('pointsInfo').textContent = '';
   state.questionIndex++;
   document.getElementById('questionNum').textContent = `Zadanie #${state.questionIndex}`;
 }
