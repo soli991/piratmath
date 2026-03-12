@@ -8460,6 +8460,12 @@ async function checkStreakBonus() {
     if (data.dukat) {
       state.dukaty = data.totalDukaty !== undefined ? data.totalDukaty : state.dukaty + 1;
       state.currentUser.dukaty = state.dukaty;
+      // Zaktualizuj lokalny licznik dukatów per temat
+      if (state.currentUser.topics && state.currentTopic) {
+        if (!state.currentUser.topics[state.currentTopic]) state.currentUser.topics[state.currentTopic] = { done: 0, points: 0, dukats: 0 };
+        state.currentUser.topics[state.currentTopic].dukats = (state.currentUser.topics[state.currentTopic].dukats || 0) + 1;
+        updateStatsRow();
+      }
     }
 
     updateUserPanel();
@@ -8646,9 +8652,13 @@ function updateStatsRow() {
   const pts = calcPoints(p.done);
   const total = pts + state.bonusPts;
   const bonusSuffix = state.bonusPts > 0 ? ` <span style="color:var(--accent);font-size:11px">(+${state.bonusPts} bonus)</span>` : '';
+  const dukatChip = (p.dukats > 0)
+    ? `<div class="stat-chip">🪙 Dukaty z tematu: <span class="val">${p.dukats}/6</span></div>`
+    : '';
   document.getElementById('statsRow').innerHTML = `
     <div class="stat-chip">📝 Zadania w temacie: <span class="val">${p.done}</span></div>
     <div class="stat-chip">⭐ Punkty za temat: <span class="val">${p.points}</span></div>
+    ${dukatChip}
     <div class="stat-chip">➡️ Kolejne: <span class="val">+${total} pkt${bonusSuffix}</span></div>
   `;
 }

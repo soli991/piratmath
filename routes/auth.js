@@ -163,9 +163,15 @@ function buildTopicsMap(userId) {
   const rows = db.prepare(
     'SELECT topic, done, points FROM topic_progress WHERE user_id = ?'
   ).all(userId);
+  const dukatRows = db.prepare(
+    'SELECT topic, SUM(earned) AS earned FROM dukat_progress WHERE user_id = ? GROUP BY topic'
+  ).all(userId);
+  const dukatMap = {};
+  for (const d of dukatRows) dukatMap[d.topic] = d.earned || 0;
+
   const topics = {};
   for (const row of rows) {
-    topics[row.topic] = { done: row.done, points: row.points };
+    topics[row.topic] = { done: row.done, points: row.points, dukats: dukatMap[row.topic] || 0 };
   }
   return topics;
 }
