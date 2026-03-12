@@ -1371,6 +1371,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   const password = document.getElementById('passwordInput').value;
   const err = document.getElementById('loginError');
   err.textContent = '';
+  state.guest = false;
 
   const endpoint = isRegisterMode ? '/api/register' : '/api/login';
   const data = await api('POST', endpoint, { name, password });
@@ -1391,6 +1392,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   state.activeFrame = data.user.active_frame || '';
   loadAchievementsState(data.user);
   document.getElementById('loginModal').style.display = 'none';
+  document.getElementById('guestBanner').style.display = 'none';
   updateUserPanel();
   renderLeaderboards();
   handleDailyBonus(data.dailyBonus, data.dailyStreak);
