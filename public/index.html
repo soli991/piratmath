@@ -3266,6 +3266,18 @@ details[open] .tp-level-summary::after { content: '▴'; }
     </div>
   </main>
 
+  <!-- Challenge: modal wyników -->
+  <div class="pvp-timeup-overlay" id="challengeResultOverlay" style="display:none">
+    <div class="pvp-timeup-box">
+      <div class="pvp-timeup-icon">⏱️</div>
+      <div class="pvp-timeup-title">Koniec wyzwania!</div>
+      <div class="pvp-timeup-msg">Poprawnych odpowiedzi:</div>
+      <div class="pvp-timeup-score" id="challengeResultScore">0</div>
+      <div class="pvp-timeup-sub" id="challengeResultPts"></div>
+      <button class="pvp-submit-btn" onclick="dismissChallengeResult()">OK</button>
+    </div>
+  </div>
+
   <!-- PvP: modal "Czas minął" -->
   <div class="pvp-timeup-overlay" id="pvpTimeUpOverlay" style="display:none">
     <div class="pvp-timeup-box">
