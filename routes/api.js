@@ -122,28 +122,37 @@ router.post('/answer/correct', requireAuth, (req, res) => {
   const isClass = server === 'class';
   const progressTable = isClass ? 'class_topic_progress' : 'topic_progress';
 
+  // Lazy reset tygodniowych punktów (musi być przed calcPoints)
+  const weekStart = getWeekStart();
+
   // Pobierz lub utwórz rekord postępu (globalny lub klasowy)
   const existing = db.prepare(
-    `SELECT done, points FROM ${progressTable} WHERE user_id = ? AND topic = ?`
+    `SELECT done, points, week_done, week_start FROM ${progressTable} WHERE user_id = ? AND topic = ?`
   ).get(userId, topic);
 
   const currentDone = existing ? existing.done : 0;
-  const bonusPts    = getBonusPts(userId);
-  const diffBonus   = (difficulty === 'medium' || difficulty === 'challenge') ? 5 : 0;
-  const pts         = calcPoints(currentDone) + bonusPts + diffBonus;
+  // week_done resetuje się co poniedziałek — liczymy od 0 dla punktów
+  const weekDone = existing && existing.week_start === weekStart ? (existing.week_done || 0) : 0;
+  const bonusPts  = getBonusPts(userId);
+  const diffBonus = (difficulty === 'medium' || difficulty === 'challenge') ? 5 : 0;
+  const pts       = calcPoints(weekDone) + bonusPts + diffBonus;
 
   if (existing) {
-    db.prepare(
-      `UPDATE ${progressTable} SET done = done + 1, points = points + ? WHERE user_id = ? AND topic = ?`
-    ).run(pts, userId, topic);
+    if (existing.week_start !== weekStart) {
+      // Nowy tydzień — resetuj week_done dla tego tematu
+      db.prepare(
+        `UPDATE ${progressTable} SET done = done + 1, points = points + ?, week_done = 1, week_start = ? WHERE user_id = ? AND topic = ?`
+      ).run(pts, weekStart, userId, topic);
+    } else {
+      db.prepare(
+        `UPDATE ${progressTable} SET done = done + 1, points = points + ?, week_done = week_done + 1 WHERE user_id = ? AND topic = ?`
+      ).run(pts, userId, topic);
+    }
   } else {
     db.prepare(
-      `INSERT INTO ${progressTable} (user_id, topic, done, points) VALUES (?, ?, 1, ?)`
-    ).run(userId, topic, pts);
+      `INSERT INTO ${progressTable} (user_id, topic, done, points, week_done, week_start) VALUES (?, ?, 1, ?, 1, ?)`
+    ).run(userId, topic, pts, weekStart);
   }
-
-  // Lazy reset tygodniowych punktów
-  const weekStart = getWeekStart();
   const userRow   = db.prepare('SELECT week_start FROM users WHERE id = ?').get(userId);
   if (userRow.week_start !== weekStart) {
     db.prepare('UPDATE users SET week_points = 0, class_week_points = 0, week_start = ? WHERE id = ?').run(weekStart, userId);

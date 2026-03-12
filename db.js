@@ -176,6 +176,12 @@ try { db.exec('ALTER TABLE users ADD COLUMN week_points       INTEGER DEFAULT 0'
 try { db.exec('ALTER TABLE users ADD COLUMN class_week_points INTEGER DEFAULT 0'); } catch(e) {}
 try { db.exec("ALTER TABLE users ADD COLUMN week_start        TEXT    DEFAULT ''"); } catch(e) {}
 
+// Tygodniowy licznik zadań per temat (v11) – reset co poniedziałek, używany do calcPoints
+try { db.exec('ALTER TABLE topic_progress ADD COLUMN week_done  INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec("ALTER TABLE topic_progress ADD COLUMN week_start TEXT    DEFAULT ''"); } catch(e) {}
+try { db.exec('ALTER TABLE class_topic_progress ADD COLUMN week_done  INTEGER DEFAULT 0'); } catch(e) {}
+try { db.exec("ALTER TABLE class_topic_progress ADD COLUMN week_start TEXT    DEFAULT ''"); } catch(e) {}
+
 // Postęp tematów na serwerze klasowym (oddzielny od globalnego)
 db.exec(`
   CREATE TABLE IF NOT EXISTS class_topic_progress (

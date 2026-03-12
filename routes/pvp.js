@@ -276,21 +276,6 @@ router.post('/challenge-answer', requireAuth, (req, res) => {
 
   db.prepare('UPDATE pvp_challenges SET p1_score = p1_score + 1 WHERE id = ?').run(challenge.id);
 
-  const existing = db.prepare(
-    'SELECT done, points FROM topic_progress WHERE user_id = ? AND topic = ?'
-  ).get(userId, topic);
-  const currentDone = existing ? existing.done : 0;
-  const bonusPts = getBonusPts(userId);
-  const pts = calcPoints(currentDone) + bonusPts;
-
-  if (existing) {
-    db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ? WHERE user_id = ? AND topic = ?')
-      .run(pts, userId, topic);
-  } else {
-    db.prepare('INSERT INTO topic_progress (user_id, topic, done, points) VALUES (?, ?, 1, ?)')
-      .run(userId, topic, pts);
-  }
-
   const weekStart = (() => {
     const d = new Date();
     const day = d.getDay();
@@ -300,6 +285,28 @@ router.post('/challenge-answer', requireAuth, (req, res) => {
     mon.setDate(d.getDate() + diff);
     return `${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
   })();
+
+  const existing = db.prepare(
+    'SELECT done, points, week_done, week_start FROM topic_progress WHERE user_id = ? AND topic = ?'
+  ).get(userId, topic);
+  const currentDone = existing ? existing.done : 0;
+  const weekDone    = existing && existing.week_start === weekStart ? (existing.week_done || 0) : 0;
+  const bonusPts    = getBonusPts(userId);
+  const pts         = calcPoints(weekDone) + bonusPts;
+
+  if (existing) {
+    if (existing.week_start !== weekStart) {
+      db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ?, week_done = 1, week_start = ? WHERE user_id = ? AND topic = ?')
+        .run(pts, weekStart, userId, topic);
+    } else {
+      db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ?, week_done = week_done + 1 WHERE user_id = ? AND topic = ?')
+        .run(pts, userId, topic);
+    }
+  } else {
+    db.prepare('INSERT INTO topic_progress (user_id, topic, done, points, week_done, week_start) VALUES (?, ?, 1, ?, 1, ?)')
+      .run(userId, topic, pts, weekStart);
+  }
+
   const wRow = db.prepare('SELECT week_start FROM users WHERE id = ?').get(userId);
   if (wRow.week_start !== weekStart) {
     db.prepare('UPDATE users SET week_points = 0, class_week_points = 0, week_start = ? WHERE id = ?').run(weekStart, userId);
@@ -618,24 +625,7 @@ router.post('/answer', requireAuth, (req, res) => {
   // Zwiększ wynik PvP (count)
   db.prepare('UPDATE pvp_turns SET score = score + 1 WHERE id = ?').run(myTurn.id);
 
-  // Aktualizuj normalny postęp (topic_progress, points, achievements) — jak w /api/answer/correct
-  const existing = db.prepare(
-    'SELECT done, points FROM topic_progress WHERE user_id = ? AND topic = ?'
-  ).get(userId, topic);
-
-  const currentDone = existing ? existing.done : 0;
-  const bonusPts    = getBonusPts(userId);
-  const pts         = calcPoints(currentDone) + bonusPts;
-
-  if (existing) {
-    db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ? WHERE user_id = ? AND topic = ?')
-      .run(pts, userId, topic);
-  } else {
-    db.prepare('INSERT INTO topic_progress (user_id, topic, done, points) VALUES (?, ?, 1, ?)')
-      .run(userId, topic, pts);
-  }
-
-  // Lazy reset tygodniowych punktów (tak jak w /api/answer/correct)
+  // Lazy reset tygodniowych punktów
   const weekStart = (() => {
     const now2 = new Date();
     const day  = now2.getDay();
@@ -645,6 +635,30 @@ router.post('/answer', requireAuth, (req, res) => {
     mon.setDate(now2.getDate() + diff);
     return `${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
   })();
+
+  // Aktualizuj normalny postęp (topic_progress, points, achievements) — jak w /api/answer/correct
+  const existing = db.prepare(
+    'SELECT done, points, week_done, week_start FROM topic_progress WHERE user_id = ? AND topic = ?'
+  ).get(userId, topic);
+
+  const currentDone = existing ? existing.done : 0;
+  const weekDone    = existing && existing.week_start === weekStart ? (existing.week_done || 0) : 0;
+  const bonusPts    = getBonusPts(userId);
+  const pts         = calcPoints(weekDone) + bonusPts;
+
+  if (existing) {
+    if (existing.week_start !== weekStart) {
+      db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ?, week_done = 1, week_start = ? WHERE user_id = ? AND topic = ?')
+        .run(pts, weekStart, userId, topic);
+    } else {
+      db.prepare('UPDATE topic_progress SET done = done + 1, points = points + ?, week_done = week_done + 1 WHERE user_id = ? AND topic = ?')
+        .run(pts, userId, topic);
+    }
+  } else {
+    db.prepare('INSERT INTO topic_progress (user_id, topic, done, points, week_done, week_start) VALUES (?, ?, 1, ?, 1, ?)')
+      .run(userId, topic, pts, weekStart);
+  }
+
   const wRow = db.prepare('SELECT week_start FROM users WHERE id = ?').get(userId);
   if (wRow.week_start !== weekStart) {
     db.prepare('UPDATE users SET week_points = 0, class_week_points = 0, week_start = ? WHERE id = ?').run(weekStart, userId);
