@@ -866,6 +866,7 @@ main {
 }
 
 .exercise-card {
+  font-family: var(--font-head);
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -2529,11 +2530,11 @@ details[open] .tp-level-summary::after { content: '▴'; }
 .ic-wrap { text-align: center; padding: 12px 0; }
 /* Fraction display inside compare */
 .fc-num { display: flex; align-items: center; justify-content: center; min-width: 64px; }
-.fc-frac { display: inline-flex; flex-direction: column; align-items: center; font-size: 24px; font-weight: 700; color: #e2e8f0; line-height: 1.1; }
+.fc-frac { display: inline-flex; flex-direction: column; align-items: center; font-size: 24px; font-weight: 700; color: #e2e8f0; line-height: 1.1; font-family: var(--font-head); }
 .fc-top, .fc-bot { padding: 0 4px; }
 .fc-bar { width: 100%; min-width: 28px; height: 2px; background: #e2e8f0; margin: 2px 0; }
 .fc-mixed { display: inline-flex; align-items: center; gap: 6px; }
-.fc-whole { font-size: 28px; font-weight: 700; color: #e2e8f0; }
+.fc-whole { font-size: 28px; font-weight: 700; color: #e2e8f0; font-family: var(--font-head); }
 /* Inline fraction in q_html */
 .qf { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 4px; font-weight: 700; color: var(--text); line-height: 1.1; }
 .qf-t { padding: 0 3px; border-bottom: 2px solid currentColor; font-size: 1.1em; }
