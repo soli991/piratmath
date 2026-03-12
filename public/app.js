@@ -1572,6 +1572,13 @@ function toggleLevel(idx, btn) {
   }
 }
 
+function openGuideModal() {
+  document.getElementById('guideModalOverlay').style.display = 'flex';
+}
+function closeGuideModal(e) {
+  if (e && e.target !== document.getElementById('guideModalOverlay')) return;
+  document.getElementById('guideModalOverlay').style.display = 'none';
+}
 function openAboutModal() {
   document.getElementById('aboutModalOverlay').style.display = 'flex';
 }
@@ -1580,7 +1587,7 @@ function closeAboutModal(e) {
   document.getElementById('aboutModalOverlay').style.display = 'none';
 }
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeAboutModal();
+  if (e.key === 'Escape') { closeAboutModal(); closeGuideModal(); }
 });
 
 let _ggbLoaded = false;

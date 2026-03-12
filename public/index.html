@@ -3052,6 +3052,9 @@ details[open] .tp-level-summary::after { content: '▴'; }
         <a href="https://forms.gle/QwkWPkEX3JBTtkhE7" target="_blank" class="social-btn survey">
           <span class="icon">📋</span>Ankieta
         </a>
+        <button class="social-btn about-btn" onclick="openGuideModal()">
+          <span class="icon">📖</span>Instrukcja
+        </button>
         <button class="social-btn about-btn" onclick="openAboutModal()">
           <span class="icon">ℹ️</span>O projekcie
         </button>
@@ -3500,6 +3503,58 @@ details[open] .tp-level-summary::after { content: '▴'; }
 </div>
 
 <!-- O PROJEKCIE MODAL -->
+<div class="about-modal-overlay" id="guideModalOverlay" style="display:none" onclick="closeGuideModal(event)">
+  <div class="about-modal">
+    <div class="about-modal-header">
+      <h2>📖 Instrukcja obsługi</h2>
+      <button class="about-modal-close" onclick="closeGuideModal()">✕</button>
+    </div>
+    <div class="about-modal-body">
+      <h3>Punkty</h3>
+      <p>Za każdą poprawną odpowiedź (przy pierwszej próbie) dostajesz punkty. Ile — zależy od tego, ile zadań z danego tematu i poziomu trudności zrobiłeś w tym tygodniu:</p>
+      <p>
+        1–10 zadań w tygodniu → <strong>10 pkt</strong><br>
+        11–20 zadań → <strong>5 pkt</strong><br>
+        21+ zadań → <strong>1 pkt</strong>
+      </p>
+      <p>Licznik resetuje się każdy poniedziałek — warto wracać do tematów co tydzień. <strong>Licznik działa osobno dla Łatwego i osobno dla Średniego/Wyzwania</strong> — możesz zdobyć maksymalne punkty z tego samego tematu dwukrotnie w ciągu tygodnia.</p>
+      <p>
+        <strong>Bonusy:</strong> +5 pkt za grę na poziomie Średnim lub Wyzwaniu &bull; +1 pkt za każde pełne 15 odblokowanych osiągnięć
+      </p>
+      <p>
+        <strong>Punkty sezonowe</strong> — resetują się na koniec sezonu (ranking aktualny)<br>
+        <strong>Łączne</strong> — nigdy się nie kasują (ranking „All-time")<br>
+        <strong>Tygodniowe</strong> — reset co poniedziałek
+      </p>
+
+      <h3>Dukaty 🪙</h3>
+      <p>Waluta do sklepu z awatarami i tytułami. Co 10 poprawnych odpowiedzi z rzędu (seria) dostajesz <strong>+5 pkt bonusu</strong> i szansę na <strong>1 dukat</strong>. Z każdego tematu możesz dostać max 2 dukaty per poziom trudności (Łatwy / Średni / Wyzwanie) — łącznie max 6 dukatów z tematu.</p>
+      <p>W sklepie (ikonka 🪙) kupisz awatary emoji i tytuły wyświetlane przy nicku.</p>
+
+      <h3>Galeony ⚓</h3>
+      <p>Waluta PvP. Co 3 wygrane mecze PvP = +1 galeon. W sklepie galeonowym (⚓) kupisz ekskluzywne awatary, tytuły i ramki.</p>
+
+      <h3>PvP — walki 1 na 1</h3>
+      <p>Klikasz PvP, wybierasz poziom, temat rundy 1 i ewentualną stawkę, po czym od razu zaczynasz grać. Wyzwanie pojawia się publicznie — czekasz, aż ktoś je przyjmie. Kto zdobył więcej poprawnych odpowiedzi w 60 sek. — wygrywa rundę. Mecz trwa 3 rundy, temat wybiera na zmianę każdy gracz. Wygrywa kto wygrał 2 z 3 rund i dostaje stawkę obu graczy.</p>
+      <p><strong>Stawki:</strong> możesz postawić dukaty (0–5) i/lub punkty sezonowe (0–100). Przegrany traci stawkę.<br>
+      <strong>Ranking PvP:</strong> +2 pkt rankingowe za wygraną, −1 za przegraną (min. 0).</p>
+
+      <h3>Poziomy trudności</h3>
+      <p>
+        <strong>Łatwy</strong> — prostsze pytania, bez limitu czasu<br>
+        <strong>Średni</strong> — trudniejsze pytania, bez limitu czasu, +5 pkt/odp.<br>
+        <strong>Wyzwanie</strong> — te same pytania co Średni, ale na czas, +5 pkt/odp.
+      </p>
+
+      <h3>Osiągnięcia</h3>
+      <p>Odblokowujesz je automatycznie za różne akcje (pierwsze zadanie, seria 10 z rzędu, gra w weekend itp.). Co 15 osiągnięć → stały <strong>+1 pkt bonus</strong> do każdej odpowiedzi.</p>
+
+      <h3>Serwer klasowy</h3>
+      <p>Jeśli masz kod zaproszenia od nauczyciela — możesz dołączyć do klasy. Klasa ma osobny ranking i osobne punkty. Nauczyciel odblokowuje tematy dla całej klasy.</p>
+    </div>
+  </div>
+</div>
+
 <div class="about-modal-overlay" id="aboutModalOverlay" style="display:none" onclick="closeAboutModal(event)">
   <div class="about-modal">
     <div class="about-modal-header">
