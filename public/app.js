@@ -1058,14 +1058,647 @@ function apCloseBg(e) {
 }
 
 function apShowTab(tab) {
-  document.getElementById('apTabUsers').classList.toggle('active',   tab === 'users');
-  document.getElementById('apTabSchools').classList.toggle('active', tab === 'schools');
-  document.getElementById('apTabStats').classList.toggle('active',   tab === 'stats');
-  document.getElementById('apTabPvp').classList.toggle('active',     tab === 'pvp');
-  if (tab === 'users')        apLoadUsers();
-  else if (tab === 'schools') apLoadSchools();
-  else if (tab === 'pvp')     apLoadPvp();
-  else                        apLoadStats();
+  document.getElementById('apTabUsers').classList.toggle('active',      tab === 'users');
+  document.getElementById('apTabSchools').classList.toggle('active',    tab === 'schools');
+  document.getElementById('apTabStats').classList.toggle('active',      tab === 'stats');
+  document.getElementById('apTabPvp').classList.toggle('active',        tab === 'pvp');
+  document.getElementById('apTabGenerators').classList.toggle('active', tab === 'generators');
+  if (tab === 'users')           apLoadUsers();
+  else if (tab === 'schools')    apLoadSchools();
+  else if (tab === 'pvp')        apLoadPvp();
+  else if (tab === 'generators') apLoadGenerators();
+  else                           apLoadStats();
+}
+
+const TOPIC_META = {
+  'Dodawanie i odejmowanie': {
+    typy: ['otwarte'], zakresy: 'łatwy: 1–20 | średni: 1–100 | wyzwanie: 1–1000', uwagi: 'losowo dodawanie lub odejmowanie',
+    subtypes: ['Dodawanie dwóch liczb', 'Odejmowanie dwóch liczb'],
+  },
+  'Mnożenie i dzielenie': {
+    typy: ['otwarte'], zakresy: 'łatwy: a≤10,b≤10 | średni: a≤25,b≤10 | wyzwanie: a≤99,b≤10', uwagi: 'losowo mnożenie lub dzielenie',
+    subtypes: ['Mnożenie dwóch liczb', 'Dzielenie (wynik zawsze całkowity)'],
+  },
+  'Tabliczka mnożenia': {
+    typy: ['otwarte'], zakresy: 'zakresy konfigurowane przez ucznia (wiersze/kolumny)', uwagi: 'na średnim/wyzwaniu 50% szans na dzielenie',
+    subtypes: ['a × b = ? (zakresy wybrane przez ucznia)', 'a × b = ? lub a ÷ b = ? (śr/wyzwanie — 50/50)'],
+  },
+  'Zapisywanie ułamka zwykłego': {
+    typy: ['custom (rysunek)', 'tekstowe'], zakresy: 'łatwy: mianowniki 2–4 | średni: 2–10', uwagi: '55% rysunek, 45% tekstowe (szablony szkolne, brak klimatu pirackiego)',
+    subtypes: [
+      'Rysunek koła — zamalowane k z n wycinków → wpisz ułamek',
+      'Rysunek prostokąta — zamalowane k z n pól → wpisz ułamek',
+      'Tekstowe: K z N przedmiotów ma cechę X — jaki ułamek?',
+      'Tekstowe: ile pozostało po zabraniu K z N?',
+      'Tekstowe: opisy algebraiczne (mianownik = licznik + d, mianownik = k × licznik itp.)',
+      'Tekstowe: jednostki czasu (7 dni tygodnia, 12 miesięcy, 24 godziny, 60 minut)',
+    ],
+    textTasks: [
+      'W klasie jest N uczniów, z czego K nosi okulary. Jaki ułamek uczniów nosi okulary?',
+      'W koszyczku leży N owoców, a K to jabłka. Jaki ułamek stanowią jabłka?',
+      'Ciasto podzielono na N równych kawałków i zjedzono K. Jaki ułamek ciasta zjedzono?',
+    ],
+  },
+  'Porównywanie ułamków': {
+    typy: ['custom (znak </>)'], zakresy: 'łatwy: ten sam mianownik + jedynkowe | średni: 7 podtypów', uwagi: 'pułapka: ułamki niewłaściwe błędnie zapisane jako liczby mieszane',
+    subtypes: [
+      'Łatwy: ułamki o tym samym mianowniku (np. 3/7 ☐ 5/7) — 50%',
+      'Łatwy: ułamki jednostkowe 1/a ☐ 1/b — 50%',
+      'Średni: ułamki o tym samym liczniku (np. 3/5 ☐ 3/8)',
+      'Średni: ułamki bliskie 1 — (n−1)/n ☐ (m−1)/m',
+      'Średni: ułamki o tym samym mianowniku',
+      'Średni: ułamki jednostkowe',
+      'Średni: liczby mieszane z tym samym mianownikiem',
+      'Średni: pułapka — niepoprawna liczba mieszana (1 5/3 vs 2 1/3)',
+    ],
+  },
+  'Skracanie i rozszerzanie ułamków': {
+    typy: ['custom (luki)'], zakresy: 'różne mianowniki z dostępnymi mnożnikami', uwagi: 'hint po każdym błędzie',
+    subtypes: [
+      'Rozszerzanie: a/b = ?/(b×k) — wpisz nowy licznik',
+      'Rozszerzanie: a/b = (a×k)/? — wpisz nowy mianownik',
+      'Skracanie: a/b = ?/c — wpisz skrócony licznik',
+      'Łańcuch równoważności: a/b = c/? = ?/e',
+      'Sprawdź równość: czy a/b = c/d? (zaznacz Tak/Nie)',
+    ],
+  },
+  'Zapisywanie liczby mieszanej': {
+    typy: ['custom (rysunek)', 'tekstowe'], zakresy: 'mianowniki 2–12, część całkowita 1–9', uwagi: 'szablony tekstowe z imionami (Bartek, Tomek…) — brak klimatu pirackiego',
+    subtypes: [
+      'Rysunek kół/prostokątów — zamalowane całe + ułamkowe → wpisz liczbę mieszaną',
+      'Ułamek niewłaściwy na rysunku → wpisz liczbę mieszaną',
+      'Tekstowe: kawałki pizzy (N na całą, K dostał) → ile pizzy?',
+      'Tekstowe: kawałki czekolady → ile tabliczek?',
+      'Tekstowe: metry sznurka (całe + ułamkowy) → ile metrów?',
+      'Tekstowe: litry z butelki (pełne + ułamkowa) → ile litrów?',
+    ],
+    textTasks: [
+      'Każdą pizzę podzielono na N kawałków. [Imię] dostał K kawałków pizzy. Ile pizzy dostał [Imię]?',
+      'Każdą tabliczkę czekolady podzielono na N kawałki. [Imię] zjadł K kawałków. Ile tabliczek czekolady zjadł [Imię]?',
+      '[Imię] kupił W całe metry sznurka i jeszcze M/N metra. Ile metrów sznurka kupił [Imię]?',
+      'Butelka mieści dokładnie 1 litr. [Imię] wypił W pełnych butelek i jeszcze M/N butelki. Ile litrów wypił [Imię]?',
+    ],
+  },
+  'Zamiana liczb mieszanych na ułamki niewłaściwe': {
+    typy: ['custom (rysunek)', 'tekstowe'], zakresy: 'mianowniki 2–10, część całkowita 1–9', uwagi: 'szablony tekstowe z imionami — brak klimatu pirackiego',
+    subtypes: [
+      'Rysunek kół/prostokątów → wpisz ułamek niewłaściwy',
+      'Luka w liczniku: W c/d = ?/d',
+      'Luka w mianowniku: W c/d = e/?',
+      'Tekstowe: kawałki jedzenia (pizza, czekolada) → ułamek niewłaściwy',
+      'Tekstowe: sport i codzienność (okrążenia, wstążka, strony, jabłka, materiał)',
+    ],
+    textTasks: [
+      '[Imię] zjadł W całe pizze i jeszcze M/N pizzy. Ile pizzy zjadł łącznie? Podaj jako ułamek niewłaściwy.',
+      '[Imię] przebiegł W całe okrążenia i jeszcze M/N okrążenia. Ile okrążeń przebiegł łącznie? Podaj jako ułamek.',
+      '[Imię] kupił W całe metry wstążki i jeszcze M/N metra. Ile metrów wstążki kupił łącznie?',
+      'Mama upiekła W całe ciasta i jeszcze M/N ciasta. Ile ciasta upiekła łącznie? Podaj jako ułamek.',
+      '[Imię] wypił W pełne butelki soku i jeszcze M/N butelki. Ile butelek soku wypił? Podaj jako ułamek niewłaściwy.',
+      'Każdą tabliczkę czekolady podzielono na N kawałki. [Imię] dostał K kawałków czekolady. Ile tabliczek to jest? Podaj jako ułamek.',
+      '[Imię] napisał W całe strony wypracowania i jeszcze M/N strony. Ile stron napisał łącznie? Podaj jako ułamek.',
+      'Ogrodnik zebrał W pełne kosze jabłek i jeszcze M/N kosza. Ile koszy zebrał? Podaj jako ułamek niewłaściwy.',
+      '[Imię] przeczytał W całe rozdziały książki i jeszcze M/N rozdziału. Ile rozdziałów przeczytał łącznie? Podaj jako ułamek.',
+      'Każdą rolkę materiału podzielono na N równe kawałki. [Imię] wziął K kawałków materiału. Ile rolek to jest? Podaj jako ułamek.',
+    ],
+  },
+  'Dodawanie i odejmowanie ułamków': {
+    typy: ['custom (kreskowy)'], zakresy: 'łatwy: ten sam mianownik ≤10 | średni: różne mianowniki ≤30', uwagi: 'obsługuje skracanie wyniku; hint z NWW',
+    subtypes: [
+      'Liczba mieszana + ułamek (jeden mianownik wielokrotnością drugiego)',
+      'Liczba mieszana − ułamek o tym samym mianowniku (z pożyczką od części całkowitej)',
+      'Ułamki właściwe (jeden mianownik wielokrotnością drugiego) — dodawanie lub odejmowanie',
+      'Liczba mieszana + ułamek (różne mianowniki, wymagane NWW)',
+      'Ułamki właściwe (różne mianowniki, wymagane NWW)',
+    ],
+  },
+  'Mnożenie ułamków': {
+    typy: ['custom (kreskowy)', 'tekstowe'], zakresy: 'liczniki i mianowniki 1–10', uwagi: 'szablony tekstowe z imionami szkolnymi — brak klimatu pirackiego',
+    subtypes: [
+      'Łatwy: ułamek właściwy × ułamek właściwy (mianowniki 2–5) — 50%',
+      'Łatwy: ułamek × liczba całkowita (mianowniki 2–5) — 50%',
+      'Średni: ułamek właściwy × ułamek właściwy (większe mianowniki)',
+      'Średni: ułamek × większa liczba całkowita',
+      'Średni: liczba mieszana × ułamek właściwy',
+      'Średni: liczba mieszana × liczba całkowita',
+      'Średni: liczba mieszana × liczba mieszana',
+      'Średni: tekstowe — K/B z N przedmiotów (klasa, parking, biblioteka, zawody, sklep)',
+      'Średni: tekstowe — K/B trasy/siatki/zbiornika (dystans, materiał, woda)',
+      'Średni: tekstowe — K/B z ułamka (ułamek × ułamek)',
+    ],
+    textTasks: [
+      'W klasie jest [N] uczniów. [K/B] klasy jedzie na wycieczkę. Ile uczniów jedzie?',
+      'Na parkingu stoi [N] samochodów. [K/B] z nich to elektryczne. Ile samochodów elektrycznych?',
+      'Biblioteka ma [N] książek. [K/B] to powieści. Ile powieści ma biblioteka?',
+      'Na zawodach startuje [N] drużyn. [K/B] drużyn przeszło do finału. Ile drużyn gra w finale?',
+      'Sklep ma [N] produktów. [K/B] to produkty przecenione. Ile produktów jest przecenionych?',
+      'Trasa ma [N] km. [Imię] przebiegł [K/B] tej trasy. Ile kilometrów przebiegł [Imię]?',
+      'Ogrodnik ma [N] metrów siatki. Użył [K/B] siatki na ogrodzenie. Ile metrów zużył?',
+      'Zbiornik mieści [N] litrów. Wypełniono [K/B] zbiornika. Ile litrów wlano?',
+      'Tkanina kosztuje [N] zł za metr. [Imię] kupił [K/B] metra. Ile zapłacił?',
+      'Działka ma [C/D] hektara. [K/B] działki przeznaczono na ogród. Ile hektarów zajmuje ogród?',
+      'Rura ma [C/D] metra długości. Robotnicy zamontowali [K/B] tej rury. Ile metrów zamontowali?',
+      'Butelka zawiera [C/D] litra soku. [Imię] wypił [K/B] butelki. Ile litrów soku wypił [Imię]?',
+      'Ścieżka ma [C/D] km. [Imię] przeszedł [K/B] ścieżki. Ile kilometrów przeszedł?',
+    ],
+  },
+  'Dzielenie ułamków': {
+    typy: ['custom (kreskowy)', 'tekstowe (piraci ⚓)'], zakresy: 'liczniki i mianowniki 1–10', uwagi: 'hint: odwróć i mnóż; tekstowe mają klimat piracki',
+    subtypes: [
+      'Łatwy: ułamek właściwy ÷ ułamek właściwy — 50%',
+      'Łatwy: ułamek ÷ liczba całkowita — 50%',
+      'Średni: ułamek właściwy ÷ ułamek właściwy (większe zakresy)',
+      'Średni: ułamek ÷ liczba całkowita',
+      'Średni: liczba mieszana ÷ ułamek właściwy',
+      'Średni: liczba całkowita ÷ ułamek właściwy (typowy błąd ucznia)',
+      'Średni: liczba mieszana ÷ liczba mieszana',
+      'Średni: tekstowe pirackie (beczki, skrzynie złota, statek, lina, mapa skarbu)',
+    ],
+    textTasks: [
+      'Kapitan Szczur ma [K/D] beczki rumu. Każda porcja to [1/C] beczki. Ile porcji wyjdzie?',
+      'Piraci zdobyli [K] skrzynie złota. Każdy pirat dostaje [C/D] skrzyni. Na ilu piratów starczy?',
+      'Statek ma [K] mil do przepłynięcia. W ciągu godziny płynie [C/D] mili. Ile godzin zajmie rejs?',
+      'Szczur Barnaba ma [N] metrów liny. Każdy kawałek do cumowania ma [A/B] metra. Ile kawałków odtnie?',
+      'Na statku jest [N] beczek z wodą. Każdy dzień rejsu zużywa [A/B] beczki. Ile dni starczy wody?',
+      'Mapa skarbu ma [N] dm długości. Każdy odcinek trasy to [A/B] dm. Ile odcinków liczy trasa?',
+      'Pirat przebiega [A/B] mili w [C/D] godziny. Jaką prędkość ma w milach na godzinę?',
+      'Skrzynia złota waży [A/B] tony. Każdy worek z łupem to [C/D] tony. Ile worków wypełni skrzynia?',
+      'Beczka rumu ma [A/B] litra. Jedna porcja to [C/D] litra. Ile porcji wyjdzie z beczki?',
+    ],
+  },
+  'Ułamki zwykłe': {
+    typy: ['otwarte'], zakresy: 'mianowniki 2–12', uwagi: 'szkielet — tylko dodawanie jednorodne',
+    subtypes: ['Dodawanie ułamków o tym samym mianowniku (szkielet WIP)'],
+  },
+  'Procenty': {
+    typy: ['otwarte'], zakresy: 'łatwy: wartość 10–100 | średni: 100–1000', uwagi: 'tylko typowe procenty: 10%, 20%, 25%, 50%',
+    subtypes: ['p% z N = ? (p ∈ {10, 20, 25, 50})'],
+  },
+  'Równania liniowe': {
+    typy: ['otwarte'], zakresy: 'b: 1–20, x: 1–15, c: 1–50', uwagi: 'szkielet — tylko forma bx+c=d',
+    subtypes: ['bx + c = d → znajdź x (szkielet WIP)'],
+  },
+  'Potęgi i pierwiastki': {
+    typy: ['otwarte'], zakresy: 'łatwy: podstawa 2–5, pierwiastek ≤10² | średni: podstawa 2–12, ≤15²', uwagi: '60% pierwiastek, 40% kwadrat',
+    subtypes: ['√n = ? (60%)', 'a² = ? (40%)'],
+  },
+  'Funkcje kwadratowe': {
+    typy: ['otwarte'], zakresy: 'a: 1–3, b: ±5, c: ±10, x: ±5', uwagi: 'szkielet — tylko oblicz wartość f(x)',
+    subtypes: ['Oblicz f(x) dla f(x) = ax² + bx + c (szkielet WIP)'],
+  },
+  'Dodawanie pisemne': {
+    typy: ['custom (kolumna)'], zakresy: 'łatwy: 2 liczby, max 1 przeniesienie | średni: 2–4 liczby do 999 | wyzwanie: 3–5 liczb do 9999', uwagi: 'interaktywna kolumna z wpisywaniem cyfr przeniesień',
+    subtypes: [
+      'Łatwy: 2 liczby dwucyfrowe, max 1 przeniesienie',
+      'Średni: 2–4 liczby (do 3 cyfr) z przeniesieniami',
+      'Wyzwanie: 3–5 liczb (do 4 cyfr) z wielokrotnymi przeniesieniami',
+    ],
+  },
+  'Odejmowanie pisemne': {
+    typy: ['custom (kolumna)'], zakresy: 'łatwy: brak pożyczek | średni/wyzwanie: do 4 cyfr', uwagi: 'interaktywna kolumna z wpisywaniem pożyczek',
+    subtypes: [
+      'Łatwy: bez pożyczek (każda cyfra odjemnika ≤ cyfra odjemnej)',
+      'Średni/Wyzwanie: do 4 cyfr z pożyczkami',
+    ],
+  },
+  'Dzielenie pisemne': {
+    typy: ['custom (schemat)'], zakresy: 'łatwy: dzielnik 2–9 | średni: 2–99 | wyzwanie: 11–19', uwagi: 'interaktywny schemat dzielenia',
+    subtypes: [
+      'Łatwy: dzielenie przez 1-cyfrowy dzielnik',
+      'Średni: dzielenie przez 2-cyfrowy dzielnik',
+      'Wyzwanie: dzielenie przez dzielnik 11–19',
+    ],
+  },
+  'Dzielenie z resztą': {
+    typy: ['custom (luki)', 'otwarte (3 warianty)'], zakresy: 'łatwy: b≤9,q≤9 | średni: b≤20,q≤20 | wyzwanie: b≤50,q≤40', uwagi: 'łatwy: zawsze custom; wyższe: 40% szans na proste pytanie',
+    subtypes: [
+      'Custom: a ÷ b = ? reszta ? (wpisz iloraz i resztę)',
+      'Otwarte: ile wynosi reszta z dzielenia a przez b?',
+      'Otwarte: ile wynosi iloraz (część całkowita) z a÷b?',
+      'Otwarte: jaka jest dzielna, jeśli iloraz=q, dzielnik=b, reszta=r?',
+    ],
+  },
+  'Mnożenie liczb z zerami na końcu': {
+    typy: ['otwarte'], zakresy: 'łatwy: ×10/100/1000 | średni: ×20–900', uwagi: '3 warianty na średnim',
+    subtypes: [
+      'Łatwy: a × 10, a × 100, a × 1000',
+      'Średni: oblicz iloczyn (a × b0…)',
+      'Średni: znajdź czynnik (? × b0 = c)',
+      'Średni: dzielenie (a ÷ b0 = ?)',
+    ],
+  },
+  'Mnożenie pisemne': {
+    typy: ['custom (kolumna)'], zakresy: 'łatwy: a 2–3 cyfry × 1 cyfra | średni: 2–3 × 2 | wyzwanie: 2–3 × 2–3', uwagi: 'interaktywna kolumna z częściowymi iloczynami',
+    subtypes: [
+      'Łatwy: liczba 2–3-cyfrowa × 1 cyfra',
+      'Średni: liczba 2–3-cyfrowa × liczba 2-cyfrowa',
+      'Wyzwanie: liczba 2–3-cyfrowa × liczba 2–3-cyfrowa',
+    ],
+  },
+  'Zaokrąglanie': {
+    typy: ['otwarte'], zakresy: 'łatwy: liczby całkowite do milionów | średni: do 4 miejsc po przecinku', uwagi: 'hint: reguła ≥5 → w górę, ≤4 → w dół',
+    subtypes: [
+      'Łatwy: zaokrąglij liczbę całkowitą do dziesiątek/setek/tysięcy/milionów',
+      'Średni: zaokrąglij liczbę dziesiętną do 1–4 miejsca po przecinku',
+    ],
+  },
+  'Potęgowanie': {
+    typy: ['otwarte', 'zamknięte A/B/C/D'], zakresy: 'łatwy: base 2–5 | średni: base 2–16 + potęgi 10 i 2', uwagi: 'na średnim blokada powwtórzeń podtypu',
+    subtypes: [
+      'Łatwy: oblicz a² (baza 1–10)',
+      'Łatwy: oblicz a³ (baza 1–6)',
+      'Średni: oblicz a² (bazy do 16, 20, 30, 40, 50)',
+      'Średni: oblicz a³ (bazy 1–10)',
+      'Średni: oblicz 10ⁿ (n: 1–5)',
+      'Średni: oblicz 2ⁿ (n: 1–10)',
+      'Średni: znajdź podstawę — □² = wynik',
+      'Średni: znajdź podstawę — □³ = wynik',
+      'Średni: znajdź wykładnik — 2^□ = wynik',
+      'Średni: znajdź wykładnik — 10^□ = wynik',
+      'Średni: a⁰ = ? (każda baza ≠ 0)',
+      'Średni: 0ⁿ = ? (n > 0)',
+    ],
+  },
+  'Kolejność działań': {
+    typy: ['otwarte'], zakresy: 'łatwy: 2 operacje | średni: 3 | wyzwanie: 4', uwagi: 'generuje wyrażenia respektując PEMDAS; hint z krokami',
+    subtypes: [
+      'Łatwy: wyrażenie z 2 operacjami (np. 3 + 4 × 2)',
+      'Średni: wyrażenie z 3 operacjami, możliwe nawiasy',
+      'Wyzwanie: wyrażenie z 4 operacjami, zagnieżdżone nawiasy',
+    ],
+  },
+  'Podzielność liczb': {
+    typy: ['zamknięte A/B/C/D', 'otwarte'], zakresy: 'liczby do 999', uwagi: 'łatwy: dzielniki 2,3,4,5,9,10,100 | średni: + 6,15,18,30,45,90,300,900',
+    subtypes: [
+      'Które z podanych liczb dzielą N? (4 opcje A/B/C/D, zaznacz wszystkie poprawne)',
+      'Podaj wszystkich dzielników spośród listy (otwarte, kilka liczb)',
+    ],
+  },
+  'O ile? Ile razy?': {
+    typy: ['otwarte'], zakresy: 'łatwy: do 100 | średni: do 1000', uwagi: '50/50',
+    subtypes: [
+      'O ile A jest większe/mniejsze od B? (różnica)',
+      'Ile razy A jest większe/mniejsze od B? (iloraz)',
+    ],
+  },
+  'Pojęcie funkcji': {
+    typy: ['otwarte', 'zamknięte A/B/C/D', 'custom (tabelka)'], zakresy: 'f(x)=ax+b, a: 1–5, b: 0–10, x: 1–10', uwagi: '25% szans każdy z 4 podtypów na średnim',
+    subtypes: [
+      'Łatwy: czy podany zbiór par jest funkcją? (tak/nie)',
+      'Łatwy: oblicz f(x) dla podanego wzoru',
+      'Średni: pary (x,y) — oceń, czy to funkcja (duplikat x = nie-funkcja)',
+      'Średni: tabelka 4 wierszy — uzupełnij wartości f(x)',
+      'Średni: wzór — oblicz f(x) lub znajdź x',
+      'Średni: słowne — oceń, czy zależność to funkcja (22 przykłady z życia)',
+    ],
+    textTasks: [
+      'Czy zależność "osoba → wzrost" jest funkcją?',
+      'Czy zależność "uczeń → numer w dzienniku" jest funkcją?',
+      'Czy zależność "kraj → stolica" jest funkcją?',
+      'Czy zależność "osoba → liczba rodzeństwa" jest funkcją?',
+      'Czy zależność "liczba → jej dzielnik" jest funkcją?',
+      'Czy zależność "miasto → mieszkaniec" jest funkcją?',
+      'Czy zależność "uczeń → ocena z testu" jest funkcją?',
+      '(łącznie 22 przykłady — 19 funkcji i 3 nie-funkcje)',
+    ],
+  },
+  'Świat liczb': {
+    typy: ['otwarte', 'zamknięte A/B/C/D'], zakresy: 'łatwy: 3-cyfrowe | średni: 4–7-cyfrowe', uwagi: 'na średnim dostępny też podtyp digit_count',
+    subtypes: [
+      'num_read: zapisz cyframi liczbę podaną słownie (np. "trzysta dwadzieścia jeden")',
+      'num_write (MCQ): wybierz poprawny zapis słowny spośród 4 opcji',
+      'palindrome: uzupełnij luki tak, żeby liczba była palindromem (obie strony nieznane)',
+      'palindrome_asym: uzupełnij luki — tylko jedna strona pary nieznana (hint: symetria)',
+      'digit_mod: zmień wskazaną cyfrę(y) na podaną wartość, zapisz wynik',
+      'digit_swap: zamień miejscami dwie wskazane cyfry, zapisz wynik',
+      'digit_change: zwiększ lub zmniejsz wskazaną cyfrę o 1, zapisz wynik',
+      'expand: rozwinięcie dziesiętne — uzupełnij brakujący składnik (np. ? × 100 + …)',
+      'digit_count (tylko śr): ile cyfr ma liczba N?',
+    ],
+  },
+  'Szacowanie pierwiastków': {
+    typy: ['custom (przedział)'], zakresy: 'łatwy: 2–80 | średni: wyrażenia do 400', uwagi: 'wpisz n i n+1 takie że n²<x<(n+1)²',
+    subtypes: [
+      'Łatwy: √x ∈ (n, n+1) — znajdź n (x do 80)',
+      'Średni: √x + k ∈ (n, n+1) — dodawanie/odejmowanie stałej',
+      'Średni: k·√x ∈ (n, n+1) — mnożenie przez stałą',
+      'Średni: ³√x ∈ (n, n+1) — pierwiastek sześcienny',
+      'Średni: √x + √y ∈ (n, n+1) — suma dwóch pierwiastków',
+    ],
+  },
+  'Rozkład liczby na czynniki pierwsze': {
+    typy: ['custom (drabinka)'], zakresy: 'łatwy: 12–100 (min 2 czynniki) | średni: 60–600 (min 3 czynniki)', uwagi: 'po 3 błędach: gotowy rozkład + wzór w postaci iloczynu',
+    subtypes: ['Interaktywna drabinka dzielenia — wpisuj kolejne pary (czynnik, iloraz)'],
+  },
+  'Wyznaczanie NWD': {
+    typy: ['custom (3-fazowy)'], zakresy: 'łatwy: a,b ∈ 6–60 | średni: 20–200 + 35% trzy liczby', uwagi: 'po 2 błędach: podświetlone wspólne czynniki',
+    subtypes: [
+      'Łatwy: NWD(a, b) — dwie liczby (zakres 6–60)',
+      'Średni: NWD(a, b) — dwie liczby (zakres 20–200)',
+      'Średni: NWD(a, b, c) — trzy liczby (35% szans, zakres 10–150)',
+      'Fazy: rozłóż A → rozłóż B → [rozłóż C →] wpisz NWD',
+    ],
+  },
+  'Wyznaczanie NWW': {
+    typy: ['custom (3-fazowy)'], zakresy: 'łatwy: a,b ∈ 2–20 (NWW≤200) | średni: 10–150 (NWW≤6000)', uwagi: 'po 2 błędach: przekreślone wspólne czynniki z B',
+    subtypes: [
+      'Łatwy: NWW(a, b) — dwie liczby (zakres 2–20, NWW≤200)',
+      'Średni: NWW(a, b) — dwie liczby (zakres 10–150, NWW≤6000)',
+      'Fazy: rozłóż A → rozłóż B → wpisz NWW',
+    ],
+  },
+  'Liczenie w głowie': {
+    typy: ['otwarte'], zakresy: 'add/sub: do 999 | mul: a≤20,b≤20 | div: podzielne', uwagi: '35% add, 35% sub, 18% mul, 12% div; 50% szans na liczbę ±1/2 od okrągłej (hint z trikiem)',
+    subtypes: [
+      'Dodawanie (35%) — łatwy: 10–50, śr: 20–200; 50% szans na ±1/2 od dziesiątki/setki',
+      'Odejmowanie (35%) — łatwy: do 100, śr: do 400; j.w.',
+      'Mnożenie (18%) — łatwy: 2–10 × 2–10, śr: 2–12 × 11–50',
+      'Dzielenie (12%) — wynik zawsze całkowity; łatwy: ÷2–10, śr: ÷2–12',
+      'Średni (25%): równania z luką — □ + b = c, a − □ = c, □ × b = c, a ÷ □ = c',
+    ],
+  },
+  'Wartość bezwzględna': {
+    typy: ['otwarte (wyrażenia symboliczne)'], zakresy: 'łatwy: int/ułamki/pierwiastki | średni: |√a−n|, |π−√a|, |√a−√b|', uwagi: 'akceptuje sqrt/√/pi/π; tolerancja 0,01 dla przybliżeń; hint po 2 błędach',
+    subtypes: [
+      'Łatwy: |−n| gdzie n ∈ [1–30] (liczba całkowita)',
+      'Łatwy: |−x| gdzie x to ułamek dziesiętny (0,5–5,5)',
+      'Łatwy: |−√r| gdzie r nie jest pełnym kwadratem',
+      'Łatwy: |√r| gdzie r nie jest pełnym kwadratem (wynik taki sam)',
+      'Średni: |√a − n| — pierwiastek minus liczba całkowita',
+      'Średni: |π − √a| — pi minus pierwiastek',
+      'Średni: |√a − √b| — różnica dwóch pierwiastków',
+    ],
+  },
+  'Własności działań': {
+    typy: ['otwarte'], zakresy: 'różne zakresy per podtyp', uwagi: 'hint po 1. błędzie, hint2 (bez wyniku) po 2. błędzie',
+    subtypes: [
+      'addComplement: A + B gdy B = dopełnienie do okrągłej + reszta (np. 27+18 = 27+3+15)',
+      'subComplement: A − B dwoma metodami (rozłóż B lub zbalansuj)',
+      'mulDistrib: N × M = N×dziesiątki + N×jedności (np. 3×27)',
+      'mulNear: A × (okrągła ± 1) = A×okrągła ± A (np. 75×9 = 75×10−75)',
+      'divDistrib: (M₁+M₂) ÷ N = M₁÷N + M₂÷N (np. 138÷3)',
+      'doubleHalf: a×25 = (a÷4)×100 lub a×50 = (a÷2)×100',
+      'addCompensate: (A+k) + (B−k) — zaokrąglij jeden, skompensuj w drugim',
+      'mulBy5: N×5 = N×10÷2',
+    ],
+  },
+  'Porównywanie liczb całkowitych': {
+    typy: ['custom (oś/porównanie)', 'zamknięte A/B/C/D'], zakresy: '±50 na łatwym, ±200 na średnim', uwagi: 'hint z osią liczbową',
+    subtypes: [
+      'Oś liczbowa: wskaż punkt A odpowiadający liczbie N',
+      'Porównanie: A ☐ B (wstaw < lub >)',
+      'Kolejność: uszereguj zbiór liczb rosnąco/malejąco',
+      'Odległość od zera: |N| = ?',
+    ],
+  },
+  'Pojęcie logarytmu': {
+    typy: ['otwarte', 'zamknięte A/B/C/D'], zakresy: 'podstawy 2–10, wyniki 1–4', uwagi: 'logₐb = c ↔ aᶜ = b',
+    subtypes: [
+      'Oblicz logₐb = ? (znajdź wykładnik)',
+      'Znajdź podstawę: log□b = c',
+      'Znajdź argument: logₐ□ = c',
+      'Oblicz log₁₀(N)',
+    ],
+  },
+  'Systemy liczbowe': {
+    typy: ['otwarte', 'zamknięte A/B/C/D'], zakresy: 'dziesiętny ↔ binarny/oktalny/hex, do 255', uwagi: 'hint z tabelką wagową',
+    subtypes: [
+      'Dziesiętny → binarny (do 255)',
+      'Binarny → dziesiętny',
+      'Dziesiętny → oktalny lub hex',
+      'Oktalny lub hex → dziesiętny',
+    ],
+  },
+  'Działania na liczbach całkowitych': {
+    typy: ['otwarte', 'zamknięte A/B/C/D', 'tekstowe (piraci ⚓)'], zakresy: 'łatwy: ±20 | średni: ±100 | wyzwanie: ±500', uwagi: 'tekstowe pirackie tylko na średnim/wyzwaniu',
+    subtypes: [
+      'Łatwy: dodawanie liczb całkowitych (wszystkie kombinacje znaków)',
+      'Łatwy: odejmowanie liczb całkowitych',
+      'Łatwy: mnożenie (oba dodatnie, oba ujemne, mieszane)',
+      'Łatwy: dzielenie (wszystkie kombinacje znaków)',
+      'Średni: potęga ujemnej podstawy — (−a)ⁿ',
+      'Średni: potęgi −2 (wykładniki 0–8)',
+      'Średni: rozdzielność mnożenia — a×(b+c)',
+      'Średni: rozdzielność — a×(b−c)',
+      'Średni: usuwanie minusa przed nawiasem — −(a−b)',
+      'Średni: kolejność działań — a + b×c',
+      'Średni: dwa iloczyny — a×b − c×d',
+      'Średni: kwadrat sumy — (a+b)²',
+      'Średni: potęga i dodawanie — a² + b',
+      'Tekstowe pirackie: temperatura / długość długu / wartość skarbu',
+    ],
+  },
+  'Własności logarytmów': {
+    typy: ['otwarte', 'zamknięte A/B/C/D'], zakresy: 'log a·b, log a/b, log aⁿ, zmiana podstawy', uwagi: 'hint z właściwością użytą w zadaniu',
+    subtypes: [
+      'log(a·b) = log a + log b',
+      'log(a/b) = log a − log b',
+      'log(aⁿ) = n·log a',
+      'Zmiana podstawy: logₐb = log b / log a',
+      'Uproszczenie wyrażenia z kilkoma własnościami',
+    ],
+  },
+  'Średnia arytmetyczna': {
+    typy: ['otwarte', 'zamknięte A/B/C/D', 'tekstowe (piraci ⚓)'], zakresy: 'łatwy: 3–4 liczby do 20 | średni: 4–6 liczb do 100', uwagi: 'tekstowe pirackie tylko na średnim/wyzwaniu',
+    subtypes: [
+      'Oblicz średnią z podanych liczb',
+      'Znajdź brakującą wartość (znasz średnią i pozostałe liczby)',
+      'Tekstowe pirackie: średnia punktów / zdobyczy / wyników',
+    ],
+  },
+};
+
+const TOPIC_STRUCTURE = [
+  { level: '🌱 Klasy 1–3', sections: [
+    { name: null, topics: ['Dodawanie i odejmowanie','Mnożenie i dzielenie','Tabliczka mnożenia','Porządkowanie liczb','Zegar i czas','Figury geometryczne'] },
+  ]},
+  { level: '🌿 Klasy 4–6', sections: [
+    { name: 'Liczby i obliczenia', topics: ['Świat liczb','Liczenie w głowie','Własności działań','Dodawanie pisemne','Odejmowanie pisemne','Mnożenie pisemne','Dzielenie pisemne','Dzielenie z resztą','Mnożenie liczb z zerami na końcu','O ile? Ile razy?','Kolejność działań','Potęgowanie','Podzielność liczb','Zaokrąglanie','Systemy liczbowe','Porównywanie liczb całkowitych','Działania na liczbach całkowitych'] },
+    { name: 'Ułamki i procenty', topics: ['Zapisywanie ułamka zwykłego','Porównywanie ułamków','Skracanie i rozszerzanie ułamków','Zapisywanie liczby mieszanej','Zamiana liczb mieszanych na ułamki niewłaściwe','Dodawanie i odejmowanie ułamków','Mnożenie ułamków','Dzielenie ułamków','Zapisywanie i odczytywanie ułamków dziesiętnych','Dodawanie ułamków dziesiętnych','Odejmowanie ułamków dziesiętnych','Mnożenie ułamków dziesiętnych','Dzielenie ułamków dziesiętnych','Zamiana ułamków dziesiętnych na zwykłe i odwrotnie','Zamiana ułamków na procenty','Obliczanie ułamka danej liczby','Obliczanie liczby, gdy dany jest jej procent','Liczby wymierne'] },
+    { name: 'Algebra', topics: ['Tworzenie i odczytywanie wyrażeń algebraicznych','Obliczanie wartości wyrażeń algebraicznych','Porządkowanie wyrażeń algebraicznych','Równania'] },
+    { name: 'Geometria płaska', topics: ['Kąty i proste','Figury płaskie','Trójkąty','Czworokąty','Pola i obwody','Skala'] },
+    { name: 'Bryły', topics: ['Graniastosłupy i ich podstawowe własności','Ostrosłupy i ich podstawowe własności','Walec, stożek, kula'] },
+    { name: 'Zastosowania', topics: ['Czas i zegar','Jednostki miar','Szybkość, droga, czas','Średnia arytmetyczna'] },
+  ]},
+  { level: '🌲 Klasy 7–8', sections: [
+    { name: 'Liczby i działania', topics: ['Liczby wymierne i rzeczywiste','Wartość bezwzględna','Liczby pierwsze i złożone','Rozkład liczby na czynniki pierwsze','Wyznaczanie NWD','Wyznaczanie NWW','Rozwinięcia dziesiętne'] },
+    { name: 'Procenty', topics: ['Obliczanie procentu danej liczby','Obliczanie liczby na podstawie jej procentu','Jakim procentem jednej liczby jest druga?','Obliczenia procentowe w praktyce'] },
+    { name: 'Potęgi', topics: ['Potęga liczby wymiernej','Mnożenie i dzielenie potęg (ta sama podstawa)','Mnożenie i dzielenie potęg (ten sam wykładnik)','Potęga potęgi','Notacja wykładnicza'] },
+    { name: 'Pierwiastki', topics: ['Pierwiastek kwadratowy i sześcienny','Szacowanie pierwiastków','Działania na pierwiastkach'] },
+    { name: 'Wyrażenia algebraiczne', topics: ['Dodawanie i odejmowanie sum algebraicznych','Mnożenie sumy przez jednomian','Mnożenie sum algebraicznych','Porządkowanie wyrażeń algebraicznych'] },
+    { name: 'Równania', topics: ['Sprawdzanie, czy dana liczba spełnia równanie','Równania I stopnia z jedną niewiadomą','Przekształcanie wzorów'] },
+    { name: 'Proporcjonalność', topics: ['Proporcja i jej własności','Wielkości wprost proporcjonalne','Podział proporcjonalny'] },
+    { name: 'Geometria płaska', topics: ['Twierdzenie Pitagorasa','Twierdzenie odwrotne do twierdzenia Pitagorasa','Trójkąt 30-60-90','Trójkąt 45-45-90','Wielokąty i ich pola','Okrąg i koło — długość i pole','Układ współrzędnych'] },
+    { name: 'Bryły', topics: ['Graniastosłupy — pole powierzchni i objętość','Ostrosłupy — pole powierzchni i objętość'] },
+    { name: 'Statystyka i prawdopodobieństwo', topics: ['Średnia arytmetyczna','Prawdopodobieństwo zdarzenia','Reguła mnożenia i dodawania'] },
+  ]},
+  { level: '🏔️ Szkoła średnia', sections: [
+    { name: 'Liczby i wyrażenia', topics: ['Liczby wymierne i niewymierne','Wyrażenia algebraiczne','Wzory skróconego mnożenia','Pierwiastki — upraszczanie i działania','Potęga o wykładniku wymiernym'] },
+    { name: 'Równania i nierówności', topics: ['Nierówności liniowe i przedziały','Działania na zbiorach','Wartość bezwzględna — równania i nierówności','Układ równań liniowych','Równanie liniowe z parametrem','Nierówności kwadratowe','Równanie kwadratowe z parametrem','Równania wymierne'] },
+    { name: 'Funkcje', topics: ['Pojęcie funkcji','Monotoniczność i miejsce zerowe','Przekształcenia wykresów funkcji','Wektory','Funkcja liniowa','Funkcja kwadratowa — postaci','Funkcja wykładnicza','Funkcja logarytmiczna'] },
+    { name: 'Logarytmy', topics: ['Pojęcie logarytmu','Własności logarytmów','Równania wykładnicze','Równania logarytmiczne'] },
+    { name: 'Wielomiany i wyrażenia wymierne', topics: ['Działania na wielomianach','Dzielenie wielomianów','Równania wielomianowe','Wyrażenia wymierne — upraszczanie'] },
+    { name: 'Trygonometria', topics: ['Trygonometria kąta ostrego','Trygonometria kąta rozwartego','Wzory trygonometryczne','Twierdzenie sinusów','Twierdzenie cosinusów'] },
+    { name: 'Geometria analityczna', topics: ['Równanie prostej na płaszczyźnie','Odległość punktów i prostych','Równanie okręgu','Symetrie na płaszczyźnie'] },
+    { name: 'Planimetria', topics: ['Kąty w okręgu','Twierdzenie Talesa i podobieństwo','Pola i obwody figur'] },
+    { name: 'Ciągi', topics: ['Ciąg arytmetyczny','Ciąg geometryczny','Zastosowania ciągów'] },
+    { name: 'Kombinatoryka i prawdopodobieństwo', topics: ['Permutacje i kombinacje','Prawdopodobieństwo klasyczne','Prawdopodobieństwo warunkowe','Statystyka opisowa'] },
+    { name: 'Stereometria', topics: ['Graniastosłupy — pola i objętości','Ostrosłupy — pola i objętości','Walec i stożek — pola i objętości','Kula — pole i objętość'] },
+    { name: 'Pochodna [rozszerzony]', topics: ['Granica funkcji','Pochodna — definicja i wzory','Zastosowania pochodnej'] },
+  ]},
+];
+
+function apLoadGenerators() {
+  const body = document.getElementById('apBody');
+
+  function topicRow(topic) {
+    const m = TOPIC_META[topic];
+    const hasGen = !!TOPIC_GENERATORS[topic];
+    const esc = topic.replace(/'/g, "\\'");
+    if (!m) {
+      return `<tr style="opacity:.45">
+        <td style="padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text3);font-size:.85rem">${topic}</td>
+        <td style="padding:7px 10px;border-bottom:1px solid var(--border)"><span style="background:rgba(239,68,68,.15);color:#f87171;padding:2px 6px;border-radius:5px;font-size:.72rem">WIP</span></td>
+        <td style="padding:7px 10px;border-bottom:1px solid var(--border)"></td>
+      </tr>`;
+    }
+    const wipBadge = hasGen ? '' : `<span style="background:rgba(239,68,68,.15);color:#f87171;padding:2px 6px;border-radius:5px;font-size:.72rem;margin-left:6px">WIP</span>`;
+    const typy = m.typy.map(t => `<span style="background:var(--bg3);padding:2px 6px;border-radius:5px;font-size:.72rem;margin-right:3px">${t}</span>`).join('');
+    return `<tr onclick="apShowGeneratorDetail('${esc}')"
+      style="cursor:pointer;transition:background .15s"
+      onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''">
+      <td style="padding:7px 10px;border-bottom:1px solid var(--border);font-weight:600;font-size:.85rem;white-space:nowrap">${topic}${wipBadge}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid var(--border)">${typy}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text3);font-size:.78rem;max-width:220px">${m.uwagi}</td>
+    </tr>`;
+  }
+
+  let html = '<div style="font-size:.8rem;color:var(--text3);margin-bottom:12px">Kliknij temat, żeby zobaczyć szczegóły i podtypy zadań.</div>';
+
+  for (const { level, sections } of TOPIC_STRUCTURE) {
+    html += `<div style="margin-bottom:24px">
+      <div style="font-size:.95rem;font-weight:800;color:var(--text);padding:8px 0 6px;border-bottom:2px solid var(--border);margin-bottom:6px">${level}</div>`;
+
+    for (const { name, topics } of sections) {
+      if (name) html += `<div style="font-size:.7rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:10px 2px 4px">${name}</div>`;
+      html += `<table style="width:100%;border-collapse:collapse;font-size:.87rem">
+        <tbody>${topics.map(topicRow).join('')}</tbody>
+      </table>`;
+    }
+    html += '</div>';
+  }
+
+  body.innerHTML = html;
+}
+
+function apFormatSample(q) {
+  if (!q) return '<em style="color:var(--text3)">(brak)</em>';
+  const g = s => `<span style="color:var(--green);font-weight:700">${s}</span>`;
+  const b = s => `<strong>${s}</strong>`;
+  let hint = '';
+  if (q.hint) hint = `<div style="color:var(--text3);font-size:.78rem;margin-top:3px">💡 ${q.hint}</div>`;
+  switch (q.type) {
+    case 'prime_factors':
+      return b('Rozłóż na czynniki pierwsze: ' + q.n) + ' → ' + g(primeFactorsOf(q.n).join(' × '));
+    case 'nwd':
+      return b(`NWD(${q.a}, ${q.b}${q.c ? ', ' + q.c : ''})`) + ' → ' + g(q.gcd);
+    case 'nww':
+      return b(`NWW(${q.a}, ${q.b})`) + ' → ' + g(q.lcm);
+    case 'abs_value':
+      return b('|' + q.exprDisplay + '|') + ' → ' + g(q.answerDisplay);
+    case 'fraction_read':
+      return b(`Narysuj ułamek ${q.k}/${q.n}`) + ` <em style="color:var(--text3)">(${q.shape === 'circle' ? 'koło' : 'prostokąt'})</em>`;
+    case 'fraction_compare': {
+      const l = (q.whole1 != null ? q.whole1 + ' ' : '') + q.a1 + '/' + q.b1;
+      const r = (q.whole2 != null ? q.whole2 + ' ' : '') + q.a2 + '/' + q.b2;
+      return b(l + ' ☐ ' + r) + ' → ' + g(q.ans) + hint;
+    }
+    case 'div_rem':
+      return b(`${q.a} ÷ ${q.b} = ? reszta ?`) + ' → ' + g(`${q.quot} reszta ${q.rem}`) + hint;
+    case 'written-addition':
+      return b(q.numbers.join(' + ') + ' = ?') + ' → ' + g(q.answer);
+    case 'written-subtraction':
+      return b(`${q.numbers[0]} − ${q.numbers[1]} = ?`) + ' → ' + g(q.answer);
+    case 'written-multiplication':
+      return b(`${q.numbers[0]} × ${q.numbers[1]} = ?`) + ' → ' + g(q.answer);
+    case 'written-division':
+      return b(`${q.numbers[0]} ÷ ${q.numbers[1]} = ?`) + ' → ' + g(q.answer);
+    case 'sqrt_bounds':
+      return b(`${q.display} ∈ (?, ?+1)`) + ' → ' + g(`${q.lo} i ${q.hi}`);
+    case 'int_compare': case 'int_order': case 'num_write': case 'num_read':
+    case 'power': case 'order_ops': case 'divisibility': case 'comparison':
+    case 'function_q': case 'rounding': case 'fraction_op': case 'fraction_eq_check':
+    case 'fraction_chain': case 'fraction_fill': case 'fraction_add': case 'fraction_mul':
+    case 'fraction_div': case 'mixed_write': case 'improper_write': case 'expand':
+      if (q.q !== undefined) return b(q.q) + ' → ' + g(q.a !== undefined ? q.a : '?') + hint;
+      return `<em style="color:var(--text3)">[${q.type}]</em>`;
+    default:
+      if (q.q !== undefined) return b(q.q) + ' → ' + g(q.a !== undefined ? q.a : '?') + hint;
+      return `<em style="color:var(--text3)">[${q.type || '?'}] — podgląd niedostępny</em>`;
+  }
+}
+
+function apGenSamples(topic, difficulty, count = 5) {
+  const gen = TOPIC_GENERATORS[topic];
+  if (!gen) return [];
+  const results = [], seen = new Set();
+  for (let i = 0; i < count * 4 && results.length < count; i++) {
+    try {
+      const q = gen(difficulty);
+      const key = JSON.stringify(q).slice(0, 120);
+      if (!seen.has(key)) { seen.add(key); results.push(q); }
+    } catch(e) { break; }
+  }
+  return results;
+}
+
+function apShowGeneratorDetail(topic) {
+  const m = TOPIC_META[topic];
+  if (!m) return;
+  const hasGen = !!TOPIC_GENERATORS[topic];
+
+  const typyHtml = m.typy.map(t =>
+    `<span style="background:var(--bg3);padding:3px 9px;border-radius:8px;font-size:.82rem;margin-right:5px">${t}</span>`
+  ).join('') + (hasGen ? '' : `<span style="background:rgba(239,68,68,.2);color:#f87171;padding:3px 9px;border-radius:8px;font-size:.82rem">WIP</span>`);
+
+  const subtypesHtml = (m.subtypes && m.subtypes.length)
+    ? `<div style="margin-top:20px">
+        <div style="font-size:.75rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Podtypy zadań</div>
+        <ul style="margin:0;padding-left:18px;line-height:1.9;color:var(--text2);font-size:.88rem">
+          ${m.subtypes.map(s => `<li>${s}</li>`).join('')}
+        </ul>
+      </div>`
+    : '';
+
+  const textTasksHtml = (m.textTasks && m.textTasks.length)
+    ? `<div style="margin-top:20px">
+        <div style="font-size:.75rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Szablony zadań tekstowych (${m.textTasks.length})</div>
+        <ol style="margin:0;padding-left:20px;font-size:.85rem;line-height:1.8;color:var(--text2)">
+          ${m.textTasks.map(t => `<li style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.05)">${t}</li>`).join('')}
+        </ol>
+      </div>`
+    : '';
+
+  document.getElementById('genDetailTitle').textContent = topic;
+  document.getElementById('genDetailBody').innerHTML = `
+    <div style="margin-bottom:14px">${typyHtml}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div>
+        <div style="font-size:.75rem;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Zakresy danych</div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.7">${m.zakresy.replace(/\|/g,'<br>')}</div>
+      </div>
+      <div>
+        <div style="font-size:.75rem;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Uwagi</div>
+        <div style="font-size:.85rem;color:var(--text2);line-height:1.7">${m.uwagi}</div>
+      </div>
+    </div>
+    ${subtypesHtml}
+    ${textTasksHtml}`;
+  document.getElementById('genDetailOverlay').style.display = 'flex';
+}
+
+function closeGenDetail(e) {
+  if (e && e.target !== document.getElementById('genDetailOverlay')) return;
+  document.getElementById('genDetailOverlay').style.display = 'none';
 }
 
 async function apLoadPvp() {
@@ -1587,7 +2220,7 @@ function closeAboutModal(e) {
   document.getElementById('aboutModalOverlay').style.display = 'none';
 }
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAboutModal(); closeGuideModal(); }
+  if (e.key === 'Escape') { closeAboutModal(); closeGuideModal(); document.getElementById('genDetailOverlay').style.display = 'none'; }
 });
 
 let _ggbLoaded = false;
